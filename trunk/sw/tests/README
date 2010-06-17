@@ -1,0 +1,18 @@
+This directory contains the DSP testsuite
+
+To run the testsuite follow these steps:
+
+1. Make sure that 'cver' and 'ajardsp-asm' are in $PATH
+
+2. From this (tests) directory issue the command:
+
+../tools/do-tests.pl
+
+3. The tests/workdir directory will now contain output produced by the
+tests. This includes:
+
+test.verilog.dump - Signal dump from the RTL simulation
+test.verilog.log  - stdout/stderr from the RTL simulation
+test.imem         - Instruction memory image produced by the assembler
+test.res          - Data memory image that was dumped after simulation
+
