@@ -1,0 +1,66 @@
+assign true_32bit_insn = insn[1] & insn[29];
+
+16 bit instructions have 3 operation encoding bits (currently 6 in use out of 8)
+32 bit instructions have 5 operation encoding bits (currently 2 in use out of 32)
+
+Mnemonic  : add16
+Operand_0 : $acc0l to $acc7h
+Operand_1 : $acc0l to $acc7h
+Operation : Operand_0 = Operand_0 + Operand_1
+Size      : 16
+Encoding  : {[14:11]=OP1,[10:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : sub16
+Operand_0 : $acc0l to $acc7h
+Operand_1 : $acc0l to $acc7h
+Operation : Operand_0 = Operand_0 - Operand_1
+Size      : 16
+Encoding  : {[14:11]=OP1,[10:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : cmp{eq,ne,lt,le,gt,ge}16
+Operand_0 : $acc0l to $acc7h
+Operand_1 : $acc0l to $acc7h
+Operand_2 : $pred1 to $pred3
+Operation : Operand_2 = Operand_0 {eq,ne,lt,le,gt,ge} Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[28:26]=CMP,[25:24]=OP2,[16:13]=OP1,[12:9]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : mpy16
+Operand_0 : $acc0l to $acc3h
+Operand_1 : $acc0l to $acc3h
+Operand_2 : $acc0 to $acc7
+Operation : Operand_2 = Operand_0 * Operand_1
+Size      : 16
+Encoding  : {[15:13]=OP2,[12:10]=OP1,[9:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : mac16
+Operand_0 : $acc0l to $acc3h  (3 bits)
+Operand_1 : $acc0l to $acc3h  (3 bits)
+Operand_2 : $acc0 to $acc7    (3 bits)
+Operation : Operand_2 = Operand_2 + Operand_0 * Operand_1
+Size      : 16
+Encoding  : {[15:13]=OP2,[12:10]=OP1,[9:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : add32
+Operand_0 : $acc0 to $acc7 (3 bits)
+Operand_1 : $acc0 to $acc7 (3 bits)
+Operand_2 : $acc0 to $acc7 (3 bits)
+Operation : Operand_2 = Operand_0 + Operand_1
+Size      : 16
+Encoding  : {[15:13]=OP2,[12:10]=OP1,[9:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : sub32
+Operand_0 : $acc0 to $acc7 (3 bits)
+Operand_1 : $acc0 to $acc7 (3 bits)
+Operand_2 : $acc0 to $acc7 (3 bits)
+Operation : Operand_2 = Operand_0 - Operand_1
+Size      : 16
+Encoding  : {[15:13]=OP2,[12:10]=OP1,[9:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : cmp{eq,ne,lt,le,gt,ge}32
+Operand_0 : $acc0 to $acc7   (3 bits)
+Operand_1 : $acc0 to $acc7   (3 bits)
+Operand_2 : $pred1 to $pred3 (2 bits)
+Operation : Operand_2 = Operand_0 {eq,ne,lt,le,gt,ge} Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[28:26]=CMP,[25:24]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}

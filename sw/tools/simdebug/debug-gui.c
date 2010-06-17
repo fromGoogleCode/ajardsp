@@ -36,7 +36,7 @@
 #include <glib.h>
 #include <pthread.h>
 #include "debug.h"
-#include "myasm.h"
+#include "asm.h"
 
 enum
 {
