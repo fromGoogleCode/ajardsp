@@ -1,2 +1,2 @@
 export CVER_INC=/usr/include/cver/
-gcc -m32 -g -I$CVER_INC -fPIC -shared -o debug.so debug-pli.c debug-gui.c `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` -lgthread-2.0 -I../asm ../asm/disasm.c ../asm/ajardsp_insn.c
+gcc -m32 -g -I$CVER_INC -fPIC -shared -o debug.so debug-pli.c debug-gui.c `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` -lgthread-2.0 -I../asm ../asm/disasm.c ../asm/ajardsp-insns.c
