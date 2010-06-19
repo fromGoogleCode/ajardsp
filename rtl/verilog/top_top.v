@@ -133,22 +133,22 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD);
                 .tx_bit(RS232_DTE_TXD)
                 );
 
-   mydsp_top mydsp_0(.clk(clk),
-                     .rst_core(rst | core_rst_r | core_halt_r),
-                     .rst_mem(rst),
+   ajardsp_top ajardsp_0(.clk(clk),
+                         .rst_core(rst | core_rst_r | core_halt_r),
+                         .rst_mem(rst),
 
-                     .ext_imem_wr_addr_i(imem_addr_r),
-                     .ext_imem_wr_data_i(imem_data_64_w),
-                     .ext_imem_wr_en_i(imem_wen),
+                         .ext_imem_wr_addr_i(imem_addr_r),
+                         .ext_imem_wr_data_i(imem_data_64_w),
+                         .ext_imem_wr_en_i(imem_wen),
 
-                     .ext_dmem_addr_i(dmem_addr_r),
-                     .ext_dmem_wr_data_i(dmem_wr_data_32_w),
-                     .ext_dmem_wr_en_i(dmem_wen),
-                     .ext_dmem_rd_data_o(dmem_rd_data_32_w),
-                     .ext_dmem_rd_en_i(dmem_ren),
+                         .ext_dmem_addr_i(dmem_addr_r),
+                         .ext_dmem_wr_data_i(dmem_wr_data_32_w),
+                         .ext_dmem_wr_en_i(dmem_wen),
+                         .ext_dmem_rd_data_o(dmem_rd_data_32_w),
+                         .ext_dmem_rd_en_i(dmem_ren),
 
-                     .core_halt_o(core_halt_w)
-                     );
+                         .core_halt_o(core_halt_w)
+                         );
 
    always @(posedge clk)
      begin

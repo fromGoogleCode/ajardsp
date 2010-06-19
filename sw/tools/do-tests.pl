@@ -65,7 +65,7 @@ foreach $arg (@ARGV) {
 }
 
 if ($debug) {
-    $sim_command_base = $sim_command_base . " +loadvpi=../tools/debug/debug.so:vpi_bootstrap ";
+    $sim_command_base = $sim_command_base . " +loadvpi=../tools/simdebug/debug.so:vpi_bootstrap ";
 }
 
 system("mkdir $workdir 2> /dev/null");
@@ -78,7 +78,7 @@ foreach $asm_file (@asm_files) {
     $asm_file =~ /([^.]+)\.asm/;
     $base_name = $1;
 
-    $asm_command = "ajardsp-asm -o=$workdir/$base_name $asm_file";
+    $asm_command = "../tools/asm/ajardsp-asm -o=$workdir/$base_name $asm_file";
 
     $sim_command_def = " +define+SIMULATION +define+IMEM_FILE=\\\"$workdir/$base_name.imem\\\" "
         . "+define+DMEM_IN_FILE=\\\"$workdir/$base_name.dmem\\\" "
@@ -107,7 +107,7 @@ foreach $asm_file (@asm_files) {
 
     if ($target) {
         #### Target - begin ####
-        if (0 == system("../tools/targetmon $workdir/$base_name.imem $workdir/$base_name.dmem $workdir/$base_name.res")) {
+        if (0 == system("../tools/target/targetmon $workdir/$base_name.imem $workdir/$base_name.dmem $workdir/$base_name.res")) {
             printf("%-64s [PASSED]\n", "Executing on target '$asm_file'");
         }
         else {
