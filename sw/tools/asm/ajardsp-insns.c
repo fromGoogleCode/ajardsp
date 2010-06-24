@@ -52,6 +52,7 @@
 
 #define CU_ITYPE_CMP_16 (0x1 << 4)
 #define CU_ITYPE_CMP_32 (0x2 << 4)
+#define CU_ITYPE_FP_MUL (0x3 << 4)
 
 #define CMP_EQ (0x0 << 26)
 #define CMP_NE (0x1 << 26)
@@ -434,6 +435,36 @@ inst_def_t ajardsp_insns[] = {
 
     },
   },
+
+  {
+    .mnemonic = "fpmul",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | CU_ITYPE_FP_MUL | FU_CU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
 
   /* New CU encoding ends here */
 

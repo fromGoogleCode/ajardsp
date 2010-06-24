@@ -82,14 +82,9 @@ module cu(clk,
    input [31:0]   op_2_data_i;
 
    output [2:0]   res_idx_o;
-   reg    [2:0]   res_idx_o;
    output 	  res_wen_o;
-   reg 		  res_wen_o;
    output [1:0]	  res_mask_o;
-   reg    [1:0]   res_mask_o;
-
    output [31:0]  res_data_o;
-   reg    [31:0]  res_data_o;
 
    output [1:0]   pred_tst_idx_o;
    input          pred_tst_bit_i;
@@ -104,6 +99,8 @@ module cu(clk,
    reg [31:0] inst_pipe_0_r;
    reg [31:0] inst_pipe_1_r;
    reg [31:0] inst_pipe_2_r;
+   reg [31:0] inst_pipe_3_r;
+   reg [31:0] inst_pipe_4_r;
 
    reg [31:0] op_0_r;
    reg [31:0] op_1_r;
@@ -130,6 +127,20 @@ module cu(clk,
    reg         mul_op_1_signed_w;
    wire [31:0] mul_res_w;
 
+   reg [15:0]  fp_mul_op_0_w;
+   reg [15:0]  fp_mul_op_1_w;
+   wire [15:0] fp_mul_res_w;
+   reg         fp_mul_begin_w;
+
+   reg [2:0]   res_early_idx_w;
+   reg         res_early_wen_w;
+   reg [1:0]   res_early_mask_w;
+   reg [15:0]  res_early_data_w;
+
+   reg [2:0]   res_late_idx_w;
+   reg         res_late_wen_w;
+   reg [1:0]   res_late_mask_w;
+   reg [15:0]  res_late_data_w;
 
 
    int_addsub addsub(.op_a_i(addsub_op_0_w),
@@ -146,6 +157,19 @@ module cu(clk,
                .res_o(mul_res_w)
                );
 
+   fp_mul fp_mul_0(.clk(clk),
+                   .rst(fp_mul_begin_w),
+                   .op_a_i(fp_mul_op_0_w),
+                   .op_b_i(fp_mul_op_1_w),
+                   .res_o(fp_mul_res_w)
+                   );
+
+
+   assign res_idx_o  = res_late_wen_w ? res_late_idx_w  : res_early_idx_w;
+   assign res_wen_o  = res_late_wen_w ? res_late_wen_w  : res_early_wen_w;
+   assign res_mask_o = res_late_wen_w ? res_late_mask_w : res_early_mask_w;
+   assign res_data_o = res_late_wen_w ? res_late_data_w : res_early_data_w;
+
    assign pred_tst_idx_o = inst_pipe_2_r[31:30];
 
    always @(posedge clk)
@@ -155,12 +179,16 @@ module cu(clk,
 	     inst_pipe_0_r <= 32'h0;
 	     inst_pipe_1_r <= 32'h0;
 	     inst_pipe_2_r <= 32'h0;
+             inst_pipe_3_r <= 32'h0;
+             inst_pipe_4_r <= 32'h0;
 	  end
 	else
 	  begin
 	     inst_pipe_0_r <= inst;
 	     inst_pipe_1_r <= inst_pipe_0_r;
 	     inst_pipe_2_r <= inst_pipe_1_r;
+             inst_pipe_3_r <= inst_pipe_2_r;
+             inst_pipe_4_r <= inst_pipe_3_r;
 	  end
      end // always @ (posedge clk)
 
@@ -214,6 +242,8 @@ module cu(clk,
         op_0_16_pos = 0;
         op_1_16_pos = 0;
 
+        fp_mul_begin_w = 0;
+
         if (inst_pipe_0_r[INSN_SIZE_BIT] & inst_pipe_0_r[INSN_ENC_BIT])
           begin  /* 32 bit instruction encoding */
              case (inst_pipe_0_r[8:4])
@@ -222,6 +252,14 @@ module cu(clk,
                   op_0_16_pos = inst_pipe_0_r[9];
  	          op_1_idx_o = inst_pipe_0_r[16:14];
                   op_1_16_pos = inst_pipe_0_r[13];
+               end
+
+               CU_ITYPE_FP_MUL: begin
+                  op_0_idx_o = inst_pipe_0_r[12:10];
+                  op_0_16_pos = inst_pipe_0_r[9];
+ 	          op_1_idx_o = inst_pipe_0_r[16:14];
+                  op_1_16_pos = inst_pipe_0_r[13];
+                  fp_mul_begin_w = 1;
                end
              endcase // case (inst_pipe_0_r[7:4])
 
@@ -295,6 +333,9 @@ module cu(clk,
         mul_op_1_w = 0;
         mul_op_0_signed_w = 0;
         mul_op_1_signed_w = 0;
+        fp_mul_op_0_w = 0;
+        fp_mul_op_1_w = 0;
+
 
         if (inst_pipe_1_r[INSN_SIZE_BIT] & inst_pipe_1_r[INSN_ENC_BIT])
           begin  /* 32 bit instruction encoding */
@@ -302,6 +343,11 @@ module cu(clk,
                CU_ITYPE_CMP_16: begin
  	          res = {16'h0, op_0_16_r - op_1_16_r};
  	       end
+
+               CU_ITYPE_FP_MUL: begin
+                  fp_mul_op_0_w = op_0_16_r;
+                  fp_mul_op_1_w = op_1_16_r;
+               end
              endcase
           end
         else  /* 16 bit instruction encoding */
@@ -388,13 +434,13 @@ module cu(clk,
 
      end // always @ (inst_pipe_0_r)
 
-   // Instruction writeback pipeline stage #2
+   // Instruction writeback (early) pipeline stage #2
    always @(inst_pipe_2_r or res_r or pred_tst_bit_i)
      begin
-	res_idx_o  = 0;
-	res_wen_o  = (inst_pipe_2_r[1] == 0 || pred_tst_bit_i) && inst_pipe_2_r[15:0] != 0;
-        res_mask_o = 2'b11;
-	res_data_o = res_r;
+	res_early_idx_w  = 0;
+	res_early_wen_w  = (inst_pipe_2_r[1] == 0 || pred_tst_bit_i) && inst_pipe_2_r[15:0] != 0;
+        res_early_mask_w = 2'b11;
+	res_early_data_w = res_r;
 
         pred_set_idx_o = 0;
         pred_set_wen_o = 0;
@@ -406,7 +452,7 @@ module cu(clk,
  	       CU_ITYPE_CMP_16: begin
                   pred_set_idx_o = inst_pipe_2_r[25:24];
                   pred_set_wen_o = 1;
-                  res_wen_o  = 0;
+                  res_early_wen_w  = 0;
 
  	          case (inst_pipe_2_r[28:26])
  	            cmp_eq: begin
@@ -437,40 +483,66 @@ module cu(clk,
 	     case (inst_pipe_2_r[6:4])
 
 	       CU_ITYPE_ADD_32: begin
-	          res_idx_o = inst_pipe_2_r[15:13];
+	          res_early_idx_w = inst_pipe_2_r[15:13];
 	       end
 
 	       CU_ITYPE_SUB_32: begin
-	          res_idx_o = inst_pipe_2_r[15:13];
+	          res_early_idx_w = inst_pipe_2_r[15:13];
 	       end
 
 	       CU_ITYPE_ADD_16: begin
-	          res_idx_o = inst_pipe_2_r[10:8];
+	          res_early_idx_w = inst_pipe_2_r[10:8];
                   if (inst_pipe_2_r[7])
-                    res_mask_o = 2'b10;
+                    res_early_mask_w = 2'b10;
                   else
-                    res_mask_o = 2'b01;
+                    res_early_mask_w = 2'b01;
 	       end
 
 	       CU_ITYPE_SUB_16: begin
-	          res_idx_o = inst_pipe_2_r[10:8];
+	          res_early_idx_w = inst_pipe_2_r[10:8];
                   if (inst_pipe_2_r[7])
-                    res_mask_o = 2'b10;
+                    res_early_mask_w = 2'b10;
                   else
-                    res_mask_o = 2'b01;
+                    res_early_mask_w = 2'b01;
 	       end
 
 	       CU_ITYPE_MPY_16: begin
-	          res_idx_o = inst_pipe_2_r[15:13];
+	          res_early_idx_w = inst_pipe_2_r[15:13];
 	       end
 
                CU_ITYPE_MAC_16: begin
-	          res_idx_o = inst_pipe_2_r[15:13];
+	          res_early_idx_w = inst_pipe_2_r[15:13];
 	       end
 
 	     endcase
 
           end
      end
+
+
+   // Instruction writeback (late) pipeline stage #4
+   always @(inst_pipe_4_r or fp_mul_res_w)
+     begin
+	res_late_idx_w  = 0;
+	res_late_wen_w  = 0;  /* cannot be predicatable yet... */
+        res_late_mask_w = 2'b11;
+	res_late_data_w = 0;
+
+        if (inst_pipe_4_r[INSN_SIZE_BIT] & inst_pipe_4_r[INSN_ENC_BIT])
+          begin  /* 32 bit instruction encoding */
+             case (inst_pipe_4_r[8:4])
+ 	       CU_ITYPE_FP_MUL: begin
+                  res_late_wen_w  = 1;
+                  res_late_data_w = fp_mul_res_w;
+                  res_late_idx_w = inst_pipe_4_r[20:18];
+                  if (inst_pipe_4_r[17])
+                    res_late_mask_w = 2'b10;
+                  else
+                    res_late_mask_w = 2'b01;
+               end
+             endcase
+          end
+     end
+
 
 endmodule // cu

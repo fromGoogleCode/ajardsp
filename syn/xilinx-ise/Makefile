@@ -26,6 +26,7 @@ SRC +=	../../rtl/verilog/ajardsp_top.v \
 	../../rtl/verilog/int_mul.v \
 	../../rtl/verilog/accrf.v \
 	../../rtl/verilog/int_addsub.v \
+	../../rtl/verilog/fp_mul.v \
 	../../rtl/verilog/pred.v \
 	../../rtl/verilog/ptrrf.v \
 	../../rtl/verilog/sp.v \
@@ -50,7 +51,7 @@ cleanall:	clean
 
 bits:		$(DESIGN).bit
 
-download:
+download: bits
 		impact -batch ./impact.run
 
 

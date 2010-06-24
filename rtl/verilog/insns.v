@@ -108,7 +108,8 @@ parameter CU_ITYPE_ADD_16 = 3'h1,
 
 /* 32 bit encoded instuctions */
 parameter CU_ITYPE_CMP_16 = 5'h1,
-	  CU_ITYPE_CMP_32 = 5'h2;
+	  CU_ITYPE_CMP_32 = 5'h2,
+	  CU_ITYPE_FP_MUL = 5'h3;
 
 parameter cmp_eq = 3'b000,
           cmp_ne = 3'b001,
