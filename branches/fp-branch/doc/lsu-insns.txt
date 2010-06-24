@@ -1,0 +1,157 @@
+assign true_32bit_insn = insn[1] & insn[29];
+
+16 bit instructions have 4 operation encoding bits (currently  in use out of 16)
+32 bit instructions have 4 operation encoding bits (currently  in use out of 16)
+
+
+16-bit instructions:
+-------------------
+
+Mnemonic  : ld16
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operation : Operand_1 = DMEM[Operand_0]
+Size      : 16
+Encoding  : {[15:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : ldinc16
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operation : Operand_1 = DMEM[Operand_0], Operand_0 = Operand_0 + 1
+Size      : 16
+Encoding  : {[15:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : st16
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operation : DMEM[Operand_0] = Operand_1
+Size      : 16
+Encoding  : {[15:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : stinc16
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operation : DMEM[Operand_0] = Operand_1, Operand_0 = Operand_0 + 1
+Size      : 16
+Encoding  : {[15:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : ld32
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0 to $acc7
+Operation : Operand_1 = DMEM[Operand_0]
+Size      : 16
+Encoding  : {[13:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : ldinc32
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0 to $acc7
+Operation : Operand_1 = DMEM[Operand_0], Operand_0 = Operand_0 + 2
+Size      : 16
+Encoding  : {[13:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : st32
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0 to $acc7
+Operation : DMEM[Operand_0] = Operand_1
+Size      : 16
+Encoding  : {[13:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : stinc32
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0 to $acc7
+Operation : DMEM[Operand_0] = Operand_1, Operand_0 = Operand_0 + 2
+Size      : 16
+Encoding  : {[13:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : {push,pop}{16,32}
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7, $spec_regs
+Operation : DMEM[--$sp] = Operand_0
+Size      : 16
+Encoding  : {[15:11]=OP0,[10]=spec,[9]=32bits,[8]=Push,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : mv16 (move $acc to $acc)
+Operand_0 : $acc0l to $acc7h
+Operand_1 : $acc0l to $acc7h
+Operation : Operand_0 = Operand_1
+Size      : 16
+Encoding  : {[15:12]=OP1,[11:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : mv16 (move $ptr to $ptr)
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $ptr0 to $ptr7
+Operation : Operand_1 = Operand_0
+Size      : 16
+Encoding  : {[14:12]=OP1,[11:9]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : mv16 (move $acc to $ptr)
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0l to $acc7h
+Operation : Operand_0 = Operand_1
+Size      : 16
+Encoding  : {[15:12]=OP1,[11:9]=OP0,[8]=1'b1,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : mv16 (move $ptr to $acc)
+Operand_0 : $ptr0 to $ptr7
+Operand_1 : $acc0l to $acc7h
+Operation : Operand_1 = Operand_0
+Size      : 16
+Encoding  : {[15:12]=OP1,[11:9]=OP0,[8]=1'b0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+
+
+
+32-bit instructions:
+-------------------
+
+Mnemonic  : ldimm16
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operand_1 : 16-bit immediate value
+Operation : Operand_0 = Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : mvfs16
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operand_1 : Special register (6 bit addressing)
+Operation : Operand_0 = Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[18:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : mvts16
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operand_1 : Special register (6 bit addressing)
+Operation : Operand_1 = Operand_0
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[18:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : ldoff16
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operand_1 : 13-bit signed immediate value (-4096,4095)
+Operand_2 : $ptr0 to $ptr7
+Operation : Operand_0 = DMEM[signextend(Operand_1) + Operand_2]
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : ldoff32
+Operand_0 : $acc0 to $acc7
+Operand_1 : 13-bit signed immediate value (-4096,4095)
+Operand_2 : $ptr0 to $ptr7
+Operation : Operand_0 = DMEM[signextend(Operand_1) + Operand_2]
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[11:9]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : stoff16
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
+Operand_1 : 13-bit signed immediate value (-4096,4095)
+Operand_2 : $ptr0 to $ptr7
+Operation : DMEM[signextend(Operand_1) + Operand_2] = Operand_0
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : stoff32
+Operand_0 : $acc0 to $acc7
+Operand_1 : 13-bit signed immediate value (-4096,4095)
+Operand_2 : $ptr0 to $ptr7
+Operation : DMEM[signextend(Operand_1) + Operand_2] = Operand_0
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[11:9]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}

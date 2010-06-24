@@ -1,0 +1,27 @@
+General
+-------
+
+[0] - Parallel bit; if set the next instruction executes in parallel
+      with this one.
+
+[1]   	- Size bit; size of current instruction
+      	- 1'b1 - 32bits
+      	- 1'b0 - 16bits
+
+[3:2] 	- Functional Unit
+	- 2'b00 - PCU (Program Control Unit)
+	- 2'b01 - LSU (Load Store Unit)
+	- 2'b10 - CU  (Computational Unit)
+	- 2'b11 - BMU (Bit Manipulation Unit)
+
+[29] - True 32bit instruction (a 16bit instruction with predicate bits
+       is not a true 32bit even though it occupies 32bits). When set
+       the instruction has 32bit encoding.
+
+[31:30] - Predicate bits; only execute insn if predicate bit 0-3 is
+          set (bit 0 is always set).
+
++ There is a predicated 32-bit counterpart of every 16-bit instruction.
++ Some instructions are only available in 32-bit format.
++ Every 32-bit instruction is predicatable.
+
