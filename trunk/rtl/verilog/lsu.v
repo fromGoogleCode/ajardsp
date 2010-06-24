@@ -256,6 +256,7 @@ module lsu(clk,
 
         spec_regs_ren_o  = 0;
         spec_regs_raddr_o = 0;
+        spec_regs_data_o_w = 0;
 
         push_en_o = 0;
         pop_en_o  = 0;
@@ -548,6 +549,7 @@ module lsu(clk,
 	acc_wr_data_o = 0;
 
         spec_regs_data_o = 0;
+        spec_regs_waddr_o = 0;
         spec_regs_wen_o  = 0;
 
         if (inst_pipe_1_r[INSN_SIZE_BIT] & inst_pipe_1_r[INSN_ENC_BIT])
