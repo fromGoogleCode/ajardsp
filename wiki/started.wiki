@@ -1,5 +1,3 @@
-#summary One-sentence summary of this page.
-
 = Getting started guide for the AjarDSP project =
 
 This page describes, in reasonable detail, how to setup the AjarDSP simulation environment environment and run the test suite.
@@ -12,6 +10,7 @@ To be able to run RTL simulation and build the required software please make sur
   * *flex* - Lexer generator needed by the assembler
   * *bison* - Parser generator needed by the assembler
   * *GTK+ development libraries* - GUI libraries needed by the _simdebug_ interactive debug tool.
+  * *gtkwave* - waveform viewer useful for viewing waveforms produced by simulation.
 
 == Building the tools ==
 
@@ -72,7 +71,9 @@ Simulation     9 passed,   0 failed
 Verification   6 passed,   0 failed
 }}}
 
-That is it, RTL simulation of AjarDSP has now run on the {{{.asm}}} files in {{{ajardsp/sw/tests}}} and for those {{{.asm}}} files that had a corresponding {{{.ref}}} file the result (contents of DMEM after simulation) has been verified.
+That is it. RTL simulation of AjarDSP has now run on the {{{.asm}}} files in {{{ajardsp/sw/tests}}} and for those {{{.asm}}} files that had a corresponding {{{.ref}}} file the result (contents of DMEM after simulation) has been verified.
+
+When simulation runs the directory {{{ajardsp/sw/tests/workdir}}} will be created. This directory contains very useful information such as _gtkwave_ viewable {{{verilog.dump}}} files that resulted from the test cases in the test suite.
 
 By default {{{do-tests.pl}}} will "glob" all {{{.asm}}} files in the current directory. If this is not the desired behavior then specific {{{.asm}}} files can be specified on the command line. The *-debug* switch will launch the graphical debug front end. The *-target* switch will, instead of RTL simulation, run the test suite on UART connected HW. 
 
