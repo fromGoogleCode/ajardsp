@@ -58,7 +58,7 @@ foobar2:
 	nop
 .align 4
 foobar:
-        push16 $retpc
+        ldimm16 $ptr5, 0xbabe | push16 $retpc
         call #foobar2
         nop
         nop

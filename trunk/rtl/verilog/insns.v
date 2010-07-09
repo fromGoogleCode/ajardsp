@@ -39,7 +39,8 @@ parameter INSN_PAR_BIT  =  0,
 
 parameter ITYPE_PCU = 2'b00,
           ITYPE_LSU = 2'b01,
-          ITYPE_CU  = 2'b10;
+          ITYPE_CU  = 2'b10,
+          ITYPE_BMU = 2'b11;
 
 /**********************************************
  * General - end
@@ -125,22 +126,15 @@ parameter cmp_eq = 3'b000,
  * BMU - begin
  **********************************************/
 
-/* 16 bit encoded instuctions */
-parameter BMU_ITYPE_AND_16 = 3'h1,
-	  BMU_ITYPE_NOT_16 = 3'h2,
-          BMU_ITYPE_OR_16  = 3'h3,
-	  BMU_ITYPE_XOR_16 = 3'h4,
-
-          BMU_ITYPE_AND_32 = 3'h5,
-	  BMU_ITYPE_NOT_32 = 3'h6,
-          BMU_ITYPE_OR_32  = 3'h7,
-          BMU_ITYPE_XOR_32 = 3'h8,
-
-          BMU_ITYPE_SHIFT_16 = 3'h9,
-          BMU_ITYPE_SHIFT_32 = 3'ha;
-
 /* 32 bit encoded instuctions */
+parameter BMU_ITYPE_AND_16_32    = 5'h1,
+	  BMU_ITYPE_NOT_16_32    = 5'h2,
+          BMU_ITYPE_OR_16_32     = 5'h3,
+	  BMU_ITYPE_XOR_16_32    = 5'h4,
+          BMU_ITYPE_SHIFTA_16_32 = 5'h5,
+          BMU_ITYPE_SHIFTL_16_32 = 5'h6;
 
+parameter BMU_OP_SIZE16_BIT = 21;
 
 /**********************************************
  * BMU - end
