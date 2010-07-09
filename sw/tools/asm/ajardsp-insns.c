@@ -36,12 +36,24 @@
 #define FU_PCU (0 << 2)
 #define FU_LSU (1 << 2)
 #define FU_CU  (2 << 2)
+#define FU_BMU (3 << 2)
 
 #define PCU_ITYPE_BKREP    (0x1 << 4)
 #define PCU_ITYPE_CALL_ABS (0x2 << 4)
 #define PCU_ITYPE_RETS     (0x3 << 4)
 #define PCU_ITYPE_JUMP_ABS (0x4 << 4)
 #define PCU_ITYPE_HALT     (0xf << 4)
+
+#define BMU_OP_SIZE_16     (1 << 21)
+
+#define BMU_SHIFT_LEFT     (1 << 23)
+
+#define BMU_ITYPE_AND_16_32    (0x01 << 4)
+#define	BMU_ITYPE_NOT_16_32    (0x02 << 4)
+#define BMU_ITYPE_OR_16_32     (0x03 << 4)
+#define BMU_ITYPE_XOR_16_32    (0x04 << 4)
+#define BMU_ITYPE_SHIFTA_16_32 (0x05 << 4)
+#define BMU_ITYPE_SHIFTL_16_32 (0x06 << 4)
 
 #define CU_ITYPE_ADD_16 (1 << 4)
 #define CU_ITYPE_SUB_16 (2 << 4)
@@ -97,6 +109,403 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
     },
   },
+
+  /* BMU instructions */
+
+  {
+    .mnemonic = "and32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_AND_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "or32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_OR_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "xor32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_XOR_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "not32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_AND_16_32 | FU_BMU,
+    .nr_operands = 2,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftra32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_SHIFTA_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftrl32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_SHIFTL_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftll32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_SHIFT_LEFT | BMU_ITYPE_SHIFTL_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "and16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_AND_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "or16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_OR_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "xor16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_XOR_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "not16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_AND_16_32 | FU_BMU,
+    .nr_operands = 2,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftra16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_SHIFTA_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftrl16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_SHIFTL_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftll16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_SHIFT_LEFT | BMU_ITYPE_SHIFTL_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
 
   /* CU instructions for the new encoding */
 

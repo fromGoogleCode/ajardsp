@@ -48,6 +48,9 @@ module predbits(clk,
                 rd_4_idx_i,
                 rd_4_bit_o,
 
+                rd_5_idx_i,
+                rd_5_bit_o,
+
                 wr_0_idx_i,
                 wr_0_wen_i,
                 wr_0_bit_i,
@@ -75,6 +78,9 @@ module predbits(clk,
    input [1:0] rd_4_idx_i;
    output      rd_4_bit_o;
 
+   input [1:0] rd_5_idx_i;
+   output      rd_5_bit_o;
+
    input [1:0] wr_0_idx_i;
    input       wr_0_wen_i;
    input       wr_0_bit_i;
@@ -93,6 +99,7 @@ module predbits(clk,
    assign rd_2_bit_o = pred_reg_w[rd_2_idx_i];
    assign rd_3_bit_o = pred_reg_w[rd_3_idx_i];
    assign rd_4_bit_o = pred_reg_w[rd_4_idx_i];
+   assign rd_5_bit_o = pred_reg_w[rd_5_idx_i];
 
    always @(posedge clk)
      begin

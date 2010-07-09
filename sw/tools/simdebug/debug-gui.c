@@ -484,6 +484,28 @@ FuDesc_t PCU_Desc = {
   }
 };
 
+FuDesc_t BMU_Desc = {
+  "BMU",
+  3,
+  {
+    {
+      "DEC",
+      "testbench.ajardsp_0.bmu_0.inst_pipe_0_r"
+    },
+
+    {
+      "EXEC",
+      "testbench.ajardsp_0.bmu_0.inst_pipe_1_r"
+    },
+
+    {
+      "WB",
+      "testbench.ajardsp_0.bmu_0.inst_pipe_2_r"
+    },
+  }
+};
+
+
 FuDesc_t CU_0_Desc = {
   "CU 0",
   3,
@@ -608,6 +630,7 @@ void WaitForGUI(void)
     SimReadOutMemory();
 
     PipelineGuiUpdate(&PCU_Desc);
+    PipelineGuiUpdate(&BMU_Desc);
     PipelineGuiUpdate(&CU_0_Desc);
     PipelineGuiUpdate(&CU_1_Desc);
     PipelineGuiUpdate(&LSU_0_Desc);
@@ -622,6 +645,7 @@ void WaitForGUI(void)
       SimReadOutMemory();
 
       PipelineGuiUpdate(&PCU_Desc);
+      PipelineGuiUpdate(&BMU_Desc);
       PipelineGuiUpdate(&CU_0_Desc);
       PipelineGuiUpdate(&CU_1_Desc);
       PipelineGuiUpdate(&LSU_0_Desc);
@@ -759,6 +783,7 @@ void* GuiMainThread(void* arg_p)
 
   /* Add all the FU pipelines to the hbox */
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&PCU_Desc));
+  gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&BMU_Desc));
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&CU_0_Desc));
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&CU_1_Desc));
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&LSU_0_Desc));
