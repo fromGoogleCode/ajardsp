@@ -1,3 +1,5 @@
+#summary Getting started guide for the AjarDSP project
+
 = Getting started guide for the AjarDSP project =
 
 This page describes, in reasonable detail, how to setup the AjarDSP simulation environment environment and run the test suite.
