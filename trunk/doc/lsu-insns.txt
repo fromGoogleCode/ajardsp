@@ -155,3 +155,10 @@ Operand_2 : $ptr0 to $ptr7
 Operation : DMEM[signextend(Operand_1) + Operand_2] = Operand_0
 Size      : 32
 Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[11:9]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : addptr16
+Operand_0 : 13-bit signed immediate value (-4096,4095)
+Operand_1 : $ptr0 to $ptr7
+Operation : Operand_1 += Operand_0
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP1,[25:13]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
