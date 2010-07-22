@@ -39,12 +39,15 @@ module cu(clk,
           mulsign_i,
 
 	  op_0_idx_o,
+          op_0_ren_o,
 	  op_0_data_i,
 
 	  op_1_idx_o,
+          op_1_ren_o,
 	  op_1_data_i,
 
 	  op_2_idx_o,
+          op_2_ren_o,
 	  op_2_data_i,
 
 	  res_idx_o,
@@ -71,14 +74,17 @@ module cu(clk,
 
    output [2:0]	  op_0_idx_o;
    reg    [2:0]   op_0_idx_o;
+   output reg     op_0_ren_o;
    input [31:0]   op_0_data_i;
 
    output [2:0]   op_1_idx_o;
    reg    [2:0]   op_1_idx_o;
+   output reg     op_1_ren_o;
    input [31:0]   op_1_data_i;
 
    output [2:0]   op_2_idx_o;
    reg    [2:0]   op_2_idx_o;
+   output reg     op_2_ren_o;
    input [31:0]   op_2_data_i;
 
    output [2:0]   res_idx_o;
@@ -211,6 +217,10 @@ module cu(clk,
 	op_1_idx_o = 0;
         op_2_idx_o = 0;
 
+        op_0_ren_o = 0;
+	op_1_ren_o = 0;
+        op_2_ren_o = 0;
+
         op_0_16_pos = 0;
         op_1_16_pos = 0;
 
@@ -219,8 +229,10 @@ module cu(clk,
              case (inst_pipe_0_r[8:4])
                CU_ITYPE_CMP_16: begin
                   op_0_idx_o = inst_pipe_0_r[12:10];
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[9];
  	          op_1_idx_o = inst_pipe_0_r[16:14];
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[13];
                end
              endcase // case (inst_pipe_0_r[7:4])
@@ -233,41 +245,54 @@ module cu(clk,
 
 	       CU_ITYPE_ADD_32: begin
 	          op_0_idx_o = inst_pipe_0_r[9:7];
+                  op_0_ren_o = 1;
 	          op_1_idx_o = inst_pipe_0_r[12:10];
+                  op_1_ren_o = 1;
 	       end
 
 	       CU_ITYPE_SUB_32: begin
 	          op_0_idx_o = inst_pipe_0_r[9:7];
+                  op_0_ren_o = 1;
 	          op_1_idx_o = inst_pipe_0_r[12:10];
+                  op_1_ren_o = 1;
 	       end
 
 	       CU_ITYPE_ADD_16: begin
 	          op_0_idx_o  = inst_pipe_0_r[10:8];
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[7];
 	          op_1_idx_o  = inst_pipe_0_r[14:12];
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[11];
 	       end
 
 	       CU_ITYPE_SUB_16: begin
 	          op_0_idx_o  = inst_pipe_0_r[10:8];
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[7];
 	          op_1_idx_o  = inst_pipe_0_r[14:12];
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[11];
 	       end
 
 	       CU_ITYPE_MPY_16: begin
 	          op_0_idx_o  = {1'b0, inst_pipe_0_r[9:8]};
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[7];
 	          op_1_idx_o  = {1'b0, inst_pipe_0_r[12:11]};
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[10];
 	       end
 
 	       CU_ITYPE_MAC_16: begin
 	          op_0_idx_o  = {1'b0, inst_pipe_0_r[9:8]};
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[7];
 	          op_1_idx_o  = {1'b0, inst_pipe_0_r[12:11]};
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[10];
                   op_2_idx_o  = inst_pipe_0_r[15:13];
+                  op_2_ren_o = 1;
 	       end
 
 	       default: begin

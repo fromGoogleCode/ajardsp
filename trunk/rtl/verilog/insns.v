@@ -89,7 +89,8 @@ parameter LSU_ITYPE_MVTS_16   = 4'h1,
           LSU_ITYPE_LD_OFF_16 = 4'h4,
           LSU_ITYPE_LD_OFF_32 = 4'h5,
           LSU_ITYPE_ST_OFF_16 = 4'h6,
-          LSU_ITYPE_ST_OFF_32 = 4'h7;
+          LSU_ITYPE_ST_OFF_32 = 4'h7,
+          LSU_ITYPE_ADDPTR_16 = 4'h8;
 
 /**********************************************
  * LSU - end
