@@ -36,9 +36,11 @@ module bmu(clk,
 	   inst,
 
 	   op_0_idx_o,
+           op_0_ren_o,
 	   op_0_data_i,
 
 	   op_1_idx_o,
+           op_1_ren_o,
 	   op_1_data_i,
 
 	   res_idx_o,
@@ -59,10 +61,12 @@ module bmu(clk,
 
    output [2:0]	  op_0_idx_o;
    reg    [2:0]   op_0_idx_o;
+   output reg     op_0_ren_o;
    input [31:0]   op_0_data_i;
 
    output [2:0]   op_1_idx_o;
    reg    [2:0]   op_1_idx_o;
+   output reg     op_1_ren_o;
    input [31:0]   op_1_data_i;
 
    output [2:0]   res_idx_o;
@@ -153,6 +157,9 @@ module bmu(clk,
 	op_0_idx_o = 0;
 	op_1_idx_o = 0;
 
+        op_0_ren_o = 0;
+        op_1_ren_o = 0;
+
         op_0_16_pos = 0;
         op_1_16_pos = 0;
 
@@ -167,8 +174,10 @@ module bmu(clk,
                  inst_pipe_0_r[8:4] == BMU_ITYPE_SHIFTL_16_32)
                begin
 	          op_0_idx_o  = inst_pipe_0_r[12:10];
+                  op_0_ren_o  = 1;
                   op_0_16_pos = inst_pipe_0_r[9];
 	          op_1_idx_o  = inst_pipe_0_r[16:14];
+                  op_1_ren_o  = 1;
                   op_1_16_pos = inst_pipe_0_r[13];
                end
           end
