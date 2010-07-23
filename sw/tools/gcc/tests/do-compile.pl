@@ -15,7 +15,7 @@ foreach $c_file (@c_files) {
     $c_file =~ /(.+)(\.c)/;
     $base_name = $1;
     for ($optlevel = 0; $optlevel <= 4; $optlevel++) {
-        $command = "mydsp-gcc -O$optlevel -S $c_file -o $workdir/$base_name-O$optlevel.S";
+        $command = "ajardsp-gcc -O$optlevel -S $c_file -o $workdir/$base_name-O$optlevel.S";
         if (0 == system($command . "> /dev/null")) {
             $comp_pass_cnt++;
             printf("%-64s [PASSED]\n", "Compiling (-O$optlevel) '$c_file'");

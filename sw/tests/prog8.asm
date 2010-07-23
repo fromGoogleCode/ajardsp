@@ -32,7 +32,7 @@ output:
       | ldinc16 $ptr3, $acc0l
         nop
         mpy16 $acc1h, $acc0l, $acc6
-      | cmpeq16 $acc0l, $acc1h, $pred2
+      | cmp16eq $acc0l, $acc1h, $pred2
         nop
 loop_end:
         nop

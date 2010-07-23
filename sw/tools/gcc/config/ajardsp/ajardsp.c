@@ -151,11 +151,38 @@ insert_nop(void)
               }
 
             insert_nop_bb_scan(insn, 0, maximal_insn_latency(insn), REGNO(SET_DEST(PATTERN(insn))), insn);
+
           }
       }
   }
 
   return 0;
+}
+
+void nop_delay_slots(void)
+{
+  rtx insn;
+  insn = get_insns();
+
+  do
+    {
+      if ((JUMP_P(insn) || CALL_P(insn)) && get_attr_dslots(insn) != DSLOTS_0)
+        {
+          int nnops = 2;
+          int i;
+
+          for (i = 0; i < nnops; i++)
+            {
+              rtx nop_insn;
+              rtx nop;
+              nop = gen_nop();
+              nop_insn = emit_insn_after(nop, insn);
+              PUT_MODE(nop_insn, TImode);
+              recog_memoized(nop_insn);
+            }
+        }
+    }
+  while (insn = NEXT_INSN(insn));
 }
 
 struct rtl_opt_pass pass_insert_nop =
@@ -1329,6 +1356,8 @@ ajardsp_reorg(void)
   rtx insn;
   struct ajardsp_doloop_end_info info;
   basic_block bb;
+
+  nop_delay_slots();
 
   insn = get_insns();
 
