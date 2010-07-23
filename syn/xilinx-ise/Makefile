@@ -26,6 +26,7 @@ SRC +=	../../rtl/verilog/ajardsp_top.v \
 	../../rtl/verilog/int_mul.v \
 	../../rtl/verilog/accrf.v \
 	../../rtl/verilog/int_addsub.v \
+	../../rtl/verilog/fp_add.v \
 	../../rtl/verilog/fp_mul.v \
 	../../rtl/verilog/pred.v \
 	../../rtl/verilog/ptrrf.v \

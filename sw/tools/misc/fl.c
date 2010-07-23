@@ -125,6 +125,8 @@ float Fl16ToFl(uint16 fl16)
   return *((float *)&num);
 }
 
+#if WITH_MAIN
+
 int main(int argc, char **argv)
 {
   int i;
@@ -180,3 +182,5 @@ int main(int argc, char **argv)
 
   return 0;
 }
+
+#endif

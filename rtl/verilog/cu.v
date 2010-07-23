@@ -132,6 +132,10 @@ module cu(clk,
    wire [15:0] fp_mul_res_w;
    reg         fp_mul_begin_w;
 
+   reg [15:0]  fp_add_op_0_w;
+   reg [15:0]  fp_add_op_1_w;
+   wire [15:0] fp_add_res_w;
+
    reg [2:0]   res_early_idx_w;
    reg         res_early_wen_w;
    reg [1:0]   res_early_mask_w;
@@ -156,6 +160,13 @@ module cu(clk,
                .op_b_signed_i(mul_op_1_signed_w),
                .res_o(mul_res_w)
                );
+
+   fp_add fp_add_0(.clk(clk),
+                   .rst(rst),
+                   .op_a_i(fp_add_op_0_w),
+                   .op_b_i(fp_add_op_1_w),
+                   .res_o(fp_add_res_w)
+                   );
 
    fp_mul fp_mul_0(.clk(clk),
                    .rst(fp_mul_begin_w),
@@ -254,10 +265,17 @@ module cu(clk,
                   op_1_16_pos = inst_pipe_0_r[13];
                end
 
+               CU_ITYPE_FP_ADD: begin
+                  op_0_idx_o = inst_pipe_0_r[12:10];
+                  op_0_16_pos = inst_pipe_0_r[9];
+                  op_1_idx_o = inst_pipe_0_r[16:14];
+                  op_1_16_pos = inst_pipe_0_r[13];
+               end
+
                CU_ITYPE_FP_MUL: begin
                   op_0_idx_o = inst_pipe_0_r[12:10];
                   op_0_16_pos = inst_pipe_0_r[9];
- 	          op_1_idx_o = inst_pipe_0_r[16:14];
+                  op_1_idx_o = inst_pipe_0_r[16:14];
                   op_1_16_pos = inst_pipe_0_r[13];
                   fp_mul_begin_w = 1;
                end
@@ -333,6 +351,8 @@ module cu(clk,
         mul_op_1_w = 0;
         mul_op_0_signed_w = 0;
         mul_op_1_signed_w = 0;
+        fp_add_op_0_w = 0;
+        fp_add_op_1_w = 0;
         fp_mul_op_0_w = 0;
         fp_mul_op_1_w = 0;
 
@@ -343,6 +363,10 @@ module cu(clk,
                CU_ITYPE_CMP_16: begin
  	          res = {16'h0, op_0_16_r - op_1_16_r};
  	       end
+               CU_ITYPE_FP_ADD: begin
+                  fp_add_op_0_w = op_0_16_r;
+                  fp_add_op_1_w = op_1_16_r;
+               end
 
                CU_ITYPE_FP_MUL: begin
                   fp_mul_op_0_w = op_0_16_r;
@@ -521,7 +545,7 @@ module cu(clk,
 
 
    // Instruction writeback (late) pipeline stage #4
-   always @(inst_pipe_4_r or fp_mul_res_w)
+   always @(inst_pipe_4_r or fp_add_res_w or fp_mul_res_w)
      begin
 	res_late_idx_w  = 0;
 	res_late_wen_w  = 0;  /* cannot be predicatable yet... */
@@ -531,6 +555,16 @@ module cu(clk,
         if (inst_pipe_4_r[INSN_SIZE_BIT] & inst_pipe_4_r[INSN_ENC_BIT])
           begin  /* 32 bit instruction encoding */
              case (inst_pipe_4_r[8:4])
+ 	       CU_ITYPE_FP_ADD: begin
+                  res_late_wen_w  = 1;
+                  res_late_data_w = fp_add_res_w;
+                  res_late_idx_w = inst_pipe_4_r[20:18];
+                  if (inst_pipe_4_r[17])
+                    res_late_mask_w = 2'b10;
+                  else
+                    res_late_mask_w = 2'b01;
+               end
+
  	       CU_ITYPE_FP_MUL: begin
                   res_late_wen_w  = 1;
                   res_late_data_w = fp_mul_res_w;

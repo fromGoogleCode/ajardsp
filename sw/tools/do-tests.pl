@@ -43,7 +43,7 @@ $ver_pass_cnt = 0;
 $ver_fail_cnt = 0;
 
 
-$sim_command_base = "cver +incdir+$rtldir $rtldir/testbench.v $rtldir/ajardsp_top.v $rtldir/vliwfetch.v $rtldir/vliwdec.v $rtldir/pcu.v $rtldir/lsu.v $rtldir/sp.v $rtldir/ptrrf.v $rtldir/dmem.v $rtldir/imem.v $rtldir/accrf.v $rtldir/cu.v $rtldir/curegs.v $rtldir/int_addsub.v $rtldir/int_mul.v $rtldir/fp_mul.v $rtldir/pred.v";
+$sim_command_base = "cver +incdir+$rtldir $rtldir/testbench.v $rtldir/ajardsp_top.v $rtldir/vliwfetch.v $rtldir/vliwdec.v $rtldir/pcu.v $rtldir/lsu.v $rtldir/sp.v $rtldir/ptrrf.v $rtldir/dmem.v $rtldir/imem.v $rtldir/accrf.v $rtldir/cu.v $rtldir/curegs.v $rtldir/int_addsub.v $rtldir/int_mul.v $rtldir/fp_add.v $rtldir/fp_mul.v $rtldir/pred.v";
 
 $debug = 0;
 $target = 0;
