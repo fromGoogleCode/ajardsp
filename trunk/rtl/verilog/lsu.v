@@ -162,6 +162,8 @@ module lsu(clk,
    reg [15:0]  addptr_sum;
    reg [15:0]  addptr_sum_pipe_r;
 
+   reg [15:0]  ptr_post_inc_w, ptr_post_inc_r;
+
    assign dmem_addr_o = {dmem_log_addr[15:1], 1'b0};
    assign dmem_rd_en_o = dmem_log_read_en;
    assign dmem_wr_en_o = dmem_log_write_en;
@@ -228,6 +230,7 @@ module lsu(clk,
              spec_regs_data_o_r <= 16'h0;
              mv_16_r <= 16'h0;
              addptr_sum_pipe_r <= 0;
+             ptr_post_inc_r <= 0;
 	  end
 	else
 	  begin
@@ -238,6 +241,7 @@ module lsu(clk,
              spec_regs_data_o_r <= spec_regs_data_o_w;
              mv_16_r <= mv_16_w;
              addptr_sum_pipe_r <= addptr_sum;
+             ptr_post_inc_r <= ptr_post_inc_w;
 	  end
      end
 
@@ -270,6 +274,7 @@ module lsu(clk,
         mv_16_w = 0;
 
         addptr_sum = 0;
+        ptr_post_inc_w = 0;
 
         if (inst_pipe_0_r[INSN_SIZE_BIT] & inst_pipe_0_r[INSN_ENC_BIT])
           begin  /* 32 bit instruction encoding */
@@ -383,6 +388,7 @@ module lsu(clk,
 	          dmem_log_read_en = 1;
                   dmem_log_size_16  = 1;
 	          dmem_log_addr = ptr_rd_data_i;
+                  ptr_post_inc_w = ptr_rd_data_i + 1;
 	       end
 
 	     if (inst_pipe_0_r[7:4] == LSU_ITYPE_LD_32 ||
@@ -393,6 +399,7 @@ module lsu(clk,
 	          dmem_log_read_en = 1;
                   dmem_log_size_16  = 0;
 	          dmem_log_addr = ptr_rd_data_i;
+                  ptr_post_inc_w = ptr_rd_data_i + 2;
 	       end
 
 	     if (inst_pipe_0_r[7:4] == LSU_ITYPE_ST_16 ||
@@ -404,6 +411,7 @@ module lsu(clk,
                   dmem_log_write_en = 1;
                   dmem_log_size_16  = 1;
 	          dmem_log_addr = ptr_rd_data_i;
+                  ptr_post_inc_w = ptr_rd_data_i + 1;
 
                   if (inst_pipe_0_r[15])  /* $acc */
 	            begin
@@ -425,6 +433,23 @@ module lsu(clk,
                        $finish;
 `endif
 	            end
+
+	       end
+
+	     if (inst_pipe_0_r[7:4] == LSU_ITYPE_ST_32 ||
+                 inst_pipe_0_r[7:4] == LSU_ITYPE_ST_INC_32)
+	       begin
+	          ptr_rd_en_o = 1;
+	          ptr_rd_idx_o = inst_pipe_0_r[10:8];
+
+                  dmem_log_write_en = 1;
+                  dmem_log_size_16  = 0;
+	          dmem_log_addr = ptr_rd_data_i;
+
+		  acc_rd_en_o = 1;
+		  acc_rd_idx_o = inst_pipe_0_r[13:11];
+                  dmem_log_write_data_32 = acc_rd_data_i;
+                  ptr_post_inc_w = ptr_rd_data_i + 2;
 
 	       end
 
@@ -473,22 +498,6 @@ module lsu(clk,
 	          ptr_rd_idx_o = inst_pipe_0_r[11:9];
                   mv_16_w = ptr_rd_data_i;
                end
-
-	     if (inst_pipe_0_r[7:4] == LSU_ITYPE_ST_32 ||
-                 inst_pipe_0_r[7:4] == LSU_ITYPE_ST_INC_32)
-	       begin
-	          ptr_rd_en_o = 1;
-	          ptr_rd_idx_o = inst_pipe_0_r[10:8];
-
-                  dmem_log_write_en = 1;
-                  dmem_log_size_16  = 0;
-	          dmem_log_addr = ptr_rd_data_i;
-
-		  acc_rd_en_o = 1;
-		  acc_rd_idx_o = inst_pipe_0_r[13:11];
-                  dmem_log_write_data_32 = acc_rd_data_i;
-
-	       end
 
              if (inst_pipe_0_r[7:4] == LSU_ITYPE_PUSH_POP_16_32)
                begin
@@ -553,7 +562,7 @@ module lsu(clk,
    always @(inst_pipe_1_r or addr_pipe_1_r or dmem_rd_data_i or
             dmem_log_read_data_16 or dmem_log_read_data_32 or
             spec_regs_data_i_r or spec_regs_data_o_r or mv_16_r or
-            addptr_sum_pipe_r)
+            addptr_sum_pipe_r or ptr_post_inc_r)
      begin
 	ptr_wr_en_o = 0;
 	ptr_wr_idx_o = 0;
@@ -752,7 +761,7 @@ module lsu(clk,
                     begin
 	               ptr_wr_en_o   = 1;
 	               ptr_wr_idx_o  = inst_pipe_1_r[10:8];
-	               ptr_wr_data_o = addr_pipe_1_r + 1;
+	               ptr_wr_data_o = ptr_post_inc_r;
                     end
 	       end
 
@@ -768,7 +777,7 @@ module lsu(clk,
                     begin
                        ptr_wr_en_o   = 1;
 	               ptr_wr_idx_o  = inst_pipe_1_r[10:8];
-	               ptr_wr_data_o = addr_pipe_1_r + 2;
+	               ptr_wr_data_o = ptr_post_inc_r;
                     end
 
 	       end
@@ -826,14 +835,14 @@ module lsu(clk,
                begin
 	          ptr_wr_en_o   = 1;
 	          ptr_wr_idx_o  = inst_pipe_1_r[10:8];
-	          ptr_wr_data_o = addr_pipe_1_r + 1;
+	          ptr_wr_data_o = ptr_post_inc_r;
                end
 
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_ST_INC_32)
                begin
                   ptr_wr_en_o   = 1;
 	          ptr_wr_idx_o  = inst_pipe_1_r[10:8];
-	          ptr_wr_data_o = addr_pipe_1_r + 2;
+	          ptr_wr_data_o = ptr_post_inc_r;
                end
           end  /* 16 bit instruction encoding */
      end

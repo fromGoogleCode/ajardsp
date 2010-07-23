@@ -94,6 +94,7 @@
 #define LSU_ITYPE_LD_OFF_32  (0x5 << 4)
 #define LSU_ITYPE_ST_OFF_16  (0x6 << 4)
 #define LSU_ITYPE_ST_OFF_32  (0x7 << 4)
+#define LSU_ITYPE_ADDPTR_16  (0x8 << 4)
 
 #define INSN_ENC_32 (1 << 29)
 
@@ -202,7 +203,7 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "not32",
     .size = INST_32,
-    .pattern = INSN_ENC_32 | BMU_ITYPE_AND_16_32 | FU_BMU,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_NOT_16_32 | FU_BMU,
     .nr_operands = 2,
 
     .operands = {
@@ -399,7 +400,7 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "not16",
     .size = INST_32,
-    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_AND_16_32 | FU_BMU,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_NOT_16_32 | FU_BMU,
     .nr_operands = 2,
 
     .operands = {
@@ -671,7 +672,7 @@ inst_def_t ajardsp_insns[] = {
 
 
   {
-    .mnemonic = "cmpeq16",
+    .mnemonic = "cmp16eq",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_EQ | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -700,7 +701,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmpne16",
+    .mnemonic = "cmp16ne",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_NE | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -729,7 +730,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmplt16",
+    .mnemonic = "cmp16lt",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_LT | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -758,7 +759,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmple16",
+    .mnemonic = "cmp16le",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_LE | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -787,7 +788,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmpgt16",
+    .mnemonic = "cmp16gt",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_GT | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -816,7 +817,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmpge16",
+    .mnemonic = "cmp16ge",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_GE | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -1181,6 +1182,27 @@ inst_def_t ajardsp_insns[] = {
 	.encode = encode_ptr,
       },
 
+    },
+  },
+
+  {
+    .mnemonic = "addptr16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_ADDPTR_16 | FU_LSU,
+    .nr_operands = 2,
+    .operands = {
+      {
+	.type = REG,
+	.offset = 26,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = INTEGER,
+	.offset = 13,
+	.width  = 13,
+	.encode = encode_int,
+      },
     },
   },
 

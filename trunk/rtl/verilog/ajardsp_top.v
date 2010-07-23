@@ -121,6 +121,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [31:0]   lsu_1_wr_data_w;
 
    wire [2:0]    lsu_0_accrf_0_rd_idx_w;
+   wire          lsu_0_accrf_0_rd_en_w;
    wire [31:0]   lsu_0_accrf_0_rd_data_w;
 
    wire [2:0]    lsu_0_accrf_0_wr_idx_w;
@@ -129,12 +130,15 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [31:0]   lsu_0_accrf_0_wr_data_w;
 
    wire [2:0]    cu_0_accrf_0_op_0_rd_idx_w;
+   wire          cu_0_accrf_0_op_0_rd_en_w;
    wire [31:0]   cu_0_accrf_0_op_0_rd_data_w;
 
    wire [2:0]    cu_0_accrf_0_op_1_rd_idx_w;
+   wire          cu_0_accrf_0_op_1_rd_en_w;
    wire [31:0]   cu_0_accrf_0_op_1_rd_data_w;
 
    wire [2:0]    cu_0_accrf_0_op_2_rd_idx_w;
+   wire          cu_0_accrf_0_op_2_rd_en_w;
    wire [31:0]   cu_0_accrf_0_op_2_rd_data_w;
 
    wire [2:0]    cu_0_accrf_0_res_wr_idx_w;
@@ -143,6 +147,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [31:0]   cu_0_accrf_0_res_wr_data_w;
 
    wire [2:0]    lsu_1_accrf_0_rd_idx_w;
+   wire          lsu_1_accrf_0_rd_en_w;
    wire [31:0]   lsu_1_accrf_0_rd_data_w;
 
    wire [2:0]    lsu_1_accrf_0_wr_idx_w;
@@ -151,12 +156,15 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [31:0]   lsu_1_accrf_0_wr_data_w;
 
    wire [2:0]    cu_1_accrf_0_op_0_rd_idx_w;
+   wire          cu_1_accrf_0_op_0_rd_en_w;
    wire [31:0]   cu_1_accrf_0_op_0_rd_data_w;
 
    wire [2:0]    cu_1_accrf_0_op_1_rd_idx_w;
+   wire          cu_1_accrf_0_op_1_rd_en_w;
    wire [31:0]   cu_1_accrf_0_op_1_rd_data_w;
 
    wire [2:0]    cu_1_accrf_0_op_2_rd_idx_w;
+   wire          cu_1_accrf_0_op_2_rd_en_w;
    wire [31:0]   cu_1_accrf_0_op_2_rd_data_w;
 
    wire [2:0]    cu_1_accrf_0_res_wr_idx_w;
@@ -165,9 +173,11 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [31:0]   cu_1_accrf_0_res_wr_data_w;
 
    wire [2:0]    bmu_0_accrf_0_op_0_rd_idx_w;
+   wire          bmu_0_accrf_0_op_0_rd_en_w;
    wire [31:0]   bmu_0_accrf_0_op_0_rd_data_w;
 
    wire [2:0]    bmu_0_accrf_0_op_1_rd_idx_w;
+   wire          bmu_0_accrf_0_op_1_rd_en_w;
    wire [31:0]   bmu_0_accrf_0_op_1_rd_data_w;
 
    wire [2:0]    bmu_0_accrf_0_op_2_rd_idx_w;
@@ -292,65 +302,76 @@ module ajardsp_top(clk, rst_core, rst_mem,
                  .wr_data_1_i(lsu_1_ptr_wr_data_w));
 
 
-   accrf accrf_0(.clk(clk),
+   accrf_share accrf_share_0(
+                 .clk(clk),
                  .rst(rst_core),
 
-                 .rd_idx_0_i(lsu_0_accrf_0_rd_idx_w),
-                 .rd_data_0_o(lsu_0_accrf_0_rd_data_w),
+                 .rd_idx_lsu_0_i(lsu_0_accrf_0_rd_idx_w),
+                 .rd_en_lsu_0_i(lsu_0_accrf_0_rd_en_w),
+                 .rd_data_lsu_0_o(lsu_0_accrf_0_rd_data_w),
 
-                 .wr_idx_0_i(lsu_0_accrf_0_wr_idx_w),
-                 .wr_en_0_i(lsu_0_accrf_0_wr_en_w),
-                 .wr_mask_0_i(lsu_0_accrf_0_wr_mask_w),
-                 .wr_data_0_i(lsu_0_accrf_0_wr_data_w),
+                 .wr_idx_lsu_0_i(lsu_0_accrf_0_wr_idx_w),
+                 .wr_en_lsu_0_i(lsu_0_accrf_0_wr_en_w),
+                 .wr_mask_lsu_0_i(lsu_0_accrf_0_wr_mask_w),
+                 .wr_data_lsu_0_i(lsu_0_accrf_0_wr_data_w),
 
-                 .rd_idx_1_i(cu_0_accrf_0_op_0_rd_idx_w),
-                 .rd_data_1_o(cu_0_accrf_0_op_0_rd_data_w),
+                 .rd_idx_cu_0_op_0_i(cu_0_accrf_0_op_0_rd_idx_w),
+                 .rd_en_cu_0_op_0_i(cu_0_accrf_0_op_0_rd_en_w),
+                 .rd_data_cu_0_op_0_o(cu_0_accrf_0_op_0_rd_data_w),
 
-                 .rd_idx_2_i(cu_0_accrf_0_op_1_rd_idx_w),
-                 .rd_data_2_o(cu_0_accrf_0_op_1_rd_data_w),
+                 .rd_idx_cu_0_op_1_i(cu_0_accrf_0_op_1_rd_idx_w),
+                 .rd_en_cu_0_op_1_i(cu_0_accrf_0_op_1_rd_en_w),
+                 .rd_data_cu_0_op_1_o(cu_0_accrf_0_op_1_rd_data_w),
 
-                 .rd_idx_6_i(cu_0_accrf_0_op_2_rd_idx_w),
-                 .rd_data_6_o(cu_0_accrf_0_op_2_rd_data_w),
+                 .rd_idx_cu_0_op_2_i(cu_0_accrf_0_op_2_rd_idx_w),
+                 .rd_en_cu_0_op_2_i(cu_0_accrf_0_op_2_rd_en_w),
+                 .rd_data_cu_0_op_2_o(cu_0_accrf_0_op_2_rd_data_w),
 
-                 .wr_idx_1_i(cu_0_accrf_0_res_wr_idx_w),
-                 .wr_en_1_i(cu_0_accrf_0_res_wr_en_w),
-                 .wr_mask_1_i(cu_0_accrf_0_res_wr_mask_w),
-                 .wr_data_1_i(cu_0_accrf_0_res_wr_data_w),
-
-                 //
-                 .rd_idx_3_i(lsu_1_accrf_0_rd_idx_w),
-                 .rd_data_3_o(lsu_1_accrf_0_rd_data_w),
-
-                 .wr_idx_2_i(lsu_1_accrf_0_wr_idx_w),
-                 .wr_en_2_i(lsu_1_accrf_0_wr_en_w),
-                 .wr_mask_2_i(lsu_1_accrf_0_wr_mask_w),
-                 .wr_data_2_i(lsu_1_accrf_0_wr_data_w),
-
-                 .rd_idx_4_i(cu_1_accrf_0_op_0_rd_idx_w),
-                 .rd_data_4_o(cu_1_accrf_0_op_0_rd_data_w),
-
-                 .rd_idx_5_i(cu_1_accrf_0_op_1_rd_idx_w),
-                 .rd_data_5_o(cu_1_accrf_0_op_1_rd_data_w),
-
-                 .rd_idx_7_i(cu_1_accrf_0_op_2_rd_idx_w),
-                 .rd_data_7_o(cu_1_accrf_0_op_2_rd_data_w),
-
-                 .wr_idx_3_i(cu_1_accrf_0_res_wr_idx_w),
-                 .wr_en_3_i(cu_1_accrf_0_res_wr_en_w),
-                 .wr_mask_3_i(cu_1_accrf_0_res_wr_mask_w),
-                 .wr_data_3_i(cu_1_accrf_0_res_wr_data_w),
+                 .wr_idx_cu_0_i(cu_0_accrf_0_res_wr_idx_w),
+                 .wr_en_cu_0_i(cu_0_accrf_0_res_wr_en_w),
+                 .wr_mask_cu_0_i(cu_0_accrf_0_res_wr_mask_w),
+                 .wr_data_cu_0_i(cu_0_accrf_0_res_wr_data_w),
 
                  //
-                 .rd_idx_8_i(bmu_0_accrf_0_op_0_rd_idx_w),
-                 .rd_data_8_o(bmu_0_accrf_0_op_0_rd_data_w),
+                 .rd_idx_lsu_1_i(lsu_1_accrf_0_rd_idx_w),
+                 .rd_en_lsu_1_i(lsu_1_accrf_0_rd_en_w),
+                 .rd_data_lsu_1_o(lsu_1_accrf_0_rd_data_w),
 
-                 .rd_idx_9_i(bmu_0_accrf_0_op_1_rd_idx_w),
-                 .rd_data_9_o(bmu_0_accrf_0_op_1_rd_data_w),
+                 .wr_idx_lsu_1_i(lsu_1_accrf_0_wr_idx_w),
+                 .wr_en_lsu_1_i(lsu_1_accrf_0_wr_en_w),
+                 .wr_mask_lsu_1_i(lsu_1_accrf_0_wr_mask_w),
+                 .wr_data_lsu_1_i(lsu_1_accrf_0_wr_data_w),
 
-                 .wr_idx_4_i(bmu_0_accrf_0_res_wr_idx_w),
-                 .wr_en_4_i(bmu_0_accrf_0_res_wr_en_w),
-                 .wr_mask_4_i(bmu_0_accrf_0_res_wr_mask_w),
-                 .wr_data_4_i(bmu_0_accrf_0_res_wr_data_w)
+                 .rd_idx_cu_1_op_0_i(cu_1_accrf_0_op_0_rd_idx_w),
+                 .rd_en_cu_1_op_0_i(cu_1_accrf_0_op_0_rd_en_w),
+                 .rd_data_cu_1_op_0_o(cu_1_accrf_0_op_0_rd_data_w),
+
+                 .rd_idx_cu_1_op_1_i(cu_1_accrf_0_op_1_rd_idx_w),
+                 .rd_en_cu_1_op_1_i(cu_1_accrf_0_op_1_rd_en_w),
+                 .rd_data_cu_1_op_1_o(cu_1_accrf_0_op_1_rd_data_w),
+
+                 .rd_idx_cu_1_op_2_i(cu_1_accrf_0_op_2_rd_idx_w),
+                 .rd_en_cu_1_op_2_i(cu_1_accrf_0_op_2_rd_en_w),
+                 .rd_data_cu_1_op_2_o(cu_1_accrf_0_op_2_rd_data_w),
+
+                 .wr_idx_cu_1_i(cu_1_accrf_0_res_wr_idx_w),
+                 .wr_en_cu_1_i(cu_1_accrf_0_res_wr_en_w),
+                 .wr_mask_cu_1_i(cu_1_accrf_0_res_wr_mask_w),
+                 .wr_data_cu_1_i(cu_1_accrf_0_res_wr_data_w),
+
+                 //
+                 .rd_idx_bmu_0_op_0_i(bmu_0_accrf_0_op_0_rd_idx_w),
+                 .rd_en_bmu_0_op_0_i(bmu_0_accrf_0_op_0_rd_en_w),
+                 .rd_data_bmu_0_op_0_o(bmu_0_accrf_0_op_0_rd_data_w),
+
+                 .rd_idx_bmu_0_op_1_i(bmu_0_accrf_0_op_1_rd_idx_w),
+                 .rd_en_bmu_0_op_1_i(bmu_0_accrf_0_op_1_rd_en_w),
+                 .rd_data_bmu_0_op_1_o(bmu_0_accrf_0_op_1_rd_data_w),
+
+                 .wr_idx_bmu_0_i(bmu_0_accrf_0_res_wr_idx_w),
+                 .wr_en_bmu_0_i(bmu_0_accrf_0_res_wr_en_w),
+                 .wr_mask_bmu_0_i(bmu_0_accrf_0_res_wr_mask_w),
+                 .wr_data_bmu_0_i(bmu_0_accrf_0_res_wr_data_w)
                  );
 
    predbits pred_0(.clk(clk),
@@ -462,7 +483,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .ptr_wr_idx_o(lsu_0_ptr_wr_idx_w),
              .ptr_wr_data_o(lsu_0_ptr_wr_data_w),
 
-             //.acc_rd_en_o(),
+             .acc_rd_en_o(lsu_0_accrf_0_rd_en_w),
              .acc_rd_idx_o(lsu_0_accrf_0_rd_idx_w),
              .acc_rd_data_i(lsu_0_accrf_0_rd_data_w),
 
@@ -504,7 +525,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .ptr_wr_idx_o(lsu_1_ptr_wr_idx_w),
              .ptr_wr_data_o(lsu_1_ptr_wr_data_w),
 
-             //.acc_rd_en_o(),
+             .acc_rd_en_o(lsu_1_accrf_0_rd_en_w),
              .acc_rd_idx_o(lsu_1_accrf_0_rd_idx_w),
              .acc_rd_data_i(lsu_1_accrf_0_rd_data_w),
 
@@ -556,12 +577,15 @@ module ajardsp_top(clk, rst_core, rst_mem,
            .mulsign_i(curegs_0_cu_mulsign_w),
 
            .op_0_idx_o(cu_0_accrf_0_op_0_rd_idx_w),
+           .op_0_ren_o(cu_0_accrf_0_op_0_rd_en_w),
            .op_0_data_i(cu_0_accrf_0_op_0_rd_data_w),
 
            .op_1_idx_o(cu_0_accrf_0_op_1_rd_idx_w),
+           .op_1_ren_o(cu_0_accrf_0_op_1_rd_en_w),
            .op_1_data_i(cu_0_accrf_0_op_1_rd_data_w),
 
            .op_2_idx_o(cu_0_accrf_0_op_2_rd_idx_w),
+           .op_2_ren_o(cu_0_accrf_0_op_2_rd_en_w),
            .op_2_data_i(cu_0_accrf_0_op_2_rd_data_w),
 
            .res_idx_o(cu_0_accrf_0_res_wr_idx_w),
@@ -586,12 +610,15 @@ module ajardsp_top(clk, rst_core, rst_mem,
            .mulsign_i(curegs_0_cu_mulsign_w),
 
            .op_0_idx_o(cu_1_accrf_0_op_0_rd_idx_w),
+           .op_0_ren_o(cu_1_accrf_0_op_0_rd_en_w),
            .op_0_data_i(cu_1_accrf_0_op_0_rd_data_w),
 
            .op_1_idx_o(cu_1_accrf_0_op_1_rd_idx_w),
+           .op_1_ren_o(cu_1_accrf_0_op_1_rd_en_w),
            .op_1_data_i(cu_1_accrf_0_op_1_rd_data_w),
 
            .op_2_idx_o(cu_1_accrf_0_op_2_rd_idx_w),
+           .op_2_ren_o(cu_1_accrf_0_op_2_rd_en_w),
            .op_2_data_i(cu_1_accrf_0_op_2_rd_data_w),
 
            .res_idx_o(cu_1_accrf_0_res_wr_idx_w),
@@ -613,9 +640,11 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .inst(bmu_0_inst),
 
              .op_0_idx_o(bmu_0_accrf_0_op_0_rd_idx_w),
+             .op_0_ren_o(bmu_0_accrf_0_op_0_rd_en_w),
              .op_0_data_i(bmu_0_accrf_0_op_0_rd_data_w),
 
              .op_1_idx_o(bmu_0_accrf_0_op_1_rd_idx_w),
+             .op_1_ren_o(bmu_0_accrf_0_op_1_rd_en_w),
              .op_1_data_i(bmu_0_accrf_0_op_1_rd_data_w),
 
              .res_idx_o(bmu_0_accrf_0_res_wr_idx_w),

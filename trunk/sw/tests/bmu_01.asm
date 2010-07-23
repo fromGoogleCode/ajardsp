@@ -69,6 +69,12 @@ output:
         shiftrl32 $acc5, $acc3h, $acc6
         nop
         nop
+        stinc32 $ptr2, $acc7
         nop
+        stinc32 $ptr2, $acc6
+        nop
+        nop
+        nop
+
 
         halt

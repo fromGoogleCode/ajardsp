@@ -790,7 +790,7 @@ void* GuiMainThread(void* arg_p)
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&LSU_1_Desc));
 
   gtk_container_add(GTK_CONTAINER(CtrlWindow), vbox);
-  gtk_window_set_title(GTK_WINDOW(CtrlWindow), "MyDSP debugger (RTL sim)");
+  gtk_window_set_title(GTK_WINDOW(CtrlWindow), "AjarDSP debugger (RTL sim)");
 
   gtk_widget_show_all(CtrlWindow);
   /* Control Window - end */

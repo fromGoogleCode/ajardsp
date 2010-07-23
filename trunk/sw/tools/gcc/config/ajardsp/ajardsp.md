@@ -75,6 +75,9 @@
 (define_attr "isize" "1,2"
   (const_string "2"))
 
+(define_attr "dslots" "0,2"
+  (const_string "0"))
+
 ;; This dummy pattern is needed for some reason (to avoid empty data structures)
 (define_insn "dummy_pattern"
         [(reg:QI 0)]
@@ -122,7 +125,8 @@
          ]
         ""
         "rets"
-[(set_attr "itype" "pcu")])
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;movqi/movhi expanders
@@ -521,7 +525,8 @@
         ]
         ""
         "call %m0"
-[(set_attr "itype" "pcu")])
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 (define_insn "call_value"
         [(set (match_operand:QI 0 "register_operand" "=r")
@@ -530,7 +535,8 @@
         ]
         ""
         "call %1"
-[(set_attr "itype" "pcu")])
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 (define_insn "*call_value_hi"
         [(set (match_operand:HI 0 "register_operand" "=r")
@@ -539,7 +545,8 @@
         ]
         ""
         "call %1"
-[(set_attr "itype" "pcu")])
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 
 (define_insn "*call_sym"
@@ -548,7 +555,8 @@
         ]
         ""
         "call %s0"
-[(set_attr "itype" "pcu")])
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 (define_insn "*call_value_sym"
         [(set (match_operand:QI 0 "register_operand" "=r")
@@ -557,7 +565,8 @@
         ]
         ""
         "call %s1"
-[(set_attr "itype" "pcu")])
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 (define_insn "*call_value_hi_sym"
         [(set (match_operand:HI 0 "register_operand" "=r")
@@ -566,7 +575,8 @@
         ]
         ""
         "call %s1"
-[(set_attr "itype" "pcu")])
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -646,7 +656,8 @@
         {
                 return "brr #%l0";
         }
-[(set_attr "itype" "pcu")])
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 (define_insn "indirect_jump"
         [(set (pc) (match_operand:QI 0 "register_operand" ""))]
