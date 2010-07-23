@@ -88,6 +88,45 @@ Reg_t RegsOfInterest[] = {
 extern Reg_t RegsOfInterest[];
 #endif
 
+
+uint16 FlToFl16(float flnum);
+float Fl16ToFl(uint16 fl16);
+
+enum {FORMAT_HEX, FORMAT_DEC, FORMAT_FLOAT} registers_format = FORMAT_HEX;
+
+static void format_selected(gpointer   callback_data,
+                            guint      callback_action,
+                            GtkWidget *menu_item )
+{
+   if(GTK_CHECK_MENU_ITEM(menu_item)->active) {
+     registers_format = callback_action;
+   }
+}
+
+
+
+static GtkItemFactoryEntry menu_items[] = {
+  { "/_Format",      NULL,         NULL,           0,           "<Branch>" },
+  { "/Format/Hex",   NULL,         format_selected, FORMAT_HEX, "<RadioItem>" },
+  { "/Format/Dec",   NULL,         format_selected, FORMAT_DEC, "/Format/Hex" },
+  { "/Format/Float", NULL,         format_selected, FORMAT_FLOAT, "/Format/Hex" },
+};
+
+static gint nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
+
+static GtkWidget *get_format_menu(void)
+{
+  GtkItemFactory *item_factory;
+
+  item_factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "<main>",
+                                       NULL);
+
+  gtk_item_factory_create_items (item_factory, nmenu_items, menu_items, NULL);
+
+  return gtk_item_factory_get_widget (item_factory, "<main>");
+}
+
+
 void RegInitializeRegisters(Reg_t* Regs_p, int RegsLength)
 {
   int i;
@@ -262,7 +301,23 @@ Registers_DataFunc(GtkTreeViewColumn *col,
     int RegValue;
     gtk_tree_model_get(model, iter, COL_REG_VALUE, &RegValue, -1);
 
-    sprintf(buf, "0x%04X", RegValue);
+    switch (registers_format) {
+    case FORMAT_HEX:
+      sprintf(buf, "0x%04X", RegValue);
+      break;
+    case FORMAT_DEC:
+      sprintf(buf, "%d", RegValue);
+      break;
+    case FORMAT_FLOAT:
+      {
+        float f;
+        f = RegValue ? Fl16ToFl(RegValue) : 0.0;
+        sprintf(buf, "%e", f);
+      }
+      break;
+    default:
+      assert(0);
+    }
 
     if (Reg_p->CurrValue == Reg_p->PrevValue) {
       g_object_set(renderer, "foreground-set", FALSE, NULL);
@@ -292,6 +347,24 @@ RegValueEdited(GtkCellRendererText *cell,
   gint column = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (cell), "column"));
 
   NewValue = strtoul(new_text, NULL, 0);
+
+  switch (registers_format) {
+  case FORMAT_HEX:
+    sscanf(new_text, "0x%x", &NewValue);
+    break;
+  case FORMAT_DEC:
+    sscanf(new_text, "%d", &NewValue);
+    break;
+  case FORMAT_FLOAT:
+    {
+      float f;
+      sscanf(new_text, "%e", &f);
+      NewValue = FlToFl16(f);
+    }
+    break;
+  default:
+    assert(0);
+  }
 
   gtk_tree_model_get_iter (model, &iter, path);
   gtk_list_store_set(RegListStore_p, &iter,
@@ -765,7 +838,7 @@ void* GuiMainThread(void* arg_p)
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&LSU_1_Desc));
 
   gtk_container_add(GTK_CONTAINER(CtrlWindow), vbox);
-  gtk_window_set_title(GTK_WINDOW(CtrlWindow), "MyDSP debugger (RTL sim)");
+  gtk_window_set_title(GTK_WINDOW(CtrlWindow), "AjarDSP debugger (RTL sim)");
 
   gtk_widget_show_all(CtrlWindow);
   /* Control Window - end */
@@ -777,7 +850,11 @@ void* GuiMainThread(void* arg_p)
 
   view = CreateRegisterViewAndModel();
 
-  gtk_container_add(GTK_CONTAINER(RegWindow), view);
+  vbox = gtk_vbox_new(FALSE, 2);
+
+  gtk_container_add(GTK_CONTAINER(vbox), get_format_menu());
+  gtk_container_add(GTK_CONTAINER(vbox), view);
+  gtk_container_add(GTK_CONTAINER(RegWindow), vbox);
   gtk_window_set_title(GTK_WINDOW(RegWindow), "Registers");
 
   gtk_widget_show_all(RegWindow);
