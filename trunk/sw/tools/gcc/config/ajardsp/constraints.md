@@ -79,6 +79,12 @@
  "Symbol-ref"
  (match_test "GET_CODE (op) == SYMBOL_REF"))
 
+(define_memory_constraint "Qr"
+  "A memory address where the complete address is in one register"
+  (and (match_code "mem")
+       (match_test "GET_CODE(XEXP(op,0)) == REG")))
+
+
 ;; Local variables:
 ;; mode:emacs-lisp
 ;; comment-start: ";; "

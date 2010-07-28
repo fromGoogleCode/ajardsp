@@ -281,6 +281,8 @@ extern FILE *yyin;
 char *outfile;
 char *inputfile;
 
+enum {code_sections, data_sections} lookfor_state = code_sections;
+
 yyerror(const char *msg)
 {
   fprintf(stderr, "%s:%d: %s around '%s'\n", inputfile, lineno, msg, yytext);
@@ -328,11 +330,18 @@ int main(int argc, char **argv)
     print_usage();
   }
 
-  if (yyparse() == 0) {
-    inst_bundle_t *ib_p = code_section_p;
+  /* Parse twice; once for .code sections and once for .data sections */
 
-    if (RES_GOOD == asm_gen_opcodes(ib_p)) {
-      return 0;
+  lookfor_state = code_sections;
+  if (yyparse() == 0) {
+    rewind(yyin);
+    lookfor_state = data_sections;
+    if (yyparse() == 0) {
+      inst_bundle_t *ib_p = code_section_p;
+
+      if (RES_GOOD == asm_gen_opcodes(ib_p)) {
+        return 0;
+      }
     }
   }
 

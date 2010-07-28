@@ -495,7 +495,7 @@ print_operand_address(FILE *STREAM,rtx X)
     case SUBREG:
       /*As in case of register indirect mode, where address
         of operand is present in subreg.*/
-      fprintf(STREAM,"0(%s)",reg_names[REGNO(XEXP(X,0))]);
+      fprintf(STREAM,"%s",reg_names[REGNO(XEXP(X,0))]);
       break;
     case REG:
       /*As in case of register indirect mode, address of operand
@@ -507,28 +507,54 @@ print_operand_address(FILE *STREAM,rtx X)
         form of addressing.*/
       op1 = XEXP(X,0);
       op2 = XEXP(X,1);
-      if(GET_CODE(op1) == CONST_INT
-         && (GET_CODE(op2) == REG
-             || GET_CODE(op2) == SUBREG))
+      if((GET_CODE(op1) == CONST_INT || GET_CODE(op1) == SYMBOL_REF) &&
+         (GET_CODE(op2) == REG || GET_CODE(op2) == SUBREG))
         /*base displacement*/
         {
-          fprintf(STREAM,"%s(%d)",
-                  ((GET_CODE(op2)==REG)
-                   ?reg_names[REGNO(op2)]
-                   :reg_names[REGNO(XEXP(op2,0))]),  INTVAL(op1));
+          if(GET_CODE(op1) == SYMBOL_REF)
+            {
+              fprintf(STREAM,"%s, #%s",
+                      ((GET_CODE(op2)==REG)
+                       ?reg_names[REGNO(op2)]
+                       :reg_names[REGNO(XEXP(op2,0))]), XSTR((op1),0));
+
+
+            }
+          else
+            {
+              fprintf(STREAM,"%s, %d",
+                      ((GET_CODE(op2)==REG)
+                       ?reg_names[REGNO(op2)]
+                       :reg_names[REGNO(XEXP(op2,0))]),  INTVAL(op1));
+            }
         }
-      else if (GET_CODE(op2) == CONST_INT
-               && (GET_CODE(op1) == REG
-                   || GET_CODE(op1) == SUBREG))
+      else if ((GET_CODE(op2) == CONST_INT || GET_CODE(op2) == SYMBOL_REF) &&
+               (GET_CODE(op1) == REG || GET_CODE(op1) == SUBREG))
         /*base displacement*/
         {
-          fprintf(STREAM,"%s(%d)",
-                  ((GET_CODE(op1) == REG)
-                   ?reg_names[REGNO(op1)]
-                   :reg_names[REGNO(XEXP(op1,0))]), INTVAL(op2));
+          if(GET_CODE(op2) == SYMBOL_REF)
+            {
+              fprintf(STREAM,"%s, #%s",
+                      ((GET_CODE(op1) == REG)
+                       ?reg_names[REGNO(op1)]
+                       :reg_names[REGNO(XEXP(op1,0))]), XSTR((op2),0));
+            }
+          else
+            {
+              fprintf(STREAM,"%s, %d",
+                      ((GET_CODE(op1) == REG)
+                       ?reg_names[REGNO(op1)]
+                       :reg_names[REGNO(XEXP(op1,0))]), INTVAL(op2));
+            }
+        }
+      else
+        {
+          debug_rtx(X);
+          gcc_unreachable();
         }
       break;
     default:
+      gcc_unreachable();
       if(CONSTANT_ADDRESS_P(X))
         {
           output_addr_const(STREAM,X);
@@ -853,22 +879,18 @@ legitimate_address_strict(enum machine_mode MODE,rtx X)
 {
   rtx op1,op2;
 
-  if(0 && CONSTANT_ADDRESS_P(X))
-    return 1;
   if(GET_CODE(X)==REG && is_base_reg(REGNO(X)))
     return 1;
-  if(GET_CODE(X)==PLUS)  /* TODO: we have to start rejecting R_PTR_REGS with negative offset, this is only allowd for dp */
+  if(GET_CODE(X)==PLUS)
     {
       op1=XEXP(X,0);
       op2=XEXP(X,1);
       if(GET_CODE(op1)==REG && CONSTANT_ADDRESS_P(op2) && is_base_reg(REGNO(op1)))
         {
-          if (INTVAL(op2) >= 0 || REGNO(op1) == HARD_FRAME_POINTER_REGNUM)
             return 1;
         }
       if(GET_CODE(op2)==REG && CONSTANT_ADDRESS_P(op1) && is_base_reg(REGNO(op2)))
         {
-          if (INTVAL(op1) >= 0 || REGNO(op2) == HARD_FRAME_POINTER_REGNUM)
             return 1;
         }
     }
@@ -881,8 +903,6 @@ legitimate_address_non_strict(enum machine_mode MODE,rtx X)
 {
   rtx op1,op2;
 
-  if(0 && CONSTANT_ADDRESS_P(X))
-    return 1;
   if(GET_CODE(X)==REG && non_strict_base_reg(REGNO(X)))
     return 1;
   if(GET_CODE(X)==PLUS)

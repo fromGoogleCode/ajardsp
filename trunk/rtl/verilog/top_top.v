@@ -34,12 +34,16 @@
 `define UART_FULL_BIT_TIME 434
 `define UART_HALF_BIT_TIME 217
 
-module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD);
+module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
+               LCD_E, LCD_RS, LCD_RW, LCD_D);
 
    input clk;
    input rst;
    input RS232_DTE_RXD;
    output RS232_DTE_TXD;
+
+   output LCD_E, LCD_RS, LCD_RW;
+   output [3:0] LCD_D;
 
    output [7:0] LED;
    wire         rx_en;
@@ -81,6 +85,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD);
    reg          dmem_ren;
    reg          dmem_wen;
 
+   wire [15:0]  gpio_w;
+
    parameter CMD_LOAD_IMEM = 8'hc0,
              CMD_LOAD_DMEM = 8'hc1,
              CMD_RESET     = 8'hc2,
@@ -110,6 +116,11 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD);
                S_READ_DMEM_DATA_3 = 19,
 
                S_IDLE = 20;
+
+   assign LCD_E       = gpio_w[6];
+   assign LCD_RS      = gpio_w[5];
+   assign LCD_RW      = gpio_w[4];
+   assign LCD_D[3:0]  = gpio_w[3:0];
 
    assign LED = rst ? 8'haa : {6'h0, core_halt_r, core_rst_r};
 
@@ -147,7 +158,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD);
                          .ext_dmem_rd_data_o(dmem_rd_data_32_w),
                          .ext_dmem_rd_en_i(dmem_ren),
 
-                         .core_halt_o(core_halt_w)
+                         .core_halt_o(core_halt_w),
+                         .gpio_o(gpio_w)
                          );
 
    always @(posedge clk)
