@@ -42,10 +42,14 @@ module ajardsp_top(clk, rst_core, rst_mem,
                    ext_dmem_rd_data_o,
                    ext_dmem_rd_en_i,
 
-                   core_halt_o
+                   core_halt_o,
+
+                   gpio_o
+
                    );
 
 `include "insns.v"
+`include "specregs.v"
 
    input clk;
    input rst_core;
@@ -61,8 +65,9 @@ module ajardsp_top(clk, rst_core, rst_mem,
    output [31:0] ext_dmem_rd_data_o;
    input         ext_dmem_rd_en_i;
 
-
    output       core_halt_o;
+
+   output [15:0] gpio_o;
 
    wire          jump_en_w;
    wire [15:0]   jump_pc_w;
@@ -248,6 +253,18 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    wire [7:0]    curegs_0_cu_satctrl_w;
    wire [7:0]    curegs_0_cu_mulsign_w;
+
+   reg [15:0]    gpio_r;
+
+   assign gpio_o   = gpio_r;
+
+   always @(posedge clk)
+     begin
+        if (rst_core)
+          gpio_r <= 0;
+        else if (spec_regs_waddr_w == SPEC_REGS_ADDR_GPIO)
+          gpio_r <= spec_regs_wr_data_w;
+     end
 
    assign core_halt_o = pcu_0_dmem_0_halt_w;
 

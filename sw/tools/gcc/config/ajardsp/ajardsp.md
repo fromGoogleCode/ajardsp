@@ -177,12 +177,14 @@
 ;;=========================================
 
 (define_insn "*ld_qi"
-  [(set (match_operand:QI 0 "register_operand" "=r")
-        (match_operand:QI 1 "memory_operand" "m"))]
+  [(set (match_operand:QI 0 "register_operand" "=r,r")
+        (match_operand:QI 1 "memory_operand" "Qr,m"))]
   ""
-  "ld16 %a1, %0"
-  [(set_attr "itype" "lsu")
-   (set_attr "isize" "1")])
+  "@
+   ld16 %1, %0
+   ldoff16 %a1, %0"
+  [(set_attr "itype" "lsu,lsu")
+   (set_attr "isize" "1,2")])
 
 (define_insn "*ld_inc_qi"
   [(set (match_operand:QI 0 "register_operand" "=d")
@@ -240,12 +242,14 @@
 ;;====================================
 
 (define_insn "*st_qi"
-  [(set (match_operand:QI 0 "memory_operand" "=m")
-        (match_operand:QI 1 "register_operand" "r"))]
+  [(set (match_operand:QI 0 "memory_operand" "=Qr,m")
+        (match_operand:QI 1 "register_operand" "r,r"))]
   ""
-  "st16 %a0, %1"
-  [(set_attr "itype" "lsu")
-   (set_attr "isize" "1")])
+  "@
+   st16 %0, %1
+   stoff16 %a0, %1"
+  [(set_attr "itype" "lsu,lsu")
+   (set_attr "isize" "1,2")])
 
 (define_insn "*store_word_hi"
   [(set (match_operand:HI 0 "memory_operand" "=m")

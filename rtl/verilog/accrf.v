@@ -30,6 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+`include "config.v"
+
 module accrf_share(input clk,
                    input rst,
 
@@ -318,7 +320,96 @@ module accrf(clk,
    reg [15:0]    acc_regs_low[0:7];
    reg [15:0]    acc_regs_high[0:7];
 
-   reg [4:0]     i;
+   integer       i,j;
+
+`ifdef AJARDSP_CONFIG_ENABLE_ACCRF_BYPASS
+
+   reg [2:0]     rd_idx_w[0:5];
+   reg [31:0]    rd_data_w[0:5];
+
+   reg [15:0]    rd_data_high_w[0:5], rd_data_low_w[0:5];
+
+   reg [2:0]   wr_idx_w[0:3];
+   reg         wr_en_w[0:3];
+   reg [1:0]   wr_mask_w[0:3];
+   reg [15:0]  wr_data_high_w[0:3], wr_data_low_w[0:3];
+
+   assign rd_data_0_o = {rd_data_high_w[0], rd_data_low_w[0]};
+   assign rd_data_1_o = {rd_data_high_w[1], rd_data_low_w[1]};
+   assign rd_data_2_o = {rd_data_high_w[2], rd_data_low_w[2]};
+
+   assign rd_data_3_o = {rd_data_high_w[3], rd_data_low_w[3]};
+   assign rd_data_4_o = {rd_data_high_w[4], rd_data_low_w[4]};
+   assign rd_data_5_o = {rd_data_high_w[5], rd_data_low_w[5]};
+
+   always @(rd_idx_0_i or rd_idx_1_i or rd_idx_2_i or rd_idx_3_i or rd_idx_4_i or rd_idx_5_i or
+            wr_idx_0_i or wr_idx_1_i or wr_idx_2_i or wr_idx_3_i or
+            wr_en_0_i or wr_en_1_i or wr_en_2_i or wr_en_3_i or
+            wr_mask_0_i or wr_mask_1_i or wr_mask_2_i or wr_mask_3_i or
+            wr_data_0_i or wr_data_1_i or wr_data_2_i or wr_data_3_i or
+            acc_regs_high[0]  or acc_regs_high[1]  or acc_regs_high[2]  or acc_regs_high[3]  or
+            acc_regs_high[4]  or acc_regs_high[5]  or acc_regs_high[6]  or acc_regs_high[7]  or
+            acc_regs_low[0]  or acc_regs_low[1]  or acc_regs_low[2]  or acc_regs_low[3]  or
+            acc_regs_low[4]  or acc_regs_low[5]  or acc_regs_low[6]  or acc_regs_low[7])
+     begin
+
+        rd_idx_w[0] = rd_idx_0_i;
+        rd_idx_w[1] = rd_idx_1_i;
+        rd_idx_w[2] = rd_idx_2_i;
+        rd_idx_w[3] = rd_idx_3_i;
+        rd_idx_w[4] = rd_idx_4_i;
+        rd_idx_w[5] = rd_idx_5_i;
+
+        wr_idx_w[0] = wr_idx_0_i;
+        wr_idx_w[1] = wr_idx_1_i;
+        wr_idx_w[2] = wr_idx_2_i;
+        wr_idx_w[3] = wr_idx_3_i;
+
+        wr_en_w[0] = wr_en_0_i;
+        wr_en_w[1] = wr_en_1_i;
+        wr_en_w[2] = wr_en_2_i;
+        wr_en_w[3] = wr_en_3_i;
+
+        wr_mask_w[0] = wr_mask_0_i;
+        wr_mask_w[1] = wr_mask_1_i;
+        wr_mask_w[2] = wr_mask_2_i;
+        wr_mask_w[3] = wr_mask_3_i;
+
+        wr_data_high_w[0] = wr_data_0_i[31:16];
+        wr_data_high_w[1] = wr_data_1_i[31:16];
+        wr_data_high_w[2] = wr_data_2_i[31:16];
+        wr_data_high_w[3] = wr_data_3_i[31:16];
+
+        wr_data_low_w[0] = wr_data_0_i[15:0];
+        wr_data_low_w[1] = wr_data_1_i[15:0];
+        wr_data_low_w[2] = wr_data_2_i[15:0];
+        wr_data_low_w[3] = wr_data_3_i[15:0];
+
+
+        for (i = 0; i < 6; i = i + 1)
+          begin
+             rd_data_high_w[i] = acc_regs_high[rd_idx_w[i]];
+             rd_data_low_w[i]  = acc_regs_low[rd_idx_w[i]];
+
+             for (j = 0; j < 4; j = j + 1)
+               begin
+                  if (wr_en_w[j] && rd_idx_w[i] == wr_idx_w[j])
+                    begin
+                       casez(wr_mask_w[j])
+                         2'b1?:
+                           rd_data_high_w[i] = wr_data_high_w[j];
+                       endcase
+
+                       casez(wr_mask_w[j])
+                         2'b?1:
+                           rd_data_low_w[i] = wr_data_low_w[j];
+                       endcase
+                    end
+               end
+          end
+     end
+
+`else
 
    assign rd_data_0_o = {acc_regs_high[rd_idx_0_i], acc_regs_low[rd_idx_0_i]};
    assign rd_data_1_o = {acc_regs_high[rd_idx_1_i], acc_regs_low[rd_idx_1_i]};
@@ -327,6 +418,8 @@ module accrf(clk,
    assign rd_data_3_o = {acc_regs_high[rd_idx_3_i], acc_regs_low[rd_idx_3_i]};
    assign rd_data_4_o = {acc_regs_high[rd_idx_4_i], acc_regs_low[rd_idx_4_i]};
    assign rd_data_5_o = {acc_regs_high[rd_idx_5_i], acc_regs_low[rd_idx_5_i]};
+
+`endif
 
    always @(posedge clk)
      begin

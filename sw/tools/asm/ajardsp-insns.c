@@ -1068,6 +1068,34 @@ inst_def_t ajardsp_insns[] = {
       },
     },
   },
+  {
+    .mnemonic = "ldoff16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_OFF_16 | FU_LSU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 26,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = INTEGER,
+	.offset = 13,
+	.width  = 13,
+	.encode = encode_int,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
+      },
+    },
+  },
+
 
   {
     .mnemonic = "ldoff16",
@@ -1078,21 +1106,21 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
-      },
-      {
-	.type = INTEGER,
-	.offset = 13,
-	.width  = 13,
-	.encode = encode_int,
-      },
-      {
-	.type = REG,
 	.offset = 26,
 	.width  = 3,
 	.encode = encode_ptr,
+      },
+      {
+	.type = SYMBOL_REF,
+	.offset = 13,
+	.width  = 13,
+	.encode = encode_symref,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
       },
 
     },
@@ -1107,9 +1135,9 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 9,
+	.offset = 26,
 	.width  = 3,
-	.encode = encode_acc,
+	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
@@ -1119,11 +1147,10 @@ inst_def_t ajardsp_insns[] = {
       },
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 9,
 	.width  = 3,
-	.encode = encode_ptr,
+	.encode = encode_acc,
       },
-
     },
   },
 
@@ -1136,9 +1163,9 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.offset = 26,
+	.width  = 3,
+	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
@@ -1148,11 +1175,38 @@ inst_def_t ajardsp_insns[] = {
       },
       {
 	.type = REG,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "stoff16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_ST_OFF_16 | FU_LSU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
 	.offset = 26,
 	.width  = 3,
 	.encode = encode_ptr,
       },
-
+      {
+	.type = SYMBOL_REF,
+	.offset = 13,
+	.width  = 13,
+	.encode = encode_symref,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
+      },
     },
   },
 
@@ -1165,9 +1219,9 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 9,
+	.offset = 26,
 	.width  = 3,
-	.encode = encode_acc,
+	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
@@ -1177,11 +1231,10 @@ inst_def_t ajardsp_insns[] = {
       },
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 9,
 	.width  = 3,
-	.encode = encode_ptr,
+	.encode = encode_acc,
       },
-
     },
   },
 

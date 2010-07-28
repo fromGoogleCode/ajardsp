@@ -34,6 +34,10 @@
 
 $workdir = "workdir";
 $rtldir  = "../../rtl/verilog/";
+$crt_file = "../tools/crt.s";
+
+$cflags = " -O3 -fno-inline -minsert-nops";
+$cflags = " -O3 -minsert-nops";
 
 $asm_pass_cnt = 0;
 $asm_fail_cnt = 0;
@@ -60,7 +64,7 @@ foreach $arg (@ARGV) {
         $verbose = 1;
     }
     else {
-        push(@asm_files, $arg);
+        push(@input_files, $arg);
     }
 }
 
@@ -70,13 +74,46 @@ if ($debug) {
 
 system("mkdir $workdir 2> /dev/null");
 
-if (!defined(@asm_files)) {
-    @asm_files = glob("*.asm");
+if (!defined(@input_files)) {
+    @input_files = glob("*.asm");
 }
 
-foreach $asm_file (@asm_files) {
-    $asm_file =~ /([^.]+)\.asm/;
-    $base_name = $1;
+foreach $input_file (@input_files) {
+
+    print "\n";
+
+    if ($input_file =~ /\.c$/) {
+        $input_file =~ /([^.]+)\.c/;
+        $base_name = $1;
+
+        # Before we do anything make sure that we start clean
+        system("rm -f $workdir/$base_name.*");
+
+        $intermediate_asm_file = "$workdir/$base_name.s";
+
+        $asm_file = $workdir . "/" . $base_name . ".asm";
+
+        if (0 == system("ajardsp-gcc -S -o $intermediate_asm_file $input_file $cflags > /dev/null 2> /dev/null")) {
+            printf("%-64s [PASSED]\n", "Compiling '$input_file'");
+        }
+        else {
+            printf("%-64s [FAILED]\n", "Compiling '$input_file'");
+            next;
+        }
+        system("cat $crt_file $intermediate_asm_file > $asm_file") && die "Failed to prepend $crt_file\n";
+    }
+    elsif ($input_file =~ /\.asm$/) {
+        $input_file =~ /([^.]+)\.asm/;
+        $base_name = $1;
+
+        # Before we do anything make sure that we start clean
+        system("rm -f $workdir/$base_name.*");
+
+        $asm_file = $input_file;
+    }
+    else {
+        die "Unknown file format for $input_file\n";
+    }
 
     $asm_command = "../tools/asm/ajardsp-asm -o=$workdir/$base_name $asm_file";
 
@@ -86,10 +123,6 @@ foreach $asm_file (@asm_files) {
 
     $sim_command = $sim_command_base . $sim_command_def;
 
-    # Before we do anything make sure that we start clean
-    system("rm -f $workdir/$base_name.*");
-
-    print "\n";
     #### Assemble - begin ####
     if (0 == system($asm_command)) {
         printf("%-64s [PASSED]\n", "Assembling '$asm_file'");
@@ -157,7 +190,13 @@ foreach $asm_file (@asm_files) {
 
     #### Verify - begin ####
     $ref_file = $base_name . ".ref";
-    if (-e $ref_file) {
+    $ref_file_comp = $ref_file . ".gz";
+
+    if (-e $ref_file || -e $ref_file_comp) {
+        if (-e $ref_file_comp) {
+            $ref_file = "$workdir/$ref_file";
+            system("zcat $ref_file_comp > $ref_file");
+        }
         if (0 == system("diff $ref_file $workdir/$base_name.res > /dev/null")) {
             printf("%-64s [PASSED]\n", "Verifying DMEM contents after '$asm_file'");
             $ver_pass_cnt++;

@@ -59,6 +59,7 @@ struct {
   {"sp", 2},
   {"satctrl", 3},
   {"mulsign", 4},
+  {"gpio",   31},
   {NULL, 0}
 };
 
