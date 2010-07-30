@@ -30,6 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+`include "config.v"
+
 module bmu(clk,
 	   rst,
 
@@ -62,22 +64,22 @@ module bmu(clk,
    output [2:0]	  op_0_idx_o;
    reg    [2:0]   op_0_idx_o;
    output reg     op_0_ren_o;
-   input [31:0]   op_0_data_i;
+   input [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_0_data_i;
 
    output [2:0]   op_1_idx_o;
    reg    [2:0]   op_1_idx_o;
    output reg     op_1_ren_o;
-   input [31:0]   op_1_data_i;
+   input [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_1_data_i;
 
    output [2:0]   res_idx_o;
    reg    [2:0]   res_idx_o;
    output 	  res_wen_o;
    reg 		  res_wen_o;
-   output [1:0]	  res_mask_o;
-   reg    [1:0]   res_mask_o;
+   output [2:0]	  res_mask_o;
+   reg    [2:0]   res_mask_o;
 
-   output [31:0]  res_data_o;
-   reg    [31:0]  res_data_o;
+   output [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res_data_o;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0]    res_data_o;
 
    output [1:0]   pred_tst_idx_o;
    input          pred_tst_bit_i;
@@ -86,8 +88,8 @@ module bmu(clk,
    reg [31:0] inst_pipe_1_r;
    reg [31:0] inst_pipe_2_r;
 
-   reg [31:0] op_0_r;
-   reg [31:0] op_1_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_0_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_1_r;
 
    reg [15:0] op_0_16_r;
    reg [15:0] op_1_16_r;
@@ -95,8 +97,8 @@ module bmu(clk,
    reg        op_0_16_pos;
    reg        op_1_16_pos;
 
-   reg [31:0] res;
-   reg [31:0] res_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res_r;
 
    wire signed [31:0] op_0_r_signed_w;
    wire signed [15:0] op_0_16_r_signed_w;
@@ -258,7 +260,7 @@ module bmu(clk,
      begin
 	res_idx_o  = 0;
 	res_wen_o  = (inst_pipe_2_r[1] == 0 || pred_tst_bit_i) && inst_pipe_2_r[15:0] != 0;
-        res_mask_o = 2'b11;
+        res_mask_o = 3'b111;
 	res_data_o = res_r;
 
         if (inst_pipe_2_r[INSN_SIZE_BIT] & inst_pipe_2_r[INSN_ENC_BIT])
@@ -286,7 +288,7 @@ module bmu(clk,
                     end
                   else
                     begin
-                       res_mask_o = 2'b11;
+                       res_mask_o = 3'b111;
 	               res_data_o = res_r;
                     end
                end

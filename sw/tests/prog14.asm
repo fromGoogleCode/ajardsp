@@ -1,6 +1,6 @@
 /*
  *  Dot product of 32 elements. Fast version.
- *  Requires (from config.v): AJARDSP_CONFIG_ENABLE_ACCRF_BYPASS
+ *  Requires (from config.v): AJARDSP_CONFIG_ENABLE_ACCRF_BYPASS and AJARDSP_CONFIG_ENABLE_PTRRF_BYPASS
  */
 
 .data
@@ -47,17 +47,13 @@ output:
         ldimm16 $ptr4, #input_0
       | ldimm16 $ptr5, #input_0
 
-        ldimm16 $ptr6, #input_1
-      | ldimm16 $ptr7, #input_1
-
         ldimm16 $ptr2, #output
 
         /* Loop prologue */
         ldinc32 $ptr4, $acc1
       | ldinc32 $ptr5, $acc0
-
-        ldinc32 $ptr6, $acc3
-      | ldinc32 $ptr7, $acc2
+        nop
+        nop
 
         /* Loop kernel */
         bkrep #loop_end, 3
@@ -69,10 +65,10 @@ output:
       | ldinc32 $ptr4, $acc1
       | ldinc32 $ptr5, $acc0
 
-        mac16 $acc3l, $acc2l, $acc6
-      | mac16 $acc3h, $acc2h, $acc7
-      | ldinc32 $ptr6, $acc3
-      | ldinc32 $ptr7, $acc2
+        mac16 $acc1l, $acc0l, $acc6
+      | mac16 $acc1h, $acc0h, $acc7
+      | ldinc32 $ptr4, $acc1
+      | ldinc32 $ptr5, $acc0
 
 loop_end:
         mac16 $acc1l, $acc0l, $acc4
@@ -80,10 +76,10 @@ loop_end:
       | ldinc32 $ptr4, $acc1
       | ldinc32 $ptr5, $acc0
 
-        mac16 $acc3l, $acc2l, $acc6
-      | mac16 $acc3h, $acc2h, $acc7
-      | ldinc32 $ptr6, $acc3
-      | ldinc32 $ptr7, $acc2
+        mac16 $acc1l, $acc0l, $acc6
+      | mac16 $acc1h, $acc0h, $acc7
+      | ldinc32 $ptr4, $acc1
+      | ldinc32 $ptr5, $acc0
 
         /* Loop body ends here */
 

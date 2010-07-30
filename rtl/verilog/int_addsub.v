@@ -30,9 +30,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+`include "config.v"
+
 module int_addsub(op_a_i, op_b_i, res_o, sat_en_i, sub_en_i);
 
-   parameter WIDTH = 32;
+   parameter WIDTH = `AJARDSP_CONFIG_ACC_GUARD_BITS + 32;
 
    input [WIDTH-1:0] op_a_i;
    input [WIDTH-1:0]  op_b_i;

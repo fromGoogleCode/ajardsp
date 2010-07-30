@@ -64,20 +64,28 @@ Reg_t RegsOfInterest[] = {
 
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_low",  "$acc0l", 0, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_high", "$acc0h", 0, NULL},
+  {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_guard", "$acc0g", 0, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_low",  "$acc1l", 1, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_high", "$acc1h", 1, NULL},
+  {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_guard", "$acc1g", 1, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_low",  "$acc2l", 2, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_high", "$acc2h", 2, NULL},
+  {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_guard", "$acc2g", 2, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_low",  "$acc3l", 3, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_high", "$acc3h", 3, NULL},
+  {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_guard", "$acc3g", 3, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_low",  "$acc4l", 4, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_high", "$acc4h", 4, NULL},
+  {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_guard", "$acc4g", 4, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_low",  "$acc5l", 5, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_high", "$acc5h", 5, NULL},
+  {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_guard", "$acc5g", 5, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_low",  "$acc6l", 6, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_high", "$acc6h", 6, NULL},
+  {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_guard", "$acc6g", 6, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_low",  "$acc7l", 7, NULL},
   {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_high", "$acc7h", 7, NULL},
+  {"testbench.ajardsp_0.accrf_share_0.accrf_0.acc_regs_guard", "$acc7g", 7, NULL},
 };
 
 void RegUpdateValueInDesign(char* RegName_p, int NewValue)
