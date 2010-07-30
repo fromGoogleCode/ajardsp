@@ -30,6 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+`include "config.v"
+
 module ajardsp_top(clk, rst_core, rst_mem,
 
                    ext_imem_wr_addr_i,
@@ -136,20 +138,20 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    wire [2:0]    cu_0_accrf_0_op_0_rd_idx_w;
    wire          cu_0_accrf_0_op_0_rd_en_w;
-   wire [31:0]   cu_0_accrf_0_op_0_rd_data_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] cu_0_accrf_0_op_0_rd_data_w;
 
    wire [2:0]    cu_0_accrf_0_op_1_rd_idx_w;
    wire          cu_0_accrf_0_op_1_rd_en_w;
-   wire [31:0]   cu_0_accrf_0_op_1_rd_data_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] cu_0_accrf_0_op_1_rd_data_w;
 
    wire [2:0]    cu_0_accrf_0_op_2_rd_idx_w;
    wire          cu_0_accrf_0_op_2_rd_en_w;
-   wire [31:0]   cu_0_accrf_0_op_2_rd_data_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] cu_0_accrf_0_op_2_rd_data_w;
 
    wire [2:0]    cu_0_accrf_0_res_wr_idx_w;
    wire          cu_0_accrf_0_res_wr_en_w;
-   wire [1:0]    cu_0_accrf_0_res_wr_mask_w;
-   wire [31:0]   cu_0_accrf_0_res_wr_data_w;
+   wire [2:0]    cu_0_accrf_0_res_wr_mask_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] cu_0_accrf_0_res_wr_data_w;
 
    wire [2:0]    lsu_1_accrf_0_rd_idx_w;
    wire          lsu_1_accrf_0_rd_en_w;
@@ -162,36 +164,33 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    wire [2:0]    cu_1_accrf_0_op_0_rd_idx_w;
    wire          cu_1_accrf_0_op_0_rd_en_w;
-   wire [31:0]   cu_1_accrf_0_op_0_rd_data_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] cu_1_accrf_0_op_0_rd_data_w;
 
    wire [2:0]    cu_1_accrf_0_op_1_rd_idx_w;
    wire          cu_1_accrf_0_op_1_rd_en_w;
-   wire [31:0]   cu_1_accrf_0_op_1_rd_data_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] cu_1_accrf_0_op_1_rd_data_w;
 
    wire [2:0]    cu_1_accrf_0_op_2_rd_idx_w;
    wire          cu_1_accrf_0_op_2_rd_en_w;
-   wire [31:0]   cu_1_accrf_0_op_2_rd_data_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] cu_1_accrf_0_op_2_rd_data_w;
 
    wire [2:0]    cu_1_accrf_0_res_wr_idx_w;
    wire          cu_1_accrf_0_res_wr_en_w;
-   wire [1:0]    cu_1_accrf_0_res_wr_mask_w;
-   wire [31:0]   cu_1_accrf_0_res_wr_data_w;
+   wire [2:0]    cu_1_accrf_0_res_wr_mask_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] cu_1_accrf_0_res_wr_data_w;
 
    wire [2:0]    bmu_0_accrf_0_op_0_rd_idx_w;
    wire          bmu_0_accrf_0_op_0_rd_en_w;
-   wire [31:0]   bmu_0_accrf_0_op_0_rd_data_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] bmu_0_accrf_0_op_0_rd_data_w;
 
    wire [2:0]    bmu_0_accrf_0_op_1_rd_idx_w;
    wire          bmu_0_accrf_0_op_1_rd_en_w;
-   wire [31:0]   bmu_0_accrf_0_op_1_rd_data_w;
-
-   wire [2:0]    bmu_0_accrf_0_op_2_rd_idx_w;
-   wire [31:0]   bmu_0_accrf_0_op_2_rd_data_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] bmu_0_accrf_0_op_1_rd_data_w;
 
    wire [2:0]    bmu_0_accrf_0_res_wr_idx_w;
    wire          bmu_0_accrf_0_res_wr_en_w;
-   wire [1:0]    bmu_0_accrf_0_res_wr_mask_w;
-   wire [31:0]   bmu_0_accrf_0_res_wr_data_w;
+   wire [2:0]    bmu_0_accrf_0_res_wr_mask_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] bmu_0_accrf_0_res_wr_data_w;
 
    wire [1:0]    pred_0_pcu_0_rd_idx_w;
    wire          pred_0_pcu_0_rd_bit_w;

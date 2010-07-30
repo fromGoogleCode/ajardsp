@@ -333,9 +333,11 @@ int main(int argc, char **argv)
   /* Parse twice; once for .code sections and once for .data sections */
 
   lookfor_state = code_sections;
+  lineno = 1;
   if (yyparse() == 0) {
     rewind(yyin);
     lookfor_state = data_sections;
+    lineno = 1;
     if (yyparse() == 0) {
       inst_bundle_t *ib_p = code_section_p;
 

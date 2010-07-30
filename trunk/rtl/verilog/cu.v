@@ -75,27 +75,27 @@ module cu(clk,
    output [2:0]	  op_0_idx_o;
    reg    [2:0]   op_0_idx_o;
    output reg     op_0_ren_o;
-   input [31:0]   op_0_data_i;
+   input [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_0_data_i;
 
    output [2:0]   op_1_idx_o;
    reg    [2:0]   op_1_idx_o;
    output reg     op_1_ren_o;
-   input [31:0]   op_1_data_i;
+   input [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_1_data_i;
 
    output [2:0]   op_2_idx_o;
    reg    [2:0]   op_2_idx_o;
    output reg     op_2_ren_o;
-   input [31:0]   op_2_data_i;
+   input [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_2_data_i;
 
    output [2:0]   res_idx_o;
    reg    [2:0]   res_idx_o;
    output 	  res_wen_o;
    reg 		  res_wen_o;
-   output [1:0]	  res_mask_o;
-   reg    [1:0]   res_mask_o;
+   output [2:0]	  res_mask_o;
+   reg    [2:0]   res_mask_o;
 
-   output [31:0]  res_data_o;
-   reg    [31:0]  res_data_o;
+   output [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res_data_o;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0]    res_data_o;
 
    output [1:0]   pred_tst_idx_o;
    input          pred_tst_bit_i;
@@ -111,9 +111,9 @@ module cu(clk,
    reg [31:0] inst_pipe_1_r;
    reg [31:0] inst_pipe_2_r;
 
-   reg [31:0] op_0_r;
-   reg [31:0] op_1_r;
-   reg [31:0] op_2_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_0_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_1_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_2_r;
 
    reg [15:0] op_0_16_r;
    reg [15:0] op_1_16_r;
@@ -121,14 +121,14 @@ module cu(clk,
    reg        op_0_16_pos;
    reg        op_1_16_pos;
 
-   reg [31:0] res;
-   reg [31:0] res_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res_r;
 
-   reg [31:0]  addsub_op_0_w;
-   reg [31:0]  addsub_op_1_w;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] addsub_op_0_w;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] addsub_op_1_w;
    reg         addsub_sub_en_w;
    reg         addsub_sat_en_w;
-   wire [31:0] addsub_res_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] addsub_res_w;
 
    reg [15:0]  mul_op_0_w;
    reg [15:0]  mul_op_1_w;
@@ -185,16 +185,7 @@ module cu(clk,
 
 	     op_0_r <= op_0_data_i;
              op_1_r <= op_1_data_i;
-
-             /* MAC16 specific CU local bypass logic */
-             if (op_2_idx_o == res_idx_o)
-               begin
-                  op_2_r <= res_r;
-               end
-             else
-               begin
-                  op_2_r <= op_2_data_i;
-               end
+             op_2_r <= op_2_data_i;
 
              if (op_0_16_pos)
                op_0_16_r <= op_0_data_i[31:16];
@@ -418,7 +409,7 @@ module cu(clk,
      begin
 	res_idx_o  = 0;
 	res_wen_o  = (inst_pipe_2_r[1] == 0 || pred_tst_bit_i) && inst_pipe_2_r[15:0] != 0;
-        res_mask_o = 2'b11;
+        res_mask_o = 3'b111;
 	res_data_o = res_r;
 
         pred_set_idx_o = 0;
@@ -472,17 +463,17 @@ module cu(clk,
 	       CU_ITYPE_ADD_16: begin
 	          res_idx_o = inst_pipe_2_r[10:8];
                   if (inst_pipe_2_r[7])
-                    res_mask_o = 2'b10;
+                    res_mask_o = 3'b010;
                   else
-                    res_mask_o = 2'b01;
+                    res_mask_o = 3'b001;
 	       end
 
 	       CU_ITYPE_SUB_16: begin
 	          res_idx_o = inst_pipe_2_r[10:8];
                   if (inst_pipe_2_r[7])
-                    res_mask_o = 2'b10;
+                    res_mask_o = 3'b010;
                   else
-                    res_mask_o = 2'b01;
+                    res_mask_o = 3'b001;
 	       end
 
 	       CU_ITYPE_MPY_16: begin
