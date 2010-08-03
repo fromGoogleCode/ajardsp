@@ -253,6 +253,16 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [7:0]    curegs_0_cu_satctrl_w;
    wire [7:0]    curegs_0_cu_mulsign_w;
 
+   wire [15:0]   lsuregs_0_bitrev_w;
+   wire [15:0]   lsuregs_0_mask_sel_w;
+   wire [15:0]   lsuregs_0_mask_0_w;
+   wire [15:0]   lsuregs_0_mask_1_w;
+   wire [15:0]   lsuregs_0_mod_sel_w;
+   wire [15:0]   lsuregs_0_mod_0_w;
+   wire [15:0]   lsuregs_0_mod_1_w;
+
+
+
    reg [15:0]    gpio_r;
 
    assign gpio_o   = gpio_r;
@@ -486,6 +496,26 @@ module ajardsp_top(clk, rst_core, rst_mem,
            .spec_regs_data_o(spec_regs_rd_data_w)
            );
 
+   lsuregs lsuregs_0(.clk(clk),
+                     .rst(rst_core),
+
+                     .bitrev_o(lsuregs_0_bitrev_w),
+                     .mask_sel_o(lsuregs_0_mask_sel_w),
+                     .mask_0_o(lsuregs_0_mask_0_w),
+                     .mask_1_o(lsuregs_0_mask_1_w),
+                     .mod_sel_o(lsuregs_0_mod_sel_w),
+                     .mod_0_o(lsuregs_0_mod_0_w),
+                     .mod_1_o(lsuregs_0_mod_1_w),
+
+                     .spec_regs_raddr_i(spec_regs_raddr_w),
+                     .spec_regs_waddr_i(spec_regs_waddr_w),
+                     .spec_regs_ren_i(spec_regs_ren_w),
+                     .spec_regs_wen_i(spec_regs_wen_w),
+                     .spec_regs_data_i(spec_regs_wr_data_w),
+                     .spec_regs_data_o(spec_regs_rd_data_w)
+                     );
+
+
    lsu lsu_0(.clk(clk),
              .rst(rst_core),
 
@@ -525,7 +555,15 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .sp_i(sp_0_lsu_0_sp_w),
              .push_en_o(lsu_0_sp_0_push_en_w),
              .pop_en_o(lsu_0_sp_0_pop_en_w),
-             .stack_width_o(lsu_0_sp_0_stack_width_w)
+             .stack_width_o(lsu_0_sp_0_stack_width_w),
+
+             .bitrev_i(lsuregs_0_bitrev_w),
+             .mask_sel_i(lsuregs_0_mask_sel_w),
+             .mask_0_i(lsuregs_0_mask_0_w),
+             .mask_1_i(lsuregs_0_mask_1_w),
+             .mod_sel_i(lsuregs_0_mod_sel_w),
+             .mod_0_i(lsuregs_0_mod_0_w),
+             .mod_1_i(lsuregs_0_mod_1_w)
              );
 
    lsu lsu_1(.clk(clk),
@@ -567,7 +605,15 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .sp_i(sp_0_lsu_1_sp_w),
              .push_en_o(lsu_1_sp_0_push_en_w),
              .pop_en_o(lsu_1_sp_0_pop_en_w),
-             .stack_width_o(lsu_1_sp_0_stack_width_w)
+             .stack_width_o(lsu_1_sp_0_stack_width_w),
+
+             .bitrev_i(lsuregs_0_bitrev_w),
+             .mask_sel_i(lsuregs_0_mask_sel_w),
+             .mask_0_i(lsuregs_0_mask_0_w),
+             .mask_1_i(lsuregs_0_mask_1_w),
+             .mod_sel_i(lsuregs_0_mod_sel_w),
+             .mod_0_i(lsuregs_0_mod_0_w),
+             .mod_1_i(lsuregs_0_mod_1_w)
              );
 
 

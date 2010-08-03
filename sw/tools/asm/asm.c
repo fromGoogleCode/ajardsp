@@ -59,6 +59,17 @@ struct {
   {"sp", 2},
   {"satctrl", 3},
   {"mulsign", 4},
+
+  {"masksel", 5},
+  {"mask0",   6},
+  {"mask1",   7},
+
+  {"modsel",  8},
+  {"mod0",    9},
+  {"mod1",   10},
+
+  {"bitrev", 11},
+
   {"gpio",   31},
   {NULL, 0}
 };

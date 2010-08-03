@@ -34,4 +34,13 @@ parameter SPEC_REGS_ADDR_RETPC      = 6'h1,
           SPEC_REGS_ADDR_SP         = 6'h2,
           SPEC_REGS_ADDR_CUSATCTRL  = 6'h3,
           SPEC_REGS_ADDR_CUMULSIGN  = 6'h4,
+
+          SPEC_REGS_ADDR_MASK_SEL   = 6'h5,
+          SPEC_REGS_ADDR_MASK_0     = 6'h6,
+          SPEC_REGS_ADDR_MASK_1     = 6'h7,
+          SPEC_REGS_ADDR_MOD_SEL    = 6'h8,
+          SPEC_REGS_ADDR_MOD_0      = 6'h9,
+          SPEC_REGS_ADDR_MOD_1      = 6'ha,
+          SPEC_REGS_ADDR_BITREV     = 6'hb,
+
           SPEC_REGS_ADDR_GPIO       = 6'h31;

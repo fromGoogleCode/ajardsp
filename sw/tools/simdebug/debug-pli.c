@@ -53,6 +53,14 @@ Reg_t RegsOfInterest[] = {
   {"testbench.ajardsp_0.curegs_0.satctrl_r", "$satctrl", -1, NULL},
   {"testbench.ajardsp_0.curegs_0.mulsign_r", "$mulsign", -1, NULL},
 
+  {"testbench.ajardsp_0.lsuregs_0.mask_sel_o", "$masksel", -1, NULL},
+  {"testbench.ajardsp_0.lsuregs_0.mask_0_o",   "$mask0",   -1, NULL},
+  {"testbench.ajardsp_0.lsuregs_0.mask_1_o",   "$mask1",   -1, NULL},
+  {"testbench.ajardsp_0.lsuregs_0.mod_sel_o",  "$modsel",  -1, NULL},
+  {"testbench.ajardsp_0.lsuregs_0.mod_0_o",    "$mod0",    -1, NULL},
+  {"testbench.ajardsp_0.lsuregs_0.mod_1_o",    "$mod1",    -1, NULL},
+  {"testbench.ajardsp_0.lsuregs_0.bitrev_o",   "$bitrev",  -1, NULL},
+
   {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr0", 0, NULL},
   {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr1", 1, NULL},
   {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr2", 2, NULL},
