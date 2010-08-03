@@ -69,7 +69,18 @@ module lsu(clk,
            sp_i,
            push_en_o,
            pop_en_o,
-           stack_width_o
+           stack_width_o,
+
+           bitrev_i,
+
+           mask_sel_i,
+           mask_0_i,
+           mask_1_i,
+
+           mod_sel_i,
+           mod_0_i,
+           mod_1_i
+
            );
 
 `include "insns.v"
@@ -139,6 +150,14 @@ module lsu(clk,
    output [1:0]  stack_width_o;
    reg [1:0]     stack_width_o;
 
+   input [15:0]  bitrev_i;
+   input [15:0]  mask_sel_i;
+   input [15:0]  mask_0_i;
+   input [15:0]  mask_1_i;
+   input [15:0]  mod_sel_i;
+   input [15:0]  mod_0_i;
+   input [15:0]  mod_1_i;
+
    reg [15:0]    spec_regs_data_i_r;
 
    reg [31:0] inst_pipe_0_r;
@@ -163,6 +182,82 @@ module lsu(clk,
    reg [15:0]  addptr_sum_pipe_r;
 
    reg [15:0]  ptr_post_inc_w, ptr_post_inc_r;
+
+   reg [15:0]  adder_mod_val;
+   wire [15:0] adder_res;
+
+   reg [15:0]  curr_mask;
+   reg [1:0]   mask_sel_array[0:7];
+
+   always @(ptr_rd_idx_o or mask_sel_i or mask_0_i or mask_1_i)
+     begin
+
+        mask_sel_array[0] = mask_sel_i[1:0];
+        mask_sel_array[1] = mask_sel_i[3:2];
+        mask_sel_array[2] = mask_sel_i[5:4];
+        mask_sel_array[3] = mask_sel_i[7:6];
+
+        mask_sel_array[4] = mask_sel_i[9:8];
+        mask_sel_array[5] = mask_sel_i[11:10];
+        mask_sel_array[6] = mask_sel_i[13:12];
+        mask_sel_array[7] = mask_sel_i[15:14];
+
+        case (mask_sel_array[ptr_rd_idx_o])
+          2'b00: begin /* No mask */
+             curr_mask = 16'hffff;
+          end
+          2'b01: begin /* Mask 0 */
+             curr_mask = mask_0_i;
+          end
+          2'b01: begin /* Mask 1 */
+             curr_mask = mask_1_i;
+          end
+          default: begin /* Reserved (no mask) */
+             curr_mask = 16'hffff;
+          end
+         endcase
+
+     end
+
+   reg [15:0]  curr_mod;
+   reg [1:0]   mod_sel_array[0:7];
+
+
+   always @(ptr_rd_idx_o or adder_mod_val or mod_sel_i or mod_0_i or mod_1_i)
+     begin
+
+        mod_sel_array[0] = mod_sel_i[1:0];
+        mod_sel_array[1] = mod_sel_i[3:2];
+        mod_sel_array[2] = mod_sel_i[5:4];
+        mod_sel_array[3] = mod_sel_i[7:6];
+
+        mod_sel_array[4] = mod_sel_i[9:8];
+        mod_sel_array[5] = mod_sel_i[11:10];
+        mod_sel_array[6] = mod_sel_i[13:12];
+        mod_sel_array[7] = mod_sel_i[15:14];
+
+        case (mod_sel_array[ptr_rd_idx_o])
+          2'b00: begin /* No mod */
+             curr_mod = adder_mod_val;
+          end
+          2'b01: begin /* Mod 0 */
+             curr_mod = mod_0_i;
+          end
+          2'b01: begin /* Mod 1 */
+             curr_mod = mod_1_i;
+          end
+          default: begin /* Reserved (no mod) */
+             curr_mod = adder_mod_val;
+          end
+         endcase
+
+     end
+
+   ptr_adder adder_0(.ptr_i(ptr_rd_data_i),
+                     .mod_i(curr_mod),
+                     .mask_i(curr_mask),
+                     .bitrev_i(bitrev_i[ptr_rd_idx_o]),
+                     .ptr_o(adder_res));
 
    assign dmem_addr_o = {dmem_log_addr[15:1], 1'b0};
    assign dmem_rd_en_o = dmem_log_read_en;
@@ -248,7 +343,7 @@ module lsu(clk,
    /*
     * Pipeline stage #0
     */
-   always @(inst_pipe_0_r or ptr_rd_data_i or acc_rd_data_i or sp_i or spec_regs_data_i)
+   always @(inst_pipe_0_r or ptr_rd_data_i or acc_rd_data_i or sp_i or spec_regs_data_i or adder_res)
      begin
 	ptr_rd_en_o  = 0;
         ptr_rd_idx_o = 0;
@@ -276,14 +371,18 @@ module lsu(clk,
         addptr_sum = 0;
         ptr_post_inc_w = 0;
 
+        adder_mod_val = 0;
+
         if (inst_pipe_0_r[INSN_SIZE_BIT] & inst_pipe_0_r[INSN_ENC_BIT])
           begin  /* 32 bit instruction encoding */
              if (inst_pipe_0_r[7:4] == LSU_ITYPE_ADDPTR_16)
 	       begin
 	          ptr_rd_en_o = 1;
 	          ptr_rd_idx_o = inst_pipe_0_r[28:26];
-	          addptr_sum = ptr_rd_data_i +
-                               {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+/*	          addptr_sum = ptr_rd_data_i +
+                               {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]}; */
+                  adder_mod_val = {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+                  addptr_sum    = adder_res;
 	       end
 
              if (inst_pipe_0_r[7:4] == LSU_ITYPE_LD_OFF_16 ||
@@ -295,6 +394,8 @@ module lsu(clk,
                   dmem_log_size_16  = 1;
 	          dmem_log_addr = ptr_rd_data_i +
                                   {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+/*                  adder_mod_val = {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+                  dmem_log_addr = adder_res; */
 	       end
 
              if (inst_pipe_0_r[7:4] == LSU_ITYPE_ST_OFF_32)
@@ -306,6 +407,8 @@ module lsu(clk,
                   dmem_log_size_16  = 0;
 	          dmem_log_addr = ptr_rd_data_i +
                                   {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+/*                  adder_mod_val = {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+                  dmem_log_addr = adder_res; */
 
 		  acc_rd_en_o = 1;
 		  acc_rd_idx_o = inst_pipe_0_r[11:9];
@@ -321,6 +424,8 @@ module lsu(clk,
                   dmem_log_size_16  = 1;
                   dmem_log_addr = ptr_rd_data_i +
                                   {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+/*                  adder_mod_val = {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+                  dmem_log_addr = adder_res; */
 
                   if (inst_pipe_0_r[12])  /* $acc */
 	            begin
@@ -388,7 +493,9 @@ module lsu(clk,
 	          dmem_log_read_en = 1;
                   dmem_log_size_16  = 1;
 	          dmem_log_addr = ptr_rd_data_i;
-                  ptr_post_inc_w = ptr_rd_data_i + 1;
+/*                  ptr_post_inc_w = ptr_rd_data_i + 1; */
+                  adder_mod_val  = 1;
+                  ptr_post_inc_w = adder_res;
 	       end
 
 	     if (inst_pipe_0_r[7:4] == LSU_ITYPE_LD_32 ||
@@ -399,7 +506,9 @@ module lsu(clk,
 	          dmem_log_read_en = 1;
                   dmem_log_size_16  = 0;
 	          dmem_log_addr = ptr_rd_data_i;
-                  ptr_post_inc_w = ptr_rd_data_i + 2;
+/*                  ptr_post_inc_w = ptr_rd_data_i + 2; */
+                  adder_mod_val  = 2;
+                  ptr_post_inc_w = adder_res;
 	       end
 
 	     if (inst_pipe_0_r[7:4] == LSU_ITYPE_ST_16 ||
@@ -411,7 +520,9 @@ module lsu(clk,
                   dmem_log_write_en = 1;
                   dmem_log_size_16  = 1;
 	          dmem_log_addr = ptr_rd_data_i;
-                  ptr_post_inc_w = ptr_rd_data_i + 1;
+/*                  ptr_post_inc_w = ptr_rd_data_i + 1; */
+                  adder_mod_val  = 1;
+                  ptr_post_inc_w = adder_res;
 
                   if (inst_pipe_0_r[15])  /* $acc */
 	            begin
@@ -449,7 +560,9 @@ module lsu(clk,
 		  acc_rd_en_o = 1;
 		  acc_rd_idx_o = inst_pipe_0_r[13:11];
                   dmem_log_write_data_32 = acc_rd_data_i;
-                  ptr_post_inc_w = ptr_rd_data_i + 2;
+/*                  ptr_post_inc_w = ptr_rd_data_i + 2; */
+                  adder_mod_val  = 2;
+                  ptr_post_inc_w = adder_res;
 
 	       end
 
@@ -848,3 +961,177 @@ module lsu(clk,
      end
 
 endmodule // lsu
+
+module ptr_adder(ptr_i, mod_i, mask_i, bitrev_i, ptr_o);
+
+   input  [15:0] ptr_i, mod_i, mask_i;
+   input         bitrev_i;
+   output reg [15:0] ptr_o;
+
+   reg [15:0]    ptr_rev, sum;
+   integer       i;
+
+   always @(ptr_i or mod_i or mask_i or bitrev_i)
+     begin
+
+        /* Bit-reverse */
+        for (i = 0; i < 16; i = i + 1)
+          begin
+             ptr_rev[i] = ptr_i[15-i];
+          end
+
+        /* Compute the sum */
+        if (bitrev_i)
+          sum = ptr_rev + mod_i;
+        else
+          sum = ptr_i + mod_i;
+
+        /* Possibly bit-reverse output and apply mask */
+        for (i = 0; i < 16; i = i + 1)
+          begin
+             if (bitrev_i)
+               ptr_o[i] = mask_i[15-i] ? sum[15-i] : ptr_i[i];
+             else
+               ptr_o[i] = mask_i[i] ? sum[i] : ptr_i[i];
+          end
+     end
+
+endmodule
+
+`ifdef PTRADD_TB
+module ptradd_tb;
+
+   reg [15:0] ptr_in, mod, mask;
+   wire [15:0] ptr_out;
+   integer    i;
+
+
+   ptr_adder ptradd_0(.ptr_i(ptr_in), .mod_i(mod), .mask_i(mask), .bitrev_i(1'b0), .ptr_o(ptr_out));
+
+   initial begin
+      $dumpvars;
+
+      ptr_in = 16'h1230;
+      mod    = 16'h1001;
+      mask   = 16'h000f;
+
+      for (i = 0; i < 512; i = i + 1)
+        begin
+           #1 ptr_in = ptr_out;
+        end
+
+      $finish;
+   end
+
+endmodule
+
+`endif
+
+module lsuregs(clk, rst,
+
+               bitrev_o,
+
+               mask_sel_o,
+               mask_0_o,
+               mask_1_o,
+
+               mod_sel_o,
+               mod_0_o,
+               mod_1_o,
+
+               spec_regs_raddr_i,
+               spec_regs_waddr_i,
+               spec_regs_ren_i,
+               spec_regs_wen_i,
+               spec_regs_data_i,
+               spec_regs_data_o
+               );
+
+`include "specregs.v"
+
+   input clk;
+   input rst;
+
+   input [5:0]   spec_regs_raddr_i;
+   input [5:0]   spec_regs_waddr_i;
+   input         spec_regs_ren_i;
+   input         spec_regs_wen_i;
+   input  [15:0] spec_regs_data_i;
+   output [15:0] spec_regs_data_o;
+
+   output reg [15:0] bitrev_o;
+   output reg [15:0] mask_sel_o, mask_0_o, mask_1_o;
+   output reg [15:0] mod_sel_o, mod_0_o, mod_1_o;
+
+   assign spec_regs_data_o = (spec_regs_ren_i &&
+                              spec_regs_raddr_i == SPEC_REGS_ADDR_BITREV)
+     ? bitrev_o : 16'hzzzz;
+
+   assign spec_regs_data_o = (spec_regs_ren_i &&
+                              spec_regs_raddr_i == SPEC_REGS_ADDR_MASK_SEL)
+     ? mask_sel_o : 16'hzzzz;
+   assign spec_regs_data_o = (spec_regs_ren_i &&
+                              spec_regs_raddr_i == SPEC_REGS_ADDR_MASK_0)
+     ? mask_0_o : 16'hzzzz;
+   assign spec_regs_data_o = (spec_regs_ren_i &&
+                              spec_regs_raddr_i == SPEC_REGS_ADDR_MASK_1)
+     ? mask_1_o : 16'hzzzz;
+
+   assign spec_regs_data_o = (spec_regs_ren_i &&
+                              spec_regs_raddr_i == SPEC_REGS_ADDR_MOD_SEL)
+     ? mod_sel_o : 16'hzzzz;
+   assign spec_regs_data_o = (spec_regs_ren_i &&
+                              spec_regs_raddr_i == SPEC_REGS_ADDR_MOD_0)
+     ? mod_0_o : 16'hzzzz;
+   assign spec_regs_data_o = (spec_regs_ren_i &&
+                              spec_regs_raddr_i == SPEC_REGS_ADDR_MOD_1)
+     ? mod_1_o : 16'hzzzz;
+
+   always @(posedge clk)
+     begin
+        if (rst)
+          begin
+             bitrev_o <= 0;
+
+             mask_sel_o <= 0;
+             mask_0_o <= 0;
+             mask_1_o <= 0;
+
+             mod_sel_o <= 0;
+             mod_0_o <= 0;
+             mod_1_o <= 0;
+          end
+        else
+          begin
+             if (spec_regs_wen_i)
+               begin
+                  case (spec_regs_waddr_i)
+                    SPEC_REGS_ADDR_BITREV: begin
+                       bitrev_o <= spec_regs_data_i;
+                    end
+
+                    SPEC_REGS_ADDR_MASK_SEL: begin
+                       mask_sel_o <= spec_regs_data_i;
+                    end
+                    SPEC_REGS_ADDR_MASK_0: begin
+                       mask_0_o <= spec_regs_data_i;
+                    end
+                    SPEC_REGS_ADDR_MASK_1: begin
+                       mask_1_o <= spec_regs_data_i;
+                    end
+
+                    SPEC_REGS_ADDR_MOD_SEL: begin
+                       mod_sel_o <= spec_regs_data_i;
+                    end
+                    SPEC_REGS_ADDR_MOD_0: begin
+                       mod_0_o <= spec_regs_data_i;
+                    end
+                    SPEC_REGS_ADDR_MOD_1: begin
+                       mod_1_o <= spec_regs_data_i;
+                    end
+                  endcase
+               end
+          end
+     end
+
+endmodule
