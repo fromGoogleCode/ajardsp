@@ -37,7 +37,6 @@ $rtldir  = "../../rtl/verilog/";
 $crt_file = "../tools/crt.s";
 
 $cflags = " -O3 -fno-inline -minsert-nops";
-$cflags = " -O3 -minsert-nops";
 
 $asm_pass_cnt = 0;
 $asm_fail_cnt = 0;
@@ -153,6 +152,9 @@ foreach $input_file (@input_files) {
 
         #### Simulation - begin ####
         print "Sim command: $sim_command\n" if $verbose;
+
+        @ENV{"AJARDSP_SIMDEBUG_ASM_PATH"}    = $asm_file;
+        @ENV{"AJARDSP_SIMDEBUG_LINENO_PATH"} = "$workdir/$base_name.lineno";
 
         open(SIM_CMD, "$sim_command |") or die "Can't run simulation command: $sim_command\n";
         @sim_stdout = <SIM_CMD>;

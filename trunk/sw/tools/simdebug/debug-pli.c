@@ -49,6 +49,7 @@ int MemoryAge[LDM_SIZE];
 Reg_t RegsOfInterest[] = {
   {"testbench.ajardsp_0.pcu_0.pc_i", "pc", -1, NULL},
   {"testbench.ajardsp_0.pcu_0.retpc_r", "$retpc", -1, NULL},
+  {"testbench.ajardsp_0.pred_0.pred_reg_w", "$pred", -1, NULL},
   {"testbench.ajardsp_0.sp_0.sp_r", "$sp", -1, NULL},
   {"testbench.ajardsp_0.curegs_0.satctrl_r", "$satctrl", -1, NULL},
   {"testbench.ajardsp_0.curegs_0.mulsign_r", "$mulsign", -1, NULL},

@@ -39,6 +39,10 @@ module lsu(clk,
 	   ptr_rd_idx_o,
 	   ptr_rd_data_i,
 
+	   ptr_2nd_rd_en_o,
+	   ptr_2nd_rd_idx_o,
+	   ptr_2nd_rd_data_i,
+
 	   ptr_wr_en_o,
 	   ptr_wr_idx_o,
 	   ptr_wr_data_o,
@@ -94,6 +98,12 @@ module lsu(clk,
    output [2:0] ptr_rd_idx_o;
    reg    [2:0] ptr_rd_idx_o;
    input [15:0] ptr_rd_data_i;
+
+   output 	ptr_2nd_rd_en_o;
+   reg 		ptr_2nd_rd_en_o;
+   output [2:0] ptr_2nd_rd_idx_o;
+   reg    [2:0] ptr_2nd_rd_idx_o;
+   input [15:0] ptr_2nd_rd_data_i;
 
    output 	 ptr_wr_en_o;
    reg 		 ptr_wr_en_o;
@@ -373,6 +383,9 @@ module lsu(clk,
 
         adder_mod_val = 0;
 
+        ptr_2nd_rd_en_o = 0;
+        ptr_2nd_rd_idx_o = 0;
+
         if (inst_pipe_0_r[INSN_SIZE_BIT] & inst_pipe_0_r[INSN_ENC_BIT])
           begin  /* 32 bit instruction encoding */
              if (inst_pipe_0_r[7:4] == LSU_ITYPE_ADDPTR_16)
@@ -442,10 +455,9 @@ module lsu(clk,
 	            end
 	          else  /* $ptr */
 	            begin
-                       $display("!!!Not implemented yet!!!\n");
-`ifdef SIMULATION
-                       $finish;
-`endif
+                       ptr_2nd_rd_en_o = 1;
+                       ptr_2nd_rd_idx_o = inst_pipe_0_r[11:9];
+                       dmem_log_write_data_16 = ptr_2nd_rd_data_i;
 	            end
 	       end
 
@@ -539,10 +551,9 @@ module lsu(clk,
 	            end
 	          else  /* $ptr */
 	            begin
-                       $display("!!!Not implemented yet!!!\n");
-`ifdef SIMULATION
-                       $finish;
-`endif
+                       ptr_2nd_rd_en_o = 1;
+                       ptr_2nd_rd_idx_o = inst_pipe_0_r[14:12];
+                       dmem_log_write_data_16 = ptr_2nd_rd_data_i;
 	            end
 
 	       end

@@ -107,11 +107,17 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire          lsu_0_ptr_wr_en_w;
    wire [15:0]   lsu_0_ptr_wr_data_w;
 
+   wire          lsu_0_ptr_2nd_rd_en_w;
+   wire [2:0]    lsu_0_ptr_2nd_rd_idx_w;
+   wire [15:0]   lsu_0_ptr_2nd_rd_data_w;
+
    wire [2:0]    lsu_1_ptr_rd_idx_w;
    wire [15:0]   lsu_1_ptr_rd_data_w;
    wire [2:0]    lsu_1_ptr_wr_idx_w;
    wire          lsu_1_ptr_wr_en_w;
    wire [15:0]   lsu_1_ptr_wr_data_w;
+
+   wire [2:0]    lsu_0_lsu_1_ptr_rd_idx_w;
 
    wire [15:0]   lsu_0_addr_w;
    wire          lsu_0_rd_en_w;
@@ -277,6 +283,9 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    assign core_halt_o = pcu_0_dmem_0_halt_w;
 
+   assign lsu_0_ptr_2nd_rd_data_w = lsu_1_ptr_rd_data_w;
+   assign lsu_0_lsu_1_ptr_rd_idx_w = lsu_0_ptr_2nd_rd_en_w ? lsu_0_ptr_2nd_rd_idx_w : lsu_1_ptr_rd_idx_w;
+
    imem imem_0(.clk(clk),
                .rst(rst_mem),
                .ren_i(imem_ren_w),
@@ -321,7 +330,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
                  .wr_en_0_i(lsu_0_ptr_wr_en_w),
                  .wr_data_0_i(lsu_0_ptr_wr_data_w),
 
-                 .rd_idx_1_i(lsu_1_ptr_rd_idx_w),
+                 .rd_idx_1_i(lsu_0_lsu_1_ptr_rd_idx_w),
                  .rd_data_1_o(lsu_1_ptr_rd_data_w),
                  .wr_idx_1_i(lsu_1_ptr_wr_idx_w),
                  .wr_en_1_i(lsu_1_ptr_wr_en_w),
@@ -524,6 +533,10 @@ module ajardsp_top(clk, rst_core, rst_mem,
              //.ptr_rd_en_o(),
              .ptr_rd_idx_o(lsu_0_ptr_rd_idx_w),
              .ptr_rd_data_i(lsu_0_ptr_rd_data_w),
+
+             .ptr_2nd_rd_en_o(lsu_0_ptr_2nd_rd_en_w),
+             .ptr_2nd_rd_idx_o(lsu_0_ptr_2nd_rd_idx_w),
+             .ptr_2nd_rd_data_i(lsu_0_ptr_2nd_rd_data_w),
 
              .ptr_wr_en_o(lsu_0_ptr_wr_en_w),
              .ptr_wr_idx_o(lsu_0_ptr_wr_idx_w),

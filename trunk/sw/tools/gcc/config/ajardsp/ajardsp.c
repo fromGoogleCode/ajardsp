@@ -137,6 +137,8 @@ insert_nop(void)
   basic_block bb;
   rtx insn;
 
+  dfa_start();  /* needed for *_latency() calls */
+
   FOR_ALL_BB (bb)
   {
     FOR_BB_INSNS (bb, insn)
@@ -155,6 +157,8 @@ insert_nop(void)
           }
       }
   }
+
+  dfa_finish();
 
   return 0;
 }
@@ -1208,11 +1212,11 @@ ajardsp_prologue(void)
 
   emit_insn(gen_pushqi1(hard_frame_pointer_rtx));
   emit_move_insn(hard_frame_pointer_rtx, stack_pointer_rtx);
-  if (!leaf_function_p())
+  if (1 || !leaf_function_p())
     {
       emit_insn(gen_pushqi1(gen_rtx_REG(QImode, AJARDSP_REGNO_RETPC)));
     }
-  if (frame_pointer_needed)
+  if (1 || frame_pointer_needed)
     {
       emit_insn(gen_rtx_SET(QImode, hard_frame_pointer_rtx,
                             plus_constant(hard_frame_pointer_rtx, -get_frame_size())));
@@ -1279,7 +1283,7 @@ ajardsp_epilogue(void)
   emit_insn(gen_popqi1(stack_pointer_rtx));
 #else
   emit_insn(gen_popqi1(stack_pointer_rtx));
-  if (!leaf_function_p())
+  if (1 || !leaf_function_p())
     {
 
       emit_insn(gen_popqi1(gen_rtx_REG(QImode, AJARDSP_REGNO_RETPC)));
