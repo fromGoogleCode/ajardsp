@@ -52,8 +52,6 @@ typedef struct {
   char *str;
 } SourceFileLine_t;
 
-static GtkWidget *SourceWindow;
-
 static SourceFileLine_t SourceFileLines[1024];
 static int SourceFileLinesMax = 0;
 
@@ -902,14 +900,48 @@ static void RunButtonCallBack(GtkWidget *widget,
   pthread_cond_signal(&SimSyncCond);
 }
 
+static GtkWidget *CtrlWindow;
+static GtkWidget *SourceWindow;
+static GtkWidget *SourceScrollWindow;
+static GtkWidget *RegWindow;
+static GtkWidget *MemWindow;
+static GtkWidget *MemScrollWindow;
+
+static char dot_ajardsp_simdebug_file_path[64];
+
+static void PreQuitCallBack(void)
+{
+  int x, y, w, h;
+  FILE *window_pos_fp;
+
+  /* Store window geometry */
+  window_pos_fp = fopen(dot_ajardsp_simdebug_file_path, "w");
+  if (window_pos_fp) {
+
+    gtk_window_get_position (GTK_WINDOW (CtrlWindow), &x, &y);
+    gtk_window_get_size (GTK_WINDOW (CtrlWindow), &w, &h);
+    fprintf(window_pos_fp, "%d,%d,%d,%d\n", x, y, w, h);
+
+    gtk_window_get_position (GTK_WINDOW (SourceWindow), &x, &y);
+    gtk_window_get_size (GTK_WINDOW (SourceWindow), &w, &h);
+    fprintf(window_pos_fp, "%d,%d,%d,%d\n", x, y, w, h);
+
+    gtk_window_get_position (GTK_WINDOW (RegWindow), &x, &y);
+    gtk_window_get_size (GTK_WINDOW (RegWindow), &w, &h);
+    fprintf(window_pos_fp, "%d,%d,%d,%d\n", x, y, w, h);
+
+    gtk_window_get_position (GTK_WINDOW (MemWindow), &x, &y);
+    gtk_window_get_size (GTK_WINDOW (MemWindow), &w, &h);
+    fprintf(window_pos_fp, "%d,%d,%d,%d\n", x, y, w, h);
+
+    fclose(window_pos_fp);
+  }
+
+  gtk_main_quit();
+}
 
 void* GuiMainThread(void* arg_p)
 {
-  GtkWidget *CtrlWindow;
-  GtkWidget *SourceScrollWindow;
-  GtkWidget *RegWindow;
-  GtkWidget *MemWindow;
-  GtkWidget *MemScrollWindow;
   GtkWidget *StepButton;
   GtkWidget *StopButton;
   GtkWidget *RunButton;
@@ -934,7 +966,7 @@ void* GuiMainThread(void* arg_p)
 
   /* Control Window - begin */
   CtrlWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  g_signal_connect(CtrlWindow, "delete_event", gtk_main_quit, NULL);
+  g_signal_connect(CtrlWindow, "delete_event", PreQuitCallBack, NULL);
   gtk_container_set_border_width (GTK_CONTAINER (CtrlWindow), 10);
 
   StepButton = gtk_button_new();
@@ -1020,7 +1052,7 @@ void* GuiMainThread(void* arg_p)
                                    GTK_POLICY_NEVER,
                                    GTK_POLICY_ALWAYS);
 
-    g_signal_connect(SourceWindow, "delete_event", gtk_main_quit, NULL);
+    g_signal_connect(SourceWindow, "delete_event", PreQuitCallBack, NULL);
 
     view = CreateSourceViewAndModel();
 
@@ -1037,7 +1069,7 @@ void* GuiMainThread(void* arg_p)
 
   /* Register Window - begin */
   RegWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  g_signal_connect(RegWindow, "delete_event", gtk_main_quit, NULL);
+  g_signal_connect(RegWindow, "delete_event", PreQuitCallBack, NULL);
 
   view = CreateRegisterViewAndModel();
 
@@ -1062,8 +1094,7 @@ void* GuiMainThread(void* arg_p)
                                  GTK_POLICY_NEVER,
                                  GTK_POLICY_ALWAYS);
 
-
-  g_signal_connect(MemWindow, "delete_event", gtk_main_quit, NULL);
+  g_signal_connect(MemWindow, "delete_event", PreQuitCallBack, NULL);
 
   view = CreateMemoryViewAndModel();
 
@@ -1074,6 +1105,36 @@ void* GuiMainThread(void* arg_p)
 
   gtk_widget_show_all(MemWindow);
   /* Memory Window - end */
+
+  sprintf(dot_ajardsp_simdebug_file_path, "%s/.ajardsp-simdebug", getenv("HOME"));
+
+  /* Restore window geometry */
+  {
+    int x, y, w, h;
+    FILE *window_pos_fp;
+
+    window_pos_fp = fopen(dot_ajardsp_simdebug_file_path, "r");
+    if (window_pos_fp) {
+
+      fscanf(window_pos_fp, "%d,%d,%d,%d\n", &x, &y, &w, &h);
+      gtk_window_move (GTK_WINDOW (CtrlWindow), x, y);
+      gtk_window_resize (GTK_WINDOW (CtrlWindow), w, h);
+
+      fscanf(window_pos_fp, "%d,%d,%d,%d\n", &x, &y, &w, &h);
+      gtk_window_move (GTK_WINDOW (SourceWindow), x, y);
+      gtk_window_resize (GTK_WINDOW (SourceWindow), w, h);
+
+      fscanf(window_pos_fp, "%d,%d,%d,%d\n", &x, &y, &w, &h);
+      gtk_window_move (GTK_WINDOW (RegWindow), x, y);
+      gtk_window_resize (GTK_WINDOW (RegWindow), w, h);
+
+      fscanf(window_pos_fp, "%d,%d,%d,%d\n", &x, &y, &w, &h);
+      gtk_window_move (GTK_WINDOW (MemWindow), x, y);
+      gtk_window_resize (GTK_WINDOW (MemWindow), w, h);
+
+      fclose(window_pos_fp);
+    }
+  }
 
   gtk_main();
 
