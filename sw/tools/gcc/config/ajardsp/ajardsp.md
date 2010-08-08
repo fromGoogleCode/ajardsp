@@ -69,7 +69,7 @@
 ;;Definition of instruction attributes
 ;;====================================
 
-(define_attr "itype" "bmu,cu,lsu,pcu"
+(define_attr "itype" "bmu,cu,cu_cmp,lsu,pcu"
   (const_string "pcu"))
 
 (define_attr "isize" "1,2"
@@ -686,7 +686,7 @@
                          (match_operand:QI 3 "nonmemory_operand" "d")]))]
   ""
   "cmp16%1 %2, %3, %0"
-  [(set_attr "itype" "cu")
+  [(set_attr "itype" "cu_cmp")
    (set_attr "isize" "2")])
 
 (define_insn "mybranch"
@@ -697,7 +697,8 @@
                       (pc)))]
   ""
   "if (%0) bra #%l1"
-[(set_attr "itype" "pcu")] )
+[(set_attr "itype" "pcu")
+ (set_attr "dslots" "2")])
 
 
 
@@ -769,20 +770,22 @@
 (define_reservation "two_islots" "((islot0+(islot1|islot2|islot3))|(islot1+(islot0|islot2|islot3))|(islot2+(islot0|islot1|islot3))|(islot3+(islot0|islot1|islot2)))")
 
 ;; Define reservations for insturction types.
-(define_insn_reservation "bmu_16"  3 (and (eq_attr "itype" "bmu") (eq_attr "isize"  "1"))
+(define_insn_reservation "bmu_16"  2 (and (eq_attr "itype" "bmu") (eq_attr "isize"  "1"))
   "one_islot+bmu")
-(define_insn_reservation "cu_16"   3 (and (eq_attr "itype"  "cu") (eq_attr "isize"  "1"))
+(define_insn_reservation "cu_16"   2 (and (eq_attr "itype"  "cu") (eq_attr "isize"  "1"))
   "one_islot+(cu0|cu1)")
-(define_insn_reservation "lsu_16"  2 (and (eq_attr "itype" "lsu") (eq_attr "isize"  "1"))
+(define_insn_reservation "lsu_16"  1 (and (eq_attr "itype" "lsu") (eq_attr "isize"  "1"))
   "one_islot+(lsu0|lsu1)")
 (define_insn_reservation "pcu_16"  1 (and (eq_attr "itype" "pcu") (eq_attr "isize"  "1"))
   "one_islot+pcu")
 
-(define_insn_reservation "bmu_32" 3 (and (eq_attr "itype" "bmu") (eq_attr "isize"  "2"))
+(define_insn_reservation "bmu_32" 2 (and (eq_attr "itype" "bmu") (eq_attr "isize"  "2"))
   "two_islots+bmu")
-(define_insn_reservation "cu_32"  3 (and (eq_attr "itype"  "cu") (eq_attr "isize"  "2"))
+(define_insn_reservation "cu_32"  2 (and (eq_attr "itype"  "cu") (eq_attr "isize"  "2"))
   "two_islots+(cu0|cu1)")
-(define_insn_reservation "lsu_32" 2 (and (eq_attr "itype" "lsu") (eq_attr "isize"  "2"))
+(define_insn_reservation "cu_cmp_32"  3 (and (eq_attr "itype"  "cu_cmp") (eq_attr "isize"  "2"))
+  "two_islots+(cu0|cu1)")
+(define_insn_reservation "lsu_32" 1 (and (eq_attr "itype" "lsu") (eq_attr "isize"  "2"))
   "two_islots+(lsu0|lsu1)")
 (define_insn_reservation "pcu_32" 1 (and (eq_attr "itype" "pcu") (eq_attr "isize"  "2"))
   "two_islots+pcu")

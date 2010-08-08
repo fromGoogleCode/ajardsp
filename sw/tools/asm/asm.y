@@ -43,6 +43,7 @@ extern int lineno;
 %}
 
 %union {
+  struct {char *str; int lineno;} mnemonic;
   int ival;
   char *str;
   void *op_p;
@@ -59,7 +60,7 @@ extern int lineno;
 %token TOK_ALIGN
 
 %token <ival> TOK_INTEGER
-%token <str>  TOK_MNEMONIC
+%token <mnemonic>  TOK_MNEMONIC
 %token <str>  TOK_REGISTER
 %token <str>  TOK_SYMBOL_REF
 %token <str>  TOK_LABEL
@@ -148,34 +149,34 @@ instruction: TOK_MNEMONIC operand_list
            {
              instruction_t *inst_p = calloc(1, sizeof(instruction_t));
              inst_p->pred = NULL;
-             inst_p->mnemonic = $1;
+             inst_p->mnemonic = $1.str;
              inst_p->ops_p = $2;
-             inst_p->lineno = lineno;
+             inst_p->lineno = $1.lineno;
              $$ = inst_p;
            }
 	   | TOK_MNEMONIC
            {
              instruction_t *inst_p = calloc(1, sizeof(instruction_t));
              inst_p->pred = NULL;
-             inst_p->mnemonic = $1;
-             inst_p->lineno = lineno;
+             inst_p->mnemonic = $1.str;
+             inst_p->lineno = $1.lineno;
              $$ = inst_p;
            }
            | TOK_IF TOK_PAR_OPEN TOK_REGISTER TOK_PAR_CLOSE TOK_MNEMONIC operand_list
            {
              instruction_t *inst_p = calloc(1, sizeof(instruction_t));
              inst_p->pred = $3;
-             inst_p->mnemonic = $5;
+             inst_p->mnemonic = $5.str;
              inst_p->ops_p = $6;
-             inst_p->lineno = lineno;
+             inst_p->lineno = $5.lineno;
              $$ = inst_p;
            }
 	   | TOK_IF TOK_PAR_OPEN TOK_REGISTER TOK_PAR_CLOSE TOK_MNEMONIC
            {
              instruction_t *inst_p = calloc(1, sizeof(instruction_t));
              inst_p->pred = $3;
-             inst_p->mnemonic = $5;
-             inst_p->lineno = lineno;
+             inst_p->mnemonic = $5.str;
+             inst_p->lineno = $5.lineno;
              $$ = inst_p;
            }
 	   ;
@@ -298,8 +299,6 @@ int main(int argc, char **argv)
 {
   int i;
 
-  init();
-
   yyin = NULL;
 
   outfile = NULL;
@@ -329,6 +328,8 @@ int main(int argc, char **argv)
   if (yyin == NULL) {
     print_usage();
   }
+
+  init();
 
   /* Parse twice; once for .code sections and once for .data sections */
 
