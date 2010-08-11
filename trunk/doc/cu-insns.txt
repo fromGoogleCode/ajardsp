@@ -4,6 +4,7 @@ assign true_32bit_insn = insn[1] & insn[29];
 32 bit instructions have 5 operation encoding bits (currently 2 in use out of 32)
 
 Mnemonic  : add16
+Description: Add contents of 16-bit register to 16-bit register.
 Operand_0 : $acc0l to $acc7h
 Operand_1 : $acc0l to $acc7h
 Operation : Operand_0 = Operand_0 + Operand_1
@@ -11,13 +12,15 @@ Size      : 16
 Encoding  : {[14:11]=OP1,[10:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : sub16
+Description: Subtract contents of 16-bit register from 16-bit register.
 Operand_0 : $acc0l to $acc7h
 Operand_1 : $acc0l to $acc7h
 Operation : Operand_0 = Operand_0 - Operand_1
 Size      : 16
 Encoding  : {[14:11]=OP1,[10:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
 
-Mnemonic  : cmp{eq,ne,lt,le,gt,ge}16
+Mnemonic  : cmp16(op)
+Description: Compare (eq,ne,lt,le,gt,ge) two 16-bit registers and update predicate register with outcome.
 Operand_0 : $acc0l to $acc7h
 Operand_1 : $acc0l to $acc7h
 Operand_2 : $pred1 to $pred3
@@ -26,6 +29,7 @@ Size      : 32
 Encoding  : {[31:30]=PR,[29]=T,[28:26]=CMP,[25:24]=OP2,[16:13]=OP1,[12:9]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
 
 Mnemonic  : mpy16
+Description: Multiply 16-bit register with 16-bit register to yield a 32-bit product.
 Operand_0 : $acc0l to $acc3h
 Operand_1 : $acc0l to $acc3h
 Operand_2 : $acc0 to $acc7
@@ -34,6 +38,7 @@ Size      : 16
 Encoding  : {[15:13]=OP2,[12:10]=OP1,[9:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : mac16
+Description: Multiply 16-bit register with 16-bit register to yield a 32-bit product. Add this product to accumulator register.
 Operand_0 : $acc0l to $acc3h  (3 bits)
 Operand_1 : $acc0l to $acc3h  (3 bits)
 Operand_2 : $acc0 to $acc7    (3 bits)
@@ -42,6 +47,7 @@ Size      : 16
 Encoding  : {[15:13]=OP2,[12:10]=OP1,[9:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : add32
+Description: Add accumulator register to accumulator register and store the result in a third accumulator register.
 Operand_0 : $acc0 to $acc7 (3 bits)
 Operand_1 : $acc0 to $acc7 (3 bits)
 Operand_2 : $acc0 to $acc7 (3 bits)
@@ -50,6 +56,7 @@ Size      : 16
 Encoding  : {[15:13]=OP2,[12:10]=OP1,[9:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : sub32
+Description: Subtract accumulator register from accumulator register and store the result in a third accumulator register.
 Operand_0 : $acc0 to $acc7 (3 bits)
 Operand_1 : $acc0 to $acc7 (3 bits)
 Operand_2 : $acc0 to $acc7 (3 bits)
@@ -57,7 +64,8 @@ Operation : Operand_2 = Operand_0 - Operand_1
 Size      : 16
 Encoding  : {[15:13]=OP2,[12:10]=OP1,[9:7]=OP0,[6:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b0,[0]=P}
 
-Mnemonic  : cmp{eq,ne,lt,le,gt,ge}32
+Mnemonic  : cmp32(op)
+Description: Compare (eq,ne,lt,le,gt,ge) two 32-bit registers and update predicate register with outcome.
 Operand_0 : $acc0 to $acc7   (3 bits)
 Operand_1 : $acc0 to $acc7   (3 bits)
 Operand_2 : $pred1 to $pred3 (2 bits)
