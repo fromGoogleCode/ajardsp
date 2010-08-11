@@ -3,6 +3,7 @@
 \usepackage{longtable}
 \usepackage{bytefield}
 \usepackage{color}
+\usepackage{graphicx}
 \usepackage[table]{xcolor}
 \usepackage[bookmarksopen=true]{hyperref}
 
@@ -11,6 +12,16 @@
 \allsectionsfont{\usefont{OT1}{phv}{bc}{n}\selectfont}
 
 \usepackage[Lenny]{fncychap}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+
+%% Now begin customising things. See the fancyhdr docs for more info.
+
+\renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{#1}}{}}
+\renewcommand{\sectionmark}[1]{\markright{\MakeUppercase{#1}}{}}
+\renewcommand{\headrulewidth}{0pt}
 
 \hypersetup{%
 pdftitle={AjarDSP User's Guide},
@@ -54,43 +65,71 @@ Markus Lavin \texttt{markusl.se78@gmail.com}
 \end{center}
 \end{titlepage}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Architecture}
+\tableofcontents
 
+\chapter{Architecture}
+%\clearpage
+\section{Overview}
+AjarDSP is a 16-bit dual mac VLIW DSP. The major blocks of the DSP
+core are depicted in figure \ref{ajardsp-blocks}.
+\begin{figure}[!b]
+  \scalebox{1}{\includegraphics[scale=0.45, angle=-90, bb=20 20 842 700]{ajardsp-blocks.pdf}}
+  \caption{\small AjarDSP blocks and interconnect.}
+  \label{ajardsp-blocks}
+\end{figure}
+%\clearpage
 \section{Registers}
 This section describes the registers available in AjarDSP
 architecture. There are two main register files (accrf and ptrrf) and
-group of lously connected special purpose registers spread out thorugh
-the design called the special registers.
+a group of lously connected special purpose registers spread out
+thorugh the design called the special registers.
 \subsection{Accumulator Register File (ACCRF)}
 The accumulator register file (accrf) consits of eight 40-bit
 accumulator registers. Each such accumualtor register is divided into
 three parts; guard bits (typically 8-bits but configurable), a 16-bit
-high part and a 16-bit low part.  \break
+high part and a 16-bit low part. See figure
+\ref{accumulator-register}.  \break
 
+\begin{figure}[!b]
 \begin{bytefield}{40}
 \bitheader[b]{0,15,16,31,32,39} \\
 \bitbox{8}{accNg} &
 \bitbox{16}{accNh} &
 \bitbox{16}{accNl} \\
 \end{bytefield}
+\caption{\small 40-bit accumulator register.}
+\label{accumulator-register}
+\end{figure}
 
 The high and low parts (accNh and accNl) may be addressed individually
 by some instructions (those operating on 16-bit data) but the guard
 bits are not directly addressable. Access to the guard bits must be
 done via the BMU by means of downshifting.
 
+The accumulator register file is equiped with a bypass network.
+
 \subsection{Pointer Register File (PTRRF)}
 The pointer register file (ptrrf) consists of eight 16-bit
 registers. These registers are only accessable from the load store
-units (LSU) and their purpose is to addressing memory.  \break
+units (LSU) and their purpose is to addressing memory. See figure
+\ref{pointer-register}. \break
+
+\begin{figure}[!b]
+\begin{bytefield}{16}
+\bitheader[b]{0,15} \\
+\bitbox{16}{ptrN} \\
+\end{bytefield}
+\caption{\small 16-bit pointer register.}
+\label{pointer-register}
+\end{figure}
 
 \subsection{Special registers}
 As indicated above the special registers are not located togehter in a
 register file but instead spread out through the design (e.g. retpc is
-near the PCU and sp is near the LSUs).
-\break
-The architecture provides the follwing special purpose registers:
+near the PCU and sp is near the LSUs). See table
+\ref{special-registers} for a complete list of the available special
+registers. \break
+\begin{figure}
 \begin{center}
   \begin{tabular}{ | l | l |}
     \hline
@@ -110,30 +149,54 @@ The architecture provides the follwing special purpose registers:
     \hline
   \end{tabular}
 \end{center}
+\caption{Special purpose registers of AjarDSP.}
+\label{special-registers}
+\end{figure}
 
-
-
-\begin{bytefield}{16}
-\bitheader[b]{0,15} \\
-\bitbox{16}{ptrN} \\
-\end{bytefield}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\clearpage
 \section{Program Control Unit - PCU}
 The PCU is responsible for program flow control and instruction fetching.
 
+The instruction fetcher fetches 64-bits from the IMEM every clock
+cycle. These 64-bits are feed into a two stage aligner queue. The two
+LSBs of the PC are used to index the aligner queue (with respect to
+16-bit words) and select a candidate 64-bit instruction bundle that is
+passed on to the VLIW decoder to determine the instruction bundle
+boundaries. The decoder determines the next sequential PC and at which
+word positions 16 or 32-bit instructions (that are to execute this
+cycle) are available. It asserts valid signals towards the dispatcher
+at the corresponding positions. The entire 64-bit word passed on to
+the dispatcher. The dispatcher examines the functional unit (FU) bits
+of the instructions and passes them on the the respective pipelines.
+
+According to the description above the aligner queue needs to be fully
+primed to operate correctly. This imposes a stall penalty for
+jumps. However the special case of an aligned jump (jump target is
+64-bit aligned) is optimized and there is no stall penalty. This
+optimization works by allowing execution to start while only the first
+entry of the queue is filled. This is safe if the jump target was
+aligned because then the entire candidate 64-bit instruction bundle
+will be contained in that queue entry.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Load Store Unit - LSU}
+AjarDSP has two load store units. Each LSU has a 32-bit data bus to
+the DMEM. The DMEM is dual ported so in total 64-bits of data can be
+transfered each clock cycle. The dual ported memory also means that
+there are no bank conflicts.
+
+The memory is 16-bit word addressed (i.e. given address $A$ then
+address $A+1$ is the address of the next 16-bit word in memory). Data
+layout with respect to 32-bit words is little endian.
 
 \subsection{Addressing modes}
-The memory is 16-bit word addressed (meaning that given address $A$
-then address $A+1$ is the address of the next 16-bit word in
-memory). Data layout is big-endian??
-
 The architecture supports three different addressing modes. The
-current addressing modes affects the operation of the load/store
+selected addressing mode affects the operation of the load/store
 instructions with automatic pointer update (i.e. ldinc16/32 and
-stinc16/32 instructions).
+stinc16/32 instructions). Addressing modes are configured on a per
+pointer register basis.
 
 \begin{description}
   \item[linear mode] This is the normal adderssing mode where pointers
@@ -146,6 +209,12 @@ stinc16/32 instructions).
     that together with the bit-reversed update the address bits inside
     the circular buffer will updated with reversed order.
 \end{description}
+
+Since the circular addressing mode is mask based certain restrictions
+apply for the circular buffers. Namely they have to have a size that
+is a power of two and the buffer has to start at an address that is a
+multiple of its size.
+
 
 
 
@@ -162,13 +231,13 @@ stinc16/32 instructions).
 \newpage
 \chapter{Instruction set}
 \newpage
-\section{Bit Manipulation Unit (BMU)}
+\section{Bit Manipulation Unit (BMU) instructions}
 \input{bmu-insns.tex}
 \newpage
-\section{Computational Unit (CU)}
+\section{Computational Unit (CU) instructions}
 \input{cu-insns.tex}
 \newpage
-\section{Load Store Unit (LSU)}
+\section{Load Store Unit (LSU) instructions}
 \input{lsu-insns.tex}
 
 \end{document}

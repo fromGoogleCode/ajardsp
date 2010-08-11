@@ -33,7 +33,7 @@ $INSN_DOC{"Mnemonic"}
 \\textbf{Operand1} & $INSN_DOC{"Operand1"}\\\\
 \\textbf{Operand2} & $INSN_DOC{"Operand2"}\\\\
 \\textbf{Operation} & $INSN_DOC{"Operation"}\\\\
-\\textbf{Size} & 32\\\\
+\\textbf{Size} & $INSN_DOC{"Size"}\\\\
 \\end{tabular}
 \\end{center}
 TEX_PART_1
@@ -45,7 +45,7 @@ TEX_PART_1
         $encoding = $1;
         @fields = split(/,/, $encoding);
         print <<TAB_PART_1;
-\\flushleft \\textbf{Description:} \\\\
+\\flushleft \\textbf{Description:} $INSN_DOC{"Description"}\\\\
 \\flushleft \\textbf{Encoding:} \\\\
 \\begin{center}
 \\begin{tabular}{ | c | l | l |}
