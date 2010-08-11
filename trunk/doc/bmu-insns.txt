@@ -29,7 +29,6 @@ Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0
 
 Mnemonic  : not32
 Operand_0 : $acc0 to $acc7   (3 bits)
-Operand_1 : $acc0 to $acc7   (3 bits)
 Operand_2 : $acc0 to $acc7   (3 bits)
 Operation : Operand_2 = NOT Operand_0
 Size      : 32

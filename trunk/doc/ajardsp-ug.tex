@@ -1,0 +1,174 @@
+\documentclass[11pt]{book}
+\usepackage{fullpage}
+\usepackage{longtable}
+\usepackage{bytefield}
+\usepackage{color}
+\usepackage[table]{xcolor}
+\usepackage[bookmarksopen=true]{hyperref}
+
+
+\usepackage{sectsty}
+\allsectionsfont{\usefont{OT1}{phv}{bc}{n}\selectfont}
+
+\usepackage[Lenny]{fncychap}
+
+\hypersetup{%
+pdftitle={AjarDSP User's Guide},
+pdfauthor={Markus Lavin <markusl.se78@gmail.com>},
+pdfsubject={AjarDSP User's Guide},
+pdfkeywords={AjarDSP}}
+
+% Set up hyperlink colors
+\definecolor{darkred}{rgb}{0.5,0,0}
+\definecolor{darkgreen}{rgb}{0,0.3,0}
+\definecolor{darkblue}{rgb}{0,0,0.5}
+\definecolor{darkbrown}{rgb}{0.28,0.07,0.07}
+\hypersetup{%
+  colorlinks=true,
+  citecolor=darkblue,
+  urlcolor=darkgreen,
+  linkcolor=darkred,
+  menucolor=darkbrown}
+
+\renewcommand{\familydefault}{\sfdefault}
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+\HRule \\[0.4cm]
+{\Huge \textbf{AjarDSP User's Guide}}\\[0.8cm]
+\HRule \\[1.5cm]
+\emph{URL:}\\
+\texttt{http://code.google.com/p/ajardsp/}\\
+\vfill
+\begin{flushleft}
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Author:}\\
+Markus Lavin \texttt{markusl.se78@gmail.com}
+\end{flushleft}
+\end{minipage}
+\end{flushleft}
+\end{center}
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Architecture}
+
+\section{Registers}
+This section describes the registers available in AjarDSP
+architecture. There are two main register files (accrf and ptrrf) and
+group of lously connected special purpose registers spread out thorugh
+the design called the special registers.
+\subsection{Accumulator Register File (ACCRF)}
+The accumulator register file (accrf) consits of eight 40-bit
+accumulator registers. Each such accumualtor register is divided into
+three parts; guard bits (typically 8-bits but configurable), a 16-bit
+high part and a 16-bit low part.  \break
+
+\begin{bytefield}{40}
+\bitheader[b]{0,15,16,31,32,39} \\
+\bitbox{8}{accNg} &
+\bitbox{16}{accNh} &
+\bitbox{16}{accNl} \\
+\end{bytefield}
+
+The high and low parts (accNh and accNl) may be addressed individually
+by some instructions (those operating on 16-bit data) but the guard
+bits are not directly addressable. Access to the guard bits must be
+done via the BMU by means of downshifting.
+
+\subsection{Pointer Register File (PTRRF)}
+The pointer register file (ptrrf) consists of eight 16-bit
+registers. These registers are only accessable from the load store
+units (LSU) and their purpose is to addressing memory.  \break
+
+\subsection{Special registers}
+As indicated above the special registers are not located togehter in a
+register file but instead spread out through the design (e.g. retpc is
+near the PCU and sp is near the LSUs).
+\break
+The architecture provides the follwing special purpose registers:
+\begin{center}
+  \begin{tabular}{ | l | l |}
+    \hline
+    \cellcolor{lightgray} Register & \cellcolor{lightgray} Description \\ \hline
+    \textbf{sp} & Stack Pointer \\ \hline
+    \textbf{retpc} & Return PC (link register) \\ \hline
+    \textbf{satctrl} & Saturation control \\ \hline
+    \textbf{mulsign} & Multiplication operand sign \\ \hline
+    \textbf{masksel} & Pointer mask selector \\ \hline
+    \textbf{mask0}   & Pointer mask register 0 \\ \hline
+    \textbf{mask1}   & Pointer mask register 1 \\ \hline
+    \textbf{modsel}  & Pointer modification selector \\ \hline
+    \textbf{mod0}    & Pointer modification register 0 \\ \hline
+    \textbf{mod1}    & Pointer modification register 1 \\ \hline
+    \textbf{bitrev}  & Reverse carry pointer modification enable register \\ \hline
+    \textbf{gpio}    & General Purpose Input Output register \\
+    \hline
+  \end{tabular}
+\end{center}
+
+
+
+\begin{bytefield}{16}
+\bitheader[b]{0,15} \\
+\bitbox{16}{ptrN} \\
+\end{bytefield}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Program Control Unit - PCU}
+The PCU is responsible for program flow control and instruction fetching.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Load Store Unit - LSU}
+
+\subsection{Addressing modes}
+The memory is 16-bit word addressed (meaning that given address $A$
+then address $A+1$ is the address of the next 16-bit word in
+memory). Data layout is big-endian??
+
+The architecture supports three different addressing modes. The
+current addressing modes affects the operation of the load/store
+instructions with automatic pointer update (i.e. ldinc16/32 and
+stinc16/32 instructions).
+
+\begin{description}
+  \item[linear mode] This is the normal adderssing mode where pointers
+    will be updated in a linear fashion.
+  \item[circular mode] In this addressing mode a mask register is used
+    to mask the updated pointer and effectively making the pointer
+    wrap once its value goes outside the mask.
+  \item[circular mode with reverse carry update] This is similar to
+    circular mode but the modification value is choosen in such a way
+    that together with the bit-reversed update the address bits inside
+    the circular buffer will updated with reversed order.
+\end{description}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Computational Unit - CU}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Bit Manipulation Unit - BMU}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Pipeline issues}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\chapter{Instruction set}
+\newpage
+\section{Bit Manipulation Unit (BMU)}
+\input{bmu-insns.tex}
+\newpage
+\section{Computational Unit (CU)}
+\input{cu-insns.tex}
+\newpage
+\section{Load Store Unit (LSU)}
+\input{lsu-insns.tex}
+
+\end{document}
