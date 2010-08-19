@@ -15,16 +15,19 @@ while (<FILE>) {
       }
         $tex_part_1 = <<TEX_PART_1;
 \\newpage
-\\begin{minipage}{0.4\\textwidth}
+\\HRule \\\\[0.4cm]
+\\begin{minipage}{0.49\\textwidth}
 \\begin{flushleft} \\Huge \\bfseries
 $INSN_DOC{"Mnemonic"}
 \\end{flushleft}
 \\end{minipage}
-\\begin{minipage}{0.4\\textwidth}
+\\begin{minipage}{0.49\\textwidth}
 \\begin{flushright} \\Huge \\bfseries
 $INSN_DOC{"Mnemonic"}
 \\end{flushright}
-\\end{minipage}
+\\end{minipage} \\\\[0.4cm]
+\\HRule \\\\[1cm]
+\\subsection{$INSN_DOC{"Mnemonic"}}
 \\begin{center}
 \\large
 \\begin{tabular}{  r | l }
