@@ -8,6 +8,7 @@ assign true_32bit_insn = insn[1] & insn[29];
 -------------------
 
 Mnemonic  : ld16
+Description: Load 16-bit data element from data memory.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operation : Operand_1 = DMEM[Operand_0]
@@ -15,6 +16,7 @@ Size      : 16
 Encoding  : {[15:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : ldinc16
+Description: Load 16-bit data element from data memory and increment pointer register with size of data element.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operation : Operand_1 = DMEM[Operand_0], Operand_0 = Operand_0 + 1
@@ -22,6 +24,7 @@ Size      : 16
 Encoding  : {[15:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : st16
+Description: Store 16-bit register value to data memory.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operation : DMEM[Operand_0] = Operand_1
@@ -29,6 +32,7 @@ Size      : 16
 Encoding  : {[15:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : stinc16
+Description: Store 16-bit register value to data memory and increment pointer register with size of data element.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operation : DMEM[Operand_0] = Operand_1, Operand_0 = Operand_0 + 1
@@ -36,6 +40,7 @@ Size      : 16
 Encoding  : {[15:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : ld32
+Description: Load 32-bit data element from data memory.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0 to $acc7
 Operation : Operand_1 = DMEM[Operand_0]
@@ -43,6 +48,7 @@ Size      : 16
 Encoding  : {[13:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : ldinc32
+Description: Load 32-bit data element from data memory and increment pointer register with size of data element.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0 to $acc7
 Operation : Operand_1 = DMEM[Operand_0], Operand_0 = Operand_0 + 2
@@ -50,6 +56,7 @@ Size      : 16
 Encoding  : {[13:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : st32
+Description: Store 32-bit register value to data memory.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0 to $acc7
 Operation : DMEM[Operand_0] = Operand_1
@@ -57,40 +64,67 @@ Size      : 16
 Encoding  : {[13:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
 Mnemonic  : stinc32
+Description: Store 32-bit register value to data memory and increment pointer register with size of data element.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0 to $acc7
 Operation : DMEM[Operand_0] = Operand_1, Operand_0 = Operand_0 + 2
 Size      : 16
 Encoding  : {[13:11]=OP1,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
-Mnemonic  : {push,pop}{16,32}
+Mnemonic  : push16
+Description: Push 16-bit register to stack.
 Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7, $spec_regs
 Operation : DMEM[--$sp] = Operand_0
 Size      : 16
-Encoding  : {[15:11]=OP0,[10]=spec,[9]=32bits,[8]=Push,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+Encoding  : {[15:11]=OP0,[10]=spec,[9]=32bits=1'b0,[8]=Push=1'b1,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
-Mnemonic  : mv16 (move $acc to $acc)
+Mnemonic  : pop16
+Description: Pop 16-bit register from stack.
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7, $spec_regs
+Operation : DMEM[--$sp] = Operand_0
+Size      : 16
+Encoding  : {[15:11]=OP0,[10]=spec,[9]=32bits=1'b0,[8]=Push=1'b0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : push32
+Description: Push 32-bit register to stack.
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7, $spec_regs
+Operation : DMEM[--$sp] = Operand_0
+Size      : 16
+Encoding  : {[15:11]=OP0,[10]=spec,[9]=32bits=1'b1,[8]=Push=1'b1,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : pop32
+Description: Pop 32-bit register from stack.
+Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7, $spec_regs
+Operation : DMEM[--$sp] = Operand_0
+Size      : 16
+Encoding  : {[15:11]=OP0,[10]=spec,[9]=32bits=1'b1,[8]=Push=1'b0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : mv16
+Description: Move accumulator register to accumulator register.
 Operand_0 : $acc0l to $acc7h
 Operand_1 : $acc0l to $acc7h
 Operation : Operand_0 = Operand_1
 Size      : 16
 Encoding  : {[15:12]=OP1,[11:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
-Mnemonic  : mv16 (move $ptr to $ptr)
+Mnemonic  : mv16
+Description: Move pointer register to pointer register.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $ptr0 to $ptr7
 Operation : Operand_1 = Operand_0
 Size      : 16
 Encoding  : {[14:12]=OP1,[11:9]=OP0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
-Mnemonic  : mv16 (move $acc to $ptr)
+Mnemonic  : mv16
+Description: Move accumulator register to pointer register.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0l to $acc7h
 Operation : Operand_0 = Operand_1
 Size      : 16
 Encoding  : {[15:12]=OP1,[11:9]=OP0,[8]=1'b1,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0,[0]=P}
 
-Mnemonic  : mv16 (move $ptr to $acc)
+Mnemonic  : mv16
+Description: Move pointer register to accumulator register.
 Operand_0 : $ptr0 to $ptr7
 Operand_1 : $acc0l to $acc7h
 Operation : Operand_1 = Operand_0
@@ -104,6 +138,7 @@ Encoding  : {[15:12]=OP1,[11:9]=OP0,[8]=1'b0,[7:4]=IC=,[3:2]=FU=2'b01,[1]=S=1'b0
 -------------------
 
 Mnemonic  : ldimm16
+Description: Load immediate 16-bit value.
 Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operand_1 : 16-bit immediate value
 Operation : Operand_0 = Operand_1
@@ -111,6 +146,7 @@ Size      : 32
 Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
 
 Mnemonic  : mvfs16
+Description: Move from special register to ordinary 16-bit register.
 Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operand_1 : Special register (6 bit addressing)
 Operation : Operand_0 = Operand_1
@@ -118,6 +154,7 @@ Size      : 32
 Encoding  : {[31:30]=PR,[29]=T=1'b1,[18:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
 
 Mnemonic  : mvts16
+Description: Move from ordinary 16-bit register to special register.
 Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operand_1 : Special register (6 bit addressing)
 Operation : Operand_1 = Operand_0
@@ -125,6 +162,7 @@ Size      : 32
 Encoding  : {[31:30]=PR,[29]=T=1'b1,[18:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
 
 Mnemonic  : ldoff16
+Description: Load 16-bit data element from memory location pointer register plus signed offset.
 Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operand_1 : 13-bit signed immediate value (-4096,4095)
 Operand_2 : $ptr0 to $ptr7
@@ -133,6 +171,7 @@ Size      : 32
 Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
 
 Mnemonic  : ldoff32
+Description: Load 32-bit data element from memory location pointer register plus signed offset.
 Operand_0 : $acc0 to $acc7
 Operand_1 : 13-bit signed immediate value (-4096,4095)
 Operand_2 : $ptr0 to $ptr7
@@ -141,6 +180,7 @@ Size      : 32
 Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[11:9]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
 
 Mnemonic  : stoff16
+Description: Store 16-bit register value to memory location pointer register plus signed offset.
 Operand_0 : $acc0l to $acc7h, $ptr0 to $ptr7
 Operand_1 : 13-bit signed immediate value (-4096,4095)
 Operand_2 : $ptr0 to $ptr7
@@ -149,6 +189,7 @@ Size      : 32
 Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[12:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
 
 Mnemonic  : stoff32
+Description: Store 32-bit register value to memory location pointer register plus signed offset.
 Operand_0 : $acc0 to $acc7
 Operand_1 : 13-bit signed immediate value (-4096,4095)
 Operand_2 : $ptr0 to $ptr7
@@ -157,6 +198,7 @@ Size      : 32
 Encoding  : {[31:30]=PR,[29]=T=1'b1,[28:26]=OP2,[25:13]=OP1,[11:9]=OP0,[7:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
 
 Mnemonic  : addptr16
+Description: Add signed immediate value to pointer register.
 Operand_0 : 13-bit signed immediate value (-4096,4095)
 Operand_1 : $ptr0 to $ptr7
 Operation : Operand_1 += Operand_0

@@ -143,6 +143,7 @@ insert_nop(void)
   {
     FOR_BB_INSNS (bb, insn)
       {
+#if 0
         if (NONDEBUG_INSN_P (insn) && GET_CODE(PATTERN(insn)) == SET && GET_CODE(SET_DEST(PATTERN(insn))) == REG
             && recog_memoized(insn) >= 0)
           {
@@ -155,6 +156,24 @@ insert_nop(void)
             insert_nop_bb_scan(insn, 0, maximal_insn_latency(insn), REGNO(SET_DEST(PATTERN(insn))), insn);
 
           }
+#else
+        if (NONDEBUG_INSN_P (insn) && recog_memoized(insn) >= 0)
+          {
+            if (single_set(insn))
+              {
+                if (GET_CODE(PATTERN(insn)) == SET && GET_CODE(SET_DEST(PATTERN(insn))) == REG)
+                  {
+                    insert_nop_bb_scan(insn, 0, maximal_insn_latency(insn), REGNO(SET_DEST(PATTERN(insn))), insn);
+                  }
+              }
+            else if (multiple_sets(insn))
+              {
+                /* open the parallel and for each set do the insert_nop_bb_scan() */
+                fprintf(stderr, "multiple_sets()\n");
+                debug_rtx(insn);
+              }
+          }
+#endif
       }
   }
 
@@ -172,7 +191,7 @@ void nop_delay_slots(void)
     {
       if ((JUMP_P(insn) || CALL_P(insn)) && get_attr_dslots(insn) != DSLOTS_0)
         {
-          int nnops = 2;
+          int nnops = 3;
           int i;
 
           for (i = 0; i < nnops; i++)
@@ -1200,35 +1219,22 @@ ajardsp_prologue(void)
 {
   int i;
 
-  /*printf("\nTotal frame size = %d\nRegister storage = %d\nArguments = %d\nFrame size = %d\n",4*(registers_to_be_saved()+3)+cfun->args_size+get_frame_size(),registers_to_be_saved()+3,cfun->args_size,get_frame_size());*/
-#if 0
-  emit_insn(gen_pushqi1(stack_pointer_rtx));
-  emit_insn(gen_pushqi1(hard_frame_pointer_rtx));
-
-  emit_move_insn(hard_frame_pointer_rtx, stack_pointer_rtx);
-
-  emit_insn(gen_rtx_SET(QImode, stack_pointer_rtx, plus_constant(stack_pointer_rtx, -get_frame_size())));
-#else
-
   emit_insn(gen_pushqi1(hard_frame_pointer_rtx));
   emit_move_insn(hard_frame_pointer_rtx, stack_pointer_rtx);
+
   if (1 || !leaf_function_p())
     {
       emit_insn(gen_pushqi1(gen_rtx_REG(QImode, AJARDSP_REGNO_RETPC)));
     }
-  if (1 || frame_pointer_needed)
+
+  if (get_frame_size() > 0)
     {
       emit_insn(gen_rtx_SET(QImode, hard_frame_pointer_rtx,
-                            plus_constant(hard_frame_pointer_rtx, -get_frame_size())));
+                            plus_constant(hard_frame_pointer_rtx, -(get_frame_size()  + 2 /* retpc */))));
+      emit_insn(gen_swap_spec_qi(stack_pointer_rtx, hard_frame_pointer_rtx));
+      emit_insn(gen_pushqi1(hard_frame_pointer_rtx));  /* stack pointer before locals */
     }
-  /* par - begin */
-  /* should be single insn in .md file */
-  emit_move_insn(stack_pointer_rtx, hard_frame_pointer_rtx);
-  emit_move_insn(hard_frame_pointer_rtx, stack_pointer_rtx);
-  /* par - end */
-  emit_insn(gen_pushqi1(hard_frame_pointer_rtx));  /* stack pointer before locals */
 
-#endif
   for(i=0;i<FIRST_PSEUDO_REGISTER;i++)
     {
       if(df_regs_ever_live_p(i) && !call_used_regs[i] && !fixed_regs[i])
@@ -1253,12 +1259,6 @@ ajardsp_epilogue(void)
 {
   int i;
 
-  /*printf("\nTotal frame size = %d\nRegister storage = %d\nArguments = %d\nFrame size = %d\n",
-    4*(registers_to_be_saved()+3)+cfun->args_size+get_frame_size(),
-    registers_to_be_saved()+3,
-    cfun->args_size,
-    get_frame_size());*/
-
   for(i=FIRST_PSEUDO_REGISTER-1; i >= 0; i--) /*Restore all the callee-registers from stack frame*/
     {
       if(df_regs_ever_live_p(i) && !call_used_regs[i] && !fixed_regs[i])
@@ -1276,20 +1276,19 @@ ajardsp_epilogue(void)
           }
         }
     }
-#if 0
-  emit_insn(gen_rtx_SET(QImode, stack_pointer_rtx, plus_constant(stack_pointer_rtx, get_frame_size())));
 
-  emit_insn(gen_popqi1(hard_frame_pointer_rtx));
-  emit_insn(gen_popqi1(stack_pointer_rtx));
-#else
-  emit_insn(gen_popqi1(stack_pointer_rtx));
+  if (get_frame_size() > 0)
+    {
+      emit_insn(gen_popqi1(stack_pointer_rtx));
+    }
+
   if (1 || !leaf_function_p())
     {
-
       emit_insn(gen_popqi1(gen_rtx_REG(QImode, AJARDSP_REGNO_RETPC)));
     }
+
   emit_insn(gen_popqi1(hard_frame_pointer_rtx));
-#endif
+
   /*Jump instruction*/
   emit_jump_insn(gen_ajardsp_return());
 }

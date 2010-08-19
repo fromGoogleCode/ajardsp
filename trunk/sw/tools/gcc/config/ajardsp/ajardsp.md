@@ -69,7 +69,7 @@
 ;;Definition of instruction attributes
 ;;====================================
 
-(define_attr "itype" "bmu,cu,cu_cmp,lsu,pcu"
+(define_attr "itype" "bmu,cu,cu_cmp,lsu,lsu_spec,lsu_all,pcu"
   (const_string "pcu"))
 
 (define_attr "isize" "1,2"
@@ -110,18 +110,19 @@
 ;; as dead register stores).
 (define_insn "ajardsp_return"
         [(return)
-         (use (reg:HI PTR4_REGNUM))
-         (use (reg:HI PTR5_REGNUM))
-         (use (reg:HI PTR6_REGNUM))
-         (use (reg:HI PTR7_REGNUM))
-         (use (reg:HI ACC4L_REGNUM))
-         (use (reg:HI ACC4H_REGNUM))
-         (use (reg:HI ACC5L_REGNUM))
-         (use (reg:HI ACC5H_REGNUM))
-         (use (reg:HI ACC6L_REGNUM))
-         (use (reg:HI ACC6H_REGNUM))
-         (use (reg:HI ACC7L_REGNUM))
-         (use (reg:HI ACC7H_REGNUM))
+	 (use (reg:QI RETPC_REGNUM))
+         (use (reg:QI PTR4_REGNUM))
+         (use (reg:QI PTR5_REGNUM))
+         (use (reg:QI PTR6_REGNUM))
+         (use (reg:QI PTR7_REGNUM))
+         (use (reg:QI ACC4L_REGNUM))
+         (use (reg:QI ACC4H_REGNUM))
+         (use (reg:QI ACC5L_REGNUM))
+         (use (reg:QI ACC5H_REGNUM))
+         (use (reg:QI ACC6L_REGNUM))
+         (use (reg:QI ACC6H_REGNUM))
+         (use (reg:QI ACC7L_REGNUM))
+         (use (reg:QI ACC7H_REGNUM))
          ]
         ""
         "rets"
@@ -273,7 +274,7 @@
    mvts16 %1, %0
    mvfs16 %0, %1
    dummy"
-  [(set_attr "itype" "lsu,lsu,lsu,lsu")
+  [(set_attr "itype" "lsu,lsu_spec,lsu_spec,lsu")
    (set_attr "isize" "1,2,2,1")])
 
 (define_insn "*mv_hi"
@@ -284,6 +285,34 @@
   "and32 %1, %1, %0"
   [(set_attr "itype" "bmu")
    (set_attr "isize" "2")])
+
+
+;; (define_insn "swap_spec_qi"
+;;   [(parallel
+;;     [(set (match_operand:QI 0 "register_operand" "=r")
+;; 	  (match_operand:QI 1 "register_operand" "=q"))
+;;      (set (match_dup 1)
+;; 	  (match_dup 0))]
+;;     )]
+;;   ""
+;;   "mvfs16 %0, %1 | mvts16 %0, %1"
+;;   [(set_attr "itype" "lsu_all")
+;;    (set_attr "isize" "2")])
+
+
+(define_insn "swap_spec_qi"
+  [(parallel
+    [(set (match_operand:QI 0 "register_operand" "=r,q")
+	  (match_operand:QI 1 "register_operand" "=q,r"))
+     (set (match_dup 1)
+	  (match_dup 0))]
+    )]
+  ""
+  "@
+   mvfs16 %0, %1 | mvts16 %0, %1
+   mvfs16 %1, %0 | mvts16 %1, %0"
+  [(set_attr "itype" "lsu_all,lsu_all")
+   (set_attr "isize" "2,2")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Push/pop stack operations
@@ -296,7 +325,7 @@
   "@
    push16 %0
    push16 %0"
-  [(set_attr "itype" "lsu,lsu")
+  [(set_attr "itype" "lsu,lsu_spec")
    (set_attr "isize" "1,1")])
 
 (define_insn "pushhi1"
@@ -314,7 +343,7 @@
   "@
    pop16 %0
    pop16 %0"
-  [(set_attr "itype" "lsu,lsu")
+  [(set_attr "itype" "lsu,lsu_spec")
    (set_attr "isize" "1,1")])
 
 (define_insn "pophi1"
@@ -760,6 +789,8 @@
 (define_cpu_unit "cu0" "ajardsp")
 (define_cpu_unit "cu1" "ajardsp")
 
+(define_cpu_unit "bus_spec" "ajardsp")
+
 (define_cpu_unit "islot0" "ajardsp")
 (define_cpu_unit "islot1" "ajardsp")
 (define_cpu_unit "islot2" "ajardsp")
@@ -789,6 +820,16 @@
   "two_islots+(lsu0|lsu1)")
 (define_insn_reservation "pcu_32" 1 (and (eq_attr "itype" "pcu") (eq_attr "isize"  "2"))
   "two_islots+pcu")
+
+(define_insn_reservation "lsu_16_spec"  2 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "1"))
+  "one_islot+(lsu0|lsu1)+bus_spec")
+(define_insn_reservation "lsu_32_spec" 2 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "2"))
+  "two_islots+(lsu0|lsu1)+bus_spec")
+
+(define_insn_reservation "lsu_32_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "2"))
+  "two_islots+lsu0+lsu1+bus_spec")
+
+
 
 ;; Local variables:
 ;; mode:emacs-lisp
