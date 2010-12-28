@@ -353,7 +353,8 @@ module lsu(clk,
    /*
     * Pipeline stage #0
     */
-   always @(inst_pipe_0_r or ptr_rd_data_i or acc_rd_data_i or sp_i or spec_regs_data_i or adder_res)
+   always @(inst_pipe_0_r or ptr_rd_data_i or ptr_2nd_rd_data_i or acc_rd_data_i or sp_i or
+            spec_regs_data_i or adder_res)
      begin
 	ptr_rd_en_o  = 0;
         ptr_rd_idx_o = 0;
@@ -456,7 +457,7 @@ module lsu(clk,
 	          else  /* $ptr */
 	            begin
                        ptr_2nd_rd_en_o = 1;
-                       ptr_2nd_rd_idx_o = inst_pipe_0_r[11:9];
+                       ptr_2nd_rd_idx_o = inst_pipe_0_r[10:8];
                        dmem_log_write_data_16 = ptr_2nd_rd_data_i;
 	            end
 	       end
@@ -552,7 +553,7 @@ module lsu(clk,
 	          else  /* $ptr */
 	            begin
                        ptr_2nd_rd_en_o = 1;
-                       ptr_2nd_rd_idx_o = inst_pipe_0_r[14:12];
+                       ptr_2nd_rd_idx_o = inst_pipe_0_r[13:11];
                        dmem_log_write_data_16 = ptr_2nd_rd_data_i;
 	            end
 

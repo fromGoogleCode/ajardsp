@@ -35,7 +35,7 @@
 `define UART_HALF_BIT_TIME 217
 
 module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
-               LCD_E, LCD_RS, LCD_RW, LCD_D);
+               LCD_E, LCD_RS, LCD_RW, LCD_D, IRQ);
 
    input clk;
    input rst;
@@ -46,6 +46,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
    output [3:0] LCD_D;
 
    output [7:0] LED;
+   input        IRQ;
+
    wire         rx_en;
    wire [7:0]   rx_byte;
 
@@ -159,7 +161,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
                          .ext_dmem_rd_en_i(dmem_ren),
 
                          .core_halt_o(core_halt_w),
-                         .gpio_o(gpio_w)
+                         .gpio_o(gpio_w),
+                         .interrupt_req_i(IRQ)
                          );
 
    always @(posedge clk)
