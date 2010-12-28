@@ -340,4 +340,49 @@ multiple of its size.
 \section{Load Store Unit (LSU) instructions}
 \input{lsu-insns.tex}
 
+\chapter{Software}
+\section{ABI}
+\subsection{Calling conventions}
+Four registers are reserved for passing non-pointer values and and
+additional four registers are reserved for passing pointer
+values. Additional arguments will be passed on the stack.
+
+Pointer values are passed in register \textbf{\$ptr0},
+\textbf{\$ptr1}, \textbf{\$ptr2} and \textbf{\$ptr3} (in that
+order). Pointer values are returned in \textbf{\$ptr0}.
+
+Non-pointer values are passed in register \textbf{\$acc0},
+\textbf{\$acc1}, \textbf{\$acc2} and \textbf{\$acc3} (in that
+order). 16-bit values are passed in the low part of the registers
+(\textbf{\$accNl}). Non-pointer values are returned in \textbf{\$acc0}
+(\textbf{\$acc0l} for 16-bit return values).
+
+\subsection{Stack layout}
+The stack grows towards a lower address. Depending on the requirements
+of the function there are a few different stack layouts. For functions
+that require stack slots (for local variables or spills) the layout
+depicted in figure \ref{figure-stack-frame} is used. If the function
+is a leaf function the retpc will not be stored. Similarly if no room
+for locals or spills is required then local variables section will not
+be present nor will the stack pointer be stored.
+\begin{figure}[!h]
+\begin{center}
+\begin{bytefield}{16}
+\wordbox{1}{Frame pointer} \\
+\wordbox{1}{Return PC} \\
+\wordbox[lrt]{1}{Local variables} \\
+\skippedwords \\
+\wordbox[lrb]{1}{} \\
+\wordbox{1}{Stack pointer} \\
+\wordbox[lrt]{1}{Callee saved registers} \\
+\skippedwords \\
+\wordbox[lrb]{1}{} \\
+\end{bytefield}
+\caption{Stack with frame for locals and spills}
+\label{figure-stack-frame}
+\end{center}
+\end{figure}
+
+
+
 \end{document}

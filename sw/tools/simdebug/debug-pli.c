@@ -62,6 +62,8 @@ Reg_t RegsOfInterest[] = {
   {"testbench.ajardsp_0.lsuregs_0.mod_1_o",    "$mod1",    -1, NULL},
   {"testbench.ajardsp_0.lsuregs_0.bitrev_o",   "$bitrev",  -1, NULL},
 
+  {"testbench.ajardsp_0.gpio_r",   "$gpio",  -1, NULL},
+
   {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr0", 0, NULL},
   {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr1", 1, NULL},
   {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr2", 2, NULL},

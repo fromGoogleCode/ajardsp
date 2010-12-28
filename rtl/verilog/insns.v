@@ -54,6 +54,9 @@ parameter PCU_ITYPE_BKREP    = 4'h1,
           PCU_ITYPE_CALL_ABS = 4'h2,
           PCU_ITYPE_RETS     = 4'h3,
           PCU_ITYPE_JUMP_ABS = 4'h4,
+          PCU_ITYPE_RETI     = 4'h5,
+          PCU_ITYPE_EINT     = 4'h6,
+          PCU_ITYPE_DINT     = 4'h7,
           PCU_ITYPE_HALT     = 4'hf;
 
 /**********************************************

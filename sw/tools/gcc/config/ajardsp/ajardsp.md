@@ -232,7 +232,7 @@
 
 (define_insn "*symbolic_address_load"
   [(set (match_operand:QI 0 "register_operand" "=r")
-        (match_operand:QI 1 "symbolic_operand" "S"))]
+        (match_operand:QI 1 "symbolic_operand" ""))]
   ""
   "ldimm16 %0, %s1"
   [(set_attr "itype" "lsu")
@@ -249,7 +249,7 @@
   "@
    st16 %0, %1
    stoff16 %a0, %1"
-  [(set_attr "itype" "lsu,lsu")
+  [(set_attr "itype" "lsu_all,lsu_all")  ;;FIXME: should _only_ be lsu_all if second operand is a $ptr register
    (set_attr "isize" "1,2")])
 
 (define_insn "*store_word_hi"
@@ -826,6 +826,8 @@
 (define_insn_reservation "lsu_32_spec" 2 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "2"))
   "two_islots+(lsu0|lsu1)+bus_spec")
 
+(define_insn_reservation "lsu_16_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "1"))
+  "one_islot+lsu0+lsu1+bus_spec")
 (define_insn_reservation "lsu_32_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "2"))
   "two_islots+lsu0+lsu1+bus_spec")
 

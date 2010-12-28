@@ -46,7 +46,9 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
                    core_halt_o,
 
-                   gpio_o
+                   gpio_o,
+
+                   interrupt_req_i
 
                    );
 
@@ -70,6 +72,8 @@ module ajardsp_top(clk, rst_core, rst_mem,
    output       core_halt_o;
 
    output [15:0] gpio_o;
+
+   input         interrupt_req_i;
 
    wire          jump_en_w;
    wire [15:0]   jump_pc_w;
@@ -100,6 +104,11 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [31:0]   inst_2;
    wire          inst_3_valid;
    wire [31:0]   inst_3;
+
+   wire          inst_0_valid_;
+   wire          inst_1_valid_;
+   wire          inst_2_valid_;
+   wire          inst_3_valid_;
 
    wire [2:0]    lsu_0_ptr_rd_idx_w;
    wire [15:0]   lsu_0_ptr_rd_data_w;
@@ -267,7 +276,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [15:0]   lsuregs_0_mod_0_w;
    wire [15:0]   lsuregs_0_mod_1_w;
 
-
+   wire          invalidate_insns_w;
 
    reg [15:0]    gpio_r;
 
@@ -276,10 +285,19 @@ module ajardsp_top(clk, rst_core, rst_mem,
    always @(posedge clk)
      begin
         if (rst_core)
-          gpio_r <= 0;
-        else if (spec_regs_waddr_w == SPEC_REGS_ADDR_GPIO)
-          gpio_r <= spec_regs_wr_data_w;
+          begin
+             gpio_r <= 0;
+          end
+        else if (spec_regs_wen_w && spec_regs_waddr_w == SPEC_REGS_ADDR_GPIO)
+          begin
+             gpio_r <= spec_regs_wr_data_w;
+          end
      end
+
+   assign inst_0_valid = inst_0_valid_ & ~invalidate_insns_w;
+   assign inst_1_valid = inst_1_valid_ & ~invalidate_insns_w;
+   assign inst_2_valid = inst_2_valid_ & ~invalidate_insns_w;
+   assign inst_3_valid = inst_3_valid_ & ~invalidate_insns_w;
 
    assign core_halt_o = pcu_0_dmem_0_halt_w;
 
@@ -311,13 +329,13 @@ module ajardsp_top(clk, rst_core, rst_mem,
                          .jump_enable(jump_en_w),
                          .jump_pc(jump_pc_w),
 
-                         .inst_0_valid(inst_0_valid),
+                         .inst_0_valid(inst_0_valid_),
                          .inst_0(inst_0),
-                         .inst_1_valid(inst_1_valid),
+                         .inst_1_valid(inst_1_valid_),
                          .inst_1(inst_1),
-                         .inst_2_valid(inst_2_valid),
+                         .inst_2_valid(inst_2_valid_),
                          .inst_2(inst_2),
-                         .inst_3_valid(inst_3_valid),
+                         .inst_3_valid(inst_3_valid_),
                          .inst_3(inst_3));
 
 
@@ -455,7 +473,10 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .spec_regs_ren_i(spec_regs_ren_w),
              .spec_regs_wen_i(spec_regs_wen_w),
              .spec_regs_data_i(spec_regs_wr_data_w),
-             .spec_regs_data_o(spec_regs_rd_data_w)
+             .spec_regs_data_o(spec_regs_rd_data_w),
+
+             .interrupt_req_i(interrupt_req_i),
+             .invalidate_insns_o(invalidate_insns_w)
              );
 
 

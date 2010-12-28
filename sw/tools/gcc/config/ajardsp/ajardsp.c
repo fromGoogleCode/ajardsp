@@ -1153,7 +1153,7 @@ ajardsp_asm_output_opcode (FILE *f, const char *ptr)
 int
 symbolic_operand (rtx op, enum machine_mode mode)
 {
-  if(GET_CODE(op) == SYMBOL_REF || GET_CODE(op) == LABEL_REF)
+  if(GET_CODE(op) == CONST || GET_CODE(op) == SYMBOL_REF || GET_CODE(op) == LABEL_REF)
     {
       return 1;
     }

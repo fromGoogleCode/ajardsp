@@ -43,6 +43,9 @@
 #define PCU_ITYPE_RETS     (0x3 << 4)
 #define PCU_ITYPE_JUMP_ABS (0x4 << 4)
 #define PCU_ITYPE_HALT     (0xf << 4)
+#define PCU_ITYPE_RETI     (0x5 << 4)
+#define PCU_ITYPE_EINT     (0x6 << 4)
+#define PCU_ITYPE_DINT     (0x7 << 4)
 
 #define BMU_OP_SIZE_16     (1 << 21)
 
@@ -1529,6 +1532,27 @@ inst_def_t ajardsp_insns[] = {
     .mnemonic = "rets",
     .size = INST_32,
     .pattern = PCU_ITYPE_RETS | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "reti",
+    .size = INST_32,
+    .pattern = PCU_ITYPE_RETI | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "eint",
+    .size = INST_32,
+    .pattern = PCU_ITYPE_EINT | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "dint",
+    .size = INST_32,
+    .pattern = PCU_ITYPE_DINT | FU_PCU,
     .nr_operands = 0,
   },
 
