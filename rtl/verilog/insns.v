@@ -33,9 +33,10 @@
 /**********************************************
  * General - begin
  **********************************************/
-parameter INSN_PAR_BIT  =  0,
-          INSN_SIZE_BIT =  1,
-          INSN_ENC_BIT  = 29;
+parameter INSN_PAR_BIT      =  0,
+          INSN_SIZE_BIT     =  1,
+          INSN_PRED_NEG_BIT = 28,
+          INSN_ENC_BIT      = 29;
 
 parameter ITYPE_PCU = 2'b00,
           ITYPE_LSU = 2'b01,
@@ -93,7 +94,9 @@ parameter LSU_ITYPE_MVTS_16   = 4'h1,
           LSU_ITYPE_LD_OFF_32 = 4'h5,
           LSU_ITYPE_ST_OFF_16 = 4'h6,
           LSU_ITYPE_ST_OFF_32 = 4'h7,
-          LSU_ITYPE_ADDPTR_16 = 4'h8;
+          LSU_ITYPE_ADDPTR_16 = 4'h8,
+          LSU_ITYPE_LD_IMM_PTR_16 = 4'h9,
+          LSU_ITYPE_LD_IMM_ACC_16 = 4'ha;
 
 /**********************************************
  * LSU - end

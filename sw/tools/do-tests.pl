@@ -36,7 +36,7 @@ $workdir = "workdir";
 $rtldir  = "../../rtl/verilog/";
 $crt_file = "../tools/crt.s";
 
-$cflags = " -O3 -fno-inline -minsert-nops -fdump-rtl-all";
+$cflags = " -Os -O3 -fno-inline -minsert-nops -fdump-rtl-all";
 
 $asm_pass_cnt = 0;
 $asm_fail_cnt = 0;
@@ -231,8 +231,6 @@ sub mems_match {
     $file_0 = $_[0];
     $file_1 = $_[1];
     $lines_to_cmp = $_[2];
-
-    print "$file_0, $file_1, $lines_to_cmp\n";
 
     open FILE_0, $file_0 or return 0;
     open FILE_1, $file_1 or return 0;

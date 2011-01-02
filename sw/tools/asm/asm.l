@@ -51,6 +51,7 @@ int lineno = 1;
 ".code" {last_state = current_state; current_state = code; BEGIN CODE;}
 ".data" {last_state = current_state; current_state = data; BEGIN DATA;}
 
+";#".*$       {lineno++;};
 "/*" {last_state = current_state; current_state = comment; BEGIN COMMENT;}
 <COMMENT>.    ;
 <COMMENT>\n   {lineno++;};
@@ -78,6 +79,7 @@ int lineno = 1;
 <CODE>"(" {if (lookfor_state == code_sections) return TOK_PAR_OPEN;}
 <CODE>")" {if (lookfor_state == code_sections) return TOK_PAR_CLOSE;}
 <CODE>"if" {if (lookfor_state == code_sections) return TOK_IF;}
+<CODE>"!"  {if (lookfor_state == code_sections) return TOK_NOT;}
 <CODE>".align" {if (lookfor_state == code_sections) return TOK_ALIGN;}
 
 <CODE>"$"[a-z0-9]+                  {if (lookfor_state == code_sections) {yylval.str  = strdup(&yytext[1]); return TOK_REGISTER;}}

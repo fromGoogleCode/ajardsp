@@ -87,6 +87,7 @@ module pcu(clk,
 
    reg [31:0] inst_pipe_0_r;
    reg [31:0] inst_pipe_1_r;
+   reg        pred_tst_bit_pipe_1_r;
 
    reg [15:0] retpc_r;
    reg [15:0] retipc_r;
@@ -100,6 +101,8 @@ module pcu(clk,
    reg [1:0]  dslot_r;
    reg [1:0]  interrupt_dslot_r;
    reg        interrupt_enable_r;
+
+   wire       pred_tst_bit_w;
 
    assign bkrep_en_w        = (bkrep_cnt_r != 0);
    assign bkrep_pc_at_end_w = (bkrep_end_pc_r == pc_i);
@@ -142,7 +145,7 @@ module pcu(clk,
      begin
         if (rst)
           begin
-             interrupt_enable_r <= 1;  /* FIXME: should start with interrupts off */
+             interrupt_enable_r <= 0;  /* FIXME: should start with interrupts off */
           end
         else if (interrupt_ack_o)
           begin
@@ -158,7 +161,7 @@ module pcu(clk,
                   interrupt_enable_r <= 1;
                end
                PCU_ITYPE_DINT: begin
-                  interrupt_enable_r <= 1;
+                  interrupt_enable_r <= 0;
                end
              endcase
           end
@@ -175,11 +178,11 @@ module pcu(clk,
           end
         else
           begin
-             if (PCU_ITYPE_BKREP == inst_pipe_0_r[7:4] && pred_tst_bit_i)
+             if (PCU_ITYPE_BKREP == inst_pipe_0_r[7:4])
                begin
                   bkrep_begin_pc_r <= pc_i;
                   bkrep_end_pc_r   <= inst_pipe_0_r[23:8];
-                  bkrep_cnt_r      <= inst_pipe_0_r[29:24];
+                  bkrep_cnt_r      <= inst_pipe_0_r[28:24];
                end
              else if (bkrep_en_w && bkrep_pc_at_end_w && !invalidate_insns_o)
                begin
@@ -189,6 +192,7 @@ module pcu(clk,
      end
 
    assign pred_tst_idx_o = inst_pipe_0_r[31:30];
+   assign pred_tst_bit_w = pred_tst_bit_i ^ inst_pipe_0_r[INSN_PRED_NEG_BIT];
 
    always @(posedge clk)
      begin
@@ -196,11 +200,13 @@ module pcu(clk,
 	  begin
 	     inst_pipe_0_r <= 0;
 	     inst_pipe_1_r <= 0;
+             pred_tst_bit_pipe_1_r <= 1;
 	  end
 	else
 	  begin
 	     inst_pipe_0_r <= inst;
              inst_pipe_1_r <= inst_pipe_0_r;
+             pred_tst_bit_pipe_1_r <= pred_tst_bit_w;
 	  end
      end // always @ (posedge clk)
 
@@ -222,7 +228,7 @@ module pcu(clk,
                begin
                   retpc_r <= spec_regs_data_i;
                end
-             else if (PCU_ITYPE_CALL_ABS == inst_pipe_1_r[7:4] && pred_tst_bit_i)
+             else if (PCU_ITYPE_CALL_ABS == inst_pipe_1_r[7:4] && pred_tst_bit_pipe_1_r)
                begin
                   retpc_r <= next_pc_i;
                end
@@ -250,7 +256,7 @@ module pcu(clk,
 
 
    // Combinatorial logic for jump_en and jump_pc
-   always @(inst_pipe_0_r or pred_tst_bit_i or bkrep_en_w or bkrep_pc_at_end_w or
+   always @(inst_pipe_0_r or pred_tst_bit_w or bkrep_en_w or bkrep_pc_at_end_w or
             bkrep_begin_pc_r or retpc_r or interrupt_req_i or dslot_r)
      begin
 
@@ -269,20 +275,20 @@ module pcu(clk,
              case (inst_pipe_0_r[7:4])
                PCU_ITYPE_CALL_ABS: begin
 	          jump_pc = inst_pipe_0_r[23:8];
-	          jump_en = pred_tst_bit_i;
+	          jump_en = pred_tst_bit_w;
 	       end
                PCU_ITYPE_RETS: begin
 	          jump_pc = retpc_r;
-	          jump_en = pred_tst_bit_i;
+	          jump_en = pred_tst_bit_w;
 	       end
                PCU_ITYPE_RETI: begin
 	          jump_pc = retipc_r;
-	          jump_en = pred_tst_bit_i;
+	          jump_en = pred_tst_bit_w;
 	       end
 
 	       PCU_ITYPE_JUMP_ABS: begin
 	          jump_pc = inst_pipe_0_r[23:8];
-	          jump_en = pred_tst_bit_i;
+	          jump_en = pred_tst_bit_w;
 	       end
                PCU_ITYPE_HALT: begin
                   halt_o = 1;
@@ -295,6 +301,6 @@ module pcu(clk,
              jump_en = 1;
              interrupt_ack_o = 1;
           end
-     end // always @ (inst_pipe_0_r or pred_tst_bit_i or bkrep_en_w or bkrep_pc_at_end_w)
+     end // always @ (inst_pipe_0_r or pred_tst_bit_w or bkrep_en_w or bkrep_pc_at_end_w)
 
 endmodule // pcu

@@ -75,3 +75,9 @@ ajardsp_sched_adjust_cost (rtx insn, rtx link, rtx dep_insn, int cost);
 
 extern void
 ajardsp_asm_function_prologue (FILE *file, HOST_WIDE_INT size ATTRIBUTE_UNUSED);
+
+extern const char *
+ajardsp_asm_output_opcode (FILE *f, const char *ptr);
+
+extern void
+ajardsp_asm_output_ascii(FILE *stream, char *ptr, int len);

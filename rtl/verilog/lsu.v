@@ -35,6 +35,9 @@ module lsu(clk,
 
 	   inst,
 
+           pred_tst_idx_o,
+           pred_tst_bit_i,
+
 	   ptr_rd_en_o,
 	   ptr_rd_idx_o,
 	   ptr_rd_data_i,
@@ -92,6 +95,9 @@ module lsu(clk,
    input clk;
    input rst;
    input [31:0] inst;
+
+   output [1:0] pred_tst_idx_o;
+   input        pred_tst_bit_i;
 
    output 	ptr_rd_en_o;
    reg 		ptr_rd_en_o;
@@ -198,6 +204,12 @@ module lsu(clk,
 
    reg [15:0]  curr_mask;
    reg [1:0]   mask_sel_array[0:7];
+
+   wire        commit_pipe_0_w;
+   reg         commit_pipe_1_r;
+
+   assign pred_tst_idx_o = inst_pipe_0_r[31:30];
+   assign commit_pipe_0_w = inst_pipe_0_r[INSN_SIZE_BIT] ? pred_tst_bit_i ^ inst_pipe_0_r[INSN_PRED_NEG_BIT] : 1;
 
    always @(ptr_rd_idx_o or mask_sel_i or mask_0_i or mask_1_i)
      begin
@@ -323,7 +335,6 @@ module lsu(clk,
           end
      end
 
-
    always @(posedge clk)
      begin
 	if (rst)
@@ -336,6 +347,7 @@ module lsu(clk,
              mv_16_r <= 16'h0;
              addptr_sum_pipe_r <= 0;
              ptr_post_inc_r <= 0;
+             commit_pipe_1_r <= 0;
 	  end
 	else
 	  begin
@@ -347,6 +359,7 @@ module lsu(clk,
              mv_16_r <= mv_16_w;
              addptr_sum_pipe_r <= addptr_sum;
              ptr_post_inc_r <= ptr_post_inc_w;
+             commit_pipe_1_r <= commit_pipe_0_w;
 	  end
      end
 
@@ -354,7 +367,7 @@ module lsu(clk,
     * Pipeline stage #0
     */
    always @(inst_pipe_0_r or ptr_rd_data_i or ptr_2nd_rd_data_i or acc_rd_data_i or sp_i or
-            spec_regs_data_i or adder_res)
+            spec_regs_data_i or adder_res or commit_pipe_0_w)
      begin
 	ptr_rd_en_o  = 0;
         ptr_rd_idx_o = 0;
@@ -392,10 +405,10 @@ module lsu(clk,
              if (inst_pipe_0_r[7:4] == LSU_ITYPE_ADDPTR_16)
 	       begin
 	          ptr_rd_en_o = 1;
-	          ptr_rd_idx_o = inst_pipe_0_r[28:26];
+	          ptr_rd_idx_o = inst_pipe_0_r[27:25];
 /*	          addptr_sum = ptr_rd_data_i +
-                               {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]}; */
-                  adder_mod_val = {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+                               {{3{inst_pipe_0_r[24]}}, inst_pipe_0_r[24:13]}; */
+                  adder_mod_val = {{4{inst_pipe_0_r[24]}}, inst_pipe_0_r[24:13]};
                   addptr_sum    = adder_res;
 	       end
 
@@ -403,25 +416,25 @@ module lsu(clk,
                  inst_pipe_0_r[7:4] == LSU_ITYPE_LD_OFF_32)
 	       begin
 	          ptr_rd_en_o = 1;
-	          ptr_rd_idx_o = inst_pipe_0_r[28:26];
+	          ptr_rd_idx_o = inst_pipe_0_r[27:25];
 	          dmem_log_read_en = 1;
                   dmem_log_size_16  = 1;
 	          dmem_log_addr = ptr_rd_data_i +
-                                  {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
-/*                  adder_mod_val = {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+                                  {{4{inst_pipe_0_r[24]}}, inst_pipe_0_r[24:13]};
+/*                  adder_mod_val = {{3{inst_pipe_0_r[24]}}, inst_pipe_0_r[24:13]};
                   dmem_log_addr = adder_res; */
 	       end
 
              if (inst_pipe_0_r[7:4] == LSU_ITYPE_ST_OFF_32)
 	       begin
 	          ptr_rd_en_o = 1;
-	          ptr_rd_idx_o = inst_pipe_0_r[28:26];
+	          ptr_rd_idx_o = inst_pipe_0_r[27:25];
 
-                  dmem_log_write_en = 1;
+                  dmem_log_write_en = 1 & commit_pipe_0_w;
                   dmem_log_size_16  = 0;
 	          dmem_log_addr = ptr_rd_data_i +
-                                  {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
-/*                  adder_mod_val = {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+                                  {{4{inst_pipe_0_r[24]}}, inst_pipe_0_r[24:13]};
+/*                  adder_mod_val = {{3{inst_pipe_0_r[24]}}, inst_pipe_0_r[24:13]};
                   dmem_log_addr = adder_res; */
 
 		  acc_rd_en_o = 1;
@@ -432,13 +445,13 @@ module lsu(clk,
              if (inst_pipe_0_r[7:4] == LSU_ITYPE_ST_OFF_16)
 	       begin
 	          ptr_rd_en_o = 1;
-	          ptr_rd_idx_o = inst_pipe_0_r[28:26];
+	          ptr_rd_idx_o = inst_pipe_0_r[27:25];
 
-                  dmem_log_write_en = 1;
+                  dmem_log_write_en = 1 & commit_pipe_0_w;
                   dmem_log_size_16  = 1;
                   dmem_log_addr = ptr_rd_data_i +
-                                  {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
-/*                  adder_mod_val = {{3{inst_pipe_0_r[25]}}, inst_pipe_0_r[25:13]};
+                                  {{4{inst_pipe_0_r[24]}}, inst_pipe_0_r[24:13]};
+/*                  adder_mod_val = {{4{inst_pipe_0_r[24]}}, inst_pipe_0_r[24:13]};
                   dmem_log_addr = adder_res; */
 
                   if (inst_pipe_0_r[12])  /* $acc */
@@ -530,7 +543,7 @@ module lsu(clk,
 	          ptr_rd_en_o = 1;
 	          ptr_rd_idx_o = inst_pipe_0_r[10:8];
 
-                  dmem_log_write_en = 1;
+                  dmem_log_write_en = 1 & commit_pipe_0_w;
                   dmem_log_size_16  = 1;
 	          dmem_log_addr = ptr_rd_data_i;
 /*                  ptr_post_inc_w = ptr_rd_data_i + 1; */
@@ -565,7 +578,7 @@ module lsu(clk,
 	          ptr_rd_en_o = 1;
 	          ptr_rd_idx_o = inst_pipe_0_r[10:8];
 
-                  dmem_log_write_en = 1;
+                  dmem_log_write_en = 1 & commit_pipe_0_w;
                   dmem_log_size_16  = 0;
 	          dmem_log_addr = ptr_rd_data_i;
 
@@ -636,7 +649,7 @@ module lsu(clk,
                   if (inst_pipe_0_r[8])  /* Push */
                     begin
                        push_en_o = 1;
-                       dmem_log_write_en = 1;
+                       dmem_log_write_en = 1 & commit_pipe_0_w;
                        dmem_log_write_data_32 = acc_rd_data_i;
 
                        if (inst_pipe_0_r[10])
@@ -687,7 +700,7 @@ module lsu(clk,
    always @(inst_pipe_1_r or addr_pipe_1_r or dmem_rd_data_i or
             dmem_log_read_data_16 or dmem_log_read_data_32 or
             spec_regs_data_i_r or spec_regs_data_o_r or mv_16_r or
-            addptr_sum_pipe_r or ptr_post_inc_r)
+            addptr_sum_pipe_r or ptr_post_inc_r or commit_pipe_1_r)
      begin
 	ptr_wr_en_o = 0;
 	ptr_wr_idx_o = 0;
@@ -707,41 +720,39 @@ module lsu(clk,
 
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_ADDPTR_16)
                begin
-                  ptr_wr_en_o   = 1;
-	          ptr_wr_idx_o  = inst_pipe_1_r[28:26];
+                  ptr_wr_en_o   = 1 & commit_pipe_1_r;
+	          ptr_wr_idx_o  = inst_pipe_1_r[27:25];
 	          ptr_wr_data_o = addptr_sum_pipe_r;
                end
 
-	     if (inst_pipe_1_r[7:4] == LSU_ITYPE_LD_IMM_16)
+	     if (inst_pipe_1_r[7:4] == LSU_ITYPE_LD_IMM_ACC_16)
 	       begin
-	          if (inst_pipe_1_r[12])
-	            begin
-		       acc_wr_en_o = 1;
-		       acc_wr_idx_o = inst_pipe_1_r[11:9];
-                       if (inst_pipe_1_r[8])
-                         begin
-		            acc_wr_data_o[31:16] = inst_pipe_1_r[28:13];
-                            acc_wr_mask_o = 2'b10;
-                         end
-                       else
-                         begin
-                            acc_wr_data_o[15:0] = inst_pipe_1_r[28:13];
-                            acc_wr_mask_o = 2'b01;
-                         end
-	            end
-	          else
-	            begin
-		       ptr_wr_en_o = 1;
-		       ptr_wr_idx_o = inst_pipe_1_r[10:8];
-		       ptr_wr_data_o = inst_pipe_1_r[28:13];
-	            end
+		  acc_wr_en_o = 1 & commit_pipe_1_r;
+		  acc_wr_idx_o = inst_pipe_1_r[11:9];
+                  if (inst_pipe_1_r[8])
+                    begin
+		       acc_wr_data_o[31:16] = inst_pipe_1_r[27:12];
+                       acc_wr_mask_o = 2'b10;
+                    end
+                  else
+                    begin
+                       acc_wr_data_o[15:0] = inst_pipe_1_r[27:12];
+                       acc_wr_mask_o = 2'b01;
+                    end
+	       end
+
+             if (inst_pipe_1_r[7:4] == LSU_ITYPE_LD_IMM_PTR_16)
+	       begin
+		  ptr_wr_en_o = 1 & commit_pipe_1_r;
+		  ptr_wr_idx_o = inst_pipe_1_r[10:8];
+		  ptr_wr_data_o = inst_pipe_1_r[27:12];
 	       end
 
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_LD_OFF_16)
 	       begin
 	          if (inst_pipe_1_r[12])
 	            begin
-		       acc_wr_en_o = 1;
+		       acc_wr_en_o = 1 & commit_pipe_1_r;
                        acc_wr_idx_o = inst_pipe_1_r[11:9];
                        if (inst_pipe_1_r[8])
                          begin
@@ -756,7 +767,7 @@ module lsu(clk,
 	            end
 	          else
 	            begin
-		       ptr_wr_en_o = 1;
+		       ptr_wr_en_o = 1 & commit_pipe_1_r;
 		       ptr_wr_idx_o = inst_pipe_1_r[10:8];
 		       ptr_wr_data_o = dmem_log_read_data_16;
 	            end
@@ -764,7 +775,7 @@ module lsu(clk,
 
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_LD_OFF_32)
 	       begin
-		  acc_wr_en_o   = 1;
+		  acc_wr_en_o   = 1 & commit_pipe_1_r;
                   acc_wr_idx_o  = inst_pipe_1_r[11:9];
 		  acc_wr_data_o = dmem_log_read_data_32;
                   acc_wr_mask_o = 2'b11;
@@ -773,7 +784,7 @@ module lsu(clk,
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_MVTS_16)
                begin
                   spec_regs_waddr_o = inst_pipe_1_r[18:13];
-                  spec_regs_wen_o  = 1;
+                  spec_regs_wen_o  = 1 & commit_pipe_1_r;
                   spec_regs_data_o = spec_regs_data_o_r;
                end
 
@@ -781,7 +792,7 @@ module lsu(clk,
                begin
 	          if (inst_pipe_1_r[12])  /* $acc */
 	            begin
-		       acc_wr_en_o = 1;
+		       acc_wr_en_o = 1 & commit_pipe_1_r;
 		       acc_wr_idx_o = inst_pipe_1_r[11:9];
 
                        if (inst_pipe_1_r[8])
@@ -797,7 +808,7 @@ module lsu(clk,
 	            end
                   else  /* $ptr */
                     begin
-                       ptr_wr_en_o   = 1;
+                       ptr_wr_en_o   = 1 & commit_pipe_1_r;
                        ptr_wr_idx_o  = inst_pipe_1_r[10:8];
                        ptr_wr_data_o = spec_regs_data_i_r;
                     end
@@ -811,13 +822,13 @@ module lsu(clk,
 	       begin
 	          if (inst_pipe_1_r[8])  /* mv $acc -> $ptr */
                     begin
-		       ptr_wr_en_o = 1;
+		       ptr_wr_en_o = 1 & commit_pipe_1_r;
 		       ptr_wr_idx_o = inst_pipe_1_r[11:9];
 		       ptr_wr_data_o = mv_16_r;
 	            end
 	          else  /* mv $ptr -> $acc */
                     begin
-		       acc_wr_en_o = 1;
+		       acc_wr_en_o = 1 & commit_pipe_1_r;
                        acc_wr_idx_o = inst_pipe_1_r[15:13];
                        if (inst_pipe_1_r[12])
                          begin
@@ -835,7 +846,7 @@ module lsu(clk,
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_MV_PTR_PTR_16)
 	       begin
                   begin
-		     ptr_wr_en_o = 1;
+		     ptr_wr_en_o = 1 & commit_pipe_1_r;
 		     ptr_wr_idx_o = inst_pipe_1_r[14:12];
 		     ptr_wr_data_o = mv_16_r;
 	          end
@@ -843,7 +854,7 @@ module lsu(clk,
 
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_MV_ACC_ACC_16)
 	       begin
-		  acc_wr_en_o = 1;
+		  acc_wr_en_o = 1 & commit_pipe_1_r;
                   acc_wr_idx_o = inst_pipe_1_r[11:9];
                   if (inst_pipe_1_r[8])
                     begin
@@ -862,7 +873,7 @@ module lsu(clk,
 	       begin
 	          if (inst_pipe_1_r[15])
 	            begin
-		       acc_wr_en_o = 1;
+		       acc_wr_en_o = 1 & commit_pipe_1_r;
                        acc_wr_idx_o = inst_pipe_1_r[14:12];
                        if (inst_pipe_1_r[11])
                          begin
@@ -877,14 +888,14 @@ module lsu(clk,
 	            end
 	          else
 	            begin
-		       ptr_wr_en_o = 1;
+		       ptr_wr_en_o = 1 & commit_pipe_1_r;
 		       ptr_wr_idx_o = inst_pipe_1_r[13:11];
 		       ptr_wr_data_o = dmem_log_read_data_16;
 	            end
 
                   if (inst_pipe_1_r[7:4] == LSU_ITYPE_LD_INC_16 && inst_pipe_1_r[15])
                     begin
-	               ptr_wr_en_o   = 1;
+	               ptr_wr_en_o   = 1 & commit_pipe_1_r;
 	               ptr_wr_idx_o  = inst_pipe_1_r[10:8];
 	               ptr_wr_data_o = ptr_post_inc_r;
                     end
@@ -893,14 +904,14 @@ module lsu(clk,
 	     if (inst_pipe_1_r[7:4] == LSU_ITYPE_LD_32 ||
                  inst_pipe_1_r[7:4] == LSU_ITYPE_LD_INC_32)
 	       begin
-		  acc_wr_en_o   = 1;
+		  acc_wr_en_o   = 1 & commit_pipe_1_r;
                   acc_wr_idx_o  = inst_pipe_1_r[13:11];
 		  acc_wr_data_o = dmem_log_read_data_32;
                   acc_wr_mask_o = 2'b11;
 
                   if (inst_pipe_1_r[7:4] == LSU_ITYPE_LD_INC_32)
                     begin
-                       ptr_wr_en_o   = 1;
+                       ptr_wr_en_o   = 1 & commit_pipe_1_r;
 	               ptr_wr_idx_o  = inst_pipe_1_r[10:8];
 	               ptr_wr_data_o = ptr_post_inc_r;
                     end
@@ -918,14 +929,14 @@ module lsu(clk,
                        if (inst_pipe_1_r[10])  /* $spec */
                          begin
                             spec_regs_waddr_o = inst_pipe_1_r[15:11];
-                            spec_regs_wen_o   = 1;
+                            spec_regs_wen_o   = 1 & commit_pipe_1_r;
                             spec_regs_data_o  = dmem_log_read_data_16;
                          end
                        else
                          begin
                             if (inst_pipe_1_r[15])  /* $acc */
 	                      begin
-		                 acc_wr_en_o = 1;
+		                 acc_wr_en_o = 1 & commit_pipe_1_r;
 		                 acc_wr_idx_o = inst_pipe_1_r[14:12];
                                  if (inst_pipe_1_r[9])  /* pop32 */
                                    begin
@@ -948,7 +959,7 @@ module lsu(clk,
 	                      end
 	                    else  /* $ptr */
 	                      begin
-                                 ptr_wr_en_o   = 1;
+                                 ptr_wr_en_o   = 1 & commit_pipe_1_r;
                                  ptr_wr_idx_o  = inst_pipe_1_r[13:11];
                                  ptr_wr_data_o = dmem_log_read_data_16;
 	                      end
@@ -958,14 +969,14 @@ module lsu(clk,
 
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_ST_INC_16 && inst_pipe_1_r[15])
                begin
-	          ptr_wr_en_o   = 1;
+	          ptr_wr_en_o   = 1 & commit_pipe_1_r;
 	          ptr_wr_idx_o  = inst_pipe_1_r[10:8];
 	          ptr_wr_data_o = ptr_post_inc_r;
                end
 
              if (inst_pipe_1_r[7:4] == LSU_ITYPE_ST_INC_32)
                begin
-                  ptr_wr_en_o   = 1;
+                  ptr_wr_en_o   = 1 & commit_pipe_1_r;
 	          ptr_wr_idx_o  = inst_pipe_1_r[10:8];
 	          ptr_wr_data_o = ptr_post_inc_r;
                end

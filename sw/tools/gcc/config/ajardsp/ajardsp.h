@@ -395,6 +395,9 @@ reg_ok_for_index_non_strict_p(x)
 #define ASM_OUTPUT_SKIP(STREAM, NBYTES)                                   \
          asm_output_skip(STREAM, NBYTES)
 
+#define ASM_OUTPUT_ASCII(STREAM, PTR, LEN)                                \
+ajardsp_asm_output_ascii(STREAM, PTR, LEN)
+
 #define PRINT_OPERAND(STREAM, X, CODE)                                    \
          print_operand(STREAM, X, CODE)
 
@@ -417,9 +420,9 @@ reg_ok_for_index_non_strict_p(x)
 function_profiler(file,lab)
 
 #define ASM_APP_ON                                                        \
-        "#APP"
+""
 #define ASM_APP_OFF                                                       \
-        "#NO_APP"
+""
 
 extern int target_flags;
 

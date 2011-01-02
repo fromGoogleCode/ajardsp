@@ -495,6 +495,11 @@ print_operand(FILE *STREAM,rtx X,char CODE)
         }
       break;
 
+    case 'J':
+      /* cond_exec */
+      gcc_assert(GET_CODE(X) == EQ || GET_CODE(X) == NE);
+      fprintf(STREAM, "if (%s%s)", GET_CODE(X) == EQ ? "" : "!", reg_names[REGNO(XEXP(X, 0))]);
+      break;
 
     default:
       printf("In print operand default");
@@ -586,6 +591,17 @@ print_operand_address(FILE *STREAM,rtx X)
         fprintf(STREAM,"Coming in default part of"
                 " print_operand_address");
       break;
+    }
+}
+
+void
+ajardsp_asm_output_ascii(FILE *stream, char *ptr, int len)
+{
+  int i;
+
+  for (i = 0; i < len; i++)
+    {
+      fprintf(stream, "\t.word\t%d\n", ptr[i]);
     }
 }
 
