@@ -57,6 +57,7 @@ extern int lineno;
 %token TOK_PAR_OPEN
 %token TOK_PAR_CLOSE
 %token TOK_IF
+%token TOK_NOT
 %token TOK_ALIGN
 
 %token <ival> TOK_INTEGER
@@ -177,6 +178,25 @@ instruction: TOK_MNEMONIC operand_list
              inst_p->pred = $3;
              inst_p->mnemonic = $5.str;
              inst_p->lineno = $5.lineno;
+             $$ = inst_p;
+           }
+           | TOK_IF TOK_PAR_OPEN TOK_NOT TOK_REGISTER TOK_PAR_CLOSE TOK_MNEMONIC operand_list
+           {
+             instruction_t *inst_p = calloc(1, sizeof(instruction_t));
+             inst_p->pred = $4;
+             inst_p->pred_neg = 1;
+             inst_p->mnemonic = $6.str;
+             inst_p->ops_p = $7;
+             inst_p->lineno = $6.lineno;
+             $$ = inst_p;
+           }
+	   | TOK_IF TOK_PAR_OPEN TOK_NOT TOK_REGISTER TOK_PAR_CLOSE TOK_MNEMONIC
+           {
+             instruction_t *inst_p = calloc(1, sizeof(instruction_t));
+             inst_p->pred = $4;
+             inst_p->pred_neg = 1;
+             inst_p->mnemonic = $6.str;
+             inst_p->lineno = $6.lineno;
              $$ = inst_p;
            }
 	   ;

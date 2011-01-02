@@ -1029,6 +1029,7 @@ static GtkWidget *CtrlWindow;
 static GtkWidget *SourceWindow;
 static GtkWidget *SourceScrollWindow;
 static GtkWidget *RegWindow;
+static GtkWidget *RegScrollWindow;
 static GtkWidget *MemWindow;
 static GtkWidget *MemScrollWindow;
 
@@ -1194,11 +1195,21 @@ void* GuiMainThread(void* arg_p)
 
   /* Register Window - begin */
   RegWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  RegScrollWindow = gtk_scrolled_window_new (NULL, NULL);
+
+  gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(RegScrollWindow),
+                                      GTK_SHADOW_ETCHED_IN);
+
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(RegScrollWindow),
+                                 GTK_POLICY_NEVER,
+                                 GTK_POLICY_AUTOMATIC);
+
   g_signal_connect(RegWindow, "delete_event", PreQuitCallBack, NULL);
 
   view = CreateRegisterViewAndModel();
 
-  gtk_container_add(GTK_CONTAINER(RegWindow), view);
+  gtk_container_add(GTK_CONTAINER(RegScrollWindow), view);
+  gtk_container_add(GTK_CONTAINER(RegWindow), RegScrollWindow);
   gtk_window_set_title(GTK_WINDOW(RegWindow), "Registers");
 
   gtk_widget_show_all(RegWindow);

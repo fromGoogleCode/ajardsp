@@ -65,6 +65,17 @@
   ]
 )
 
+;; Predication.  True iff this instruction can be predicated.
+(define_attr "predicable" "no,yes" (const_string "yes"))
+
+;; General predication pattern
+(define_cond_exec
+  [(match_operator 0 "predicate_operator"
+		   [(match_operand:BI 1 "pred_register_operand" "z")
+		    (const_int 0)])]
+  ""
+  "%J0")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Definition of instruction attributes
 ;;====================================
@@ -714,9 +725,10 @@
                         [(match_operand:QI 2 "register_operand" "d")
                          (match_operand:QI 3 "nonmemory_operand" "d")]))]
   ""
-  "cmp16%1 %2, %3, %0"
+  "cmp16%1 %3, %2, %0"
   [(set_attr "itype" "cu_cmp")
-   (set_attr "isize" "2")])
+   (set_attr "isize" "2")
+   (set_attr "predicable" "no")])
 
 (define_insn "mybranch"
   [(set (pc)
@@ -727,7 +739,8 @@
   ""
   "if (%0) bra #%l1"
 [(set_attr "itype" "pcu")
- (set_attr "dslots" "2")])
+ (set_attr "dslots" "2")
+ (set_attr "predicable" "no")])
 
 
 
@@ -740,7 +753,7 @@
                       (pc)))]
   ""
   {
-   rtx predbit = gen_reg_rtx(BImode); /*gen_rtx_REG(BImode, PRED1_REGNUM); */
+   rtx predbit = gen_reg_rtx(BImode);
 
    /* Compare instruction takes the comparison operator and its two operands. It
       produces a predicate register of BImode .*/
@@ -757,6 +770,29 @@
 )
 
 (define_expand "cstoreqi4"
+  [(set (match_operand:QI 0 "register_operand" "")
+        (match_operator 1 "comparison_operator"
+                        [(match_operand:QI 2 "register_operand" "")
+                         (match_operand:QI 3 "nonmemory_operand" "")]))]
+  ""
+  {
+   rtx predbit = gen_reg_rtx(BImode);
+
+   emit_insn(gen_mycmpqi(predbit, operands[1], operands[2], operands[3]));
+
+   emit_insn (gen_rtx_COND_EXEC (VOIDmode,
+				 gen_rtx_EQ (BImode, predbit, const0_rtx),
+				 gen_rtx_SET (QImode, operands[0], const1_rtx)));
+
+   emit_insn (gen_rtx_COND_EXEC (VOIDmode,
+				 gen_rtx_NE (BImode, predbit, const0_rtx),
+				 gen_rtx_SET (QImode, operands[0], const0_rtx)));
+
+   DONE;
+  }
+)
+
+(define_expand "cstorebi4"
   [(set (match_operand:BI 0 "pred_register_operand" "")
         (match_operator 1 "comparison_operator"
                         [(match_operand:QI 2 "register_operand" "")
@@ -771,6 +807,24 @@
    DONE;
   }
 )
+
+;; zero_extendbisi2
+
+(define_insn "zero_extendbiqi2"
+  [(set (match_operand:QI 0 "register_operand" "=d")
+	(zero_extend:QI (match_operand:BI 1 "pred_register_operand" "z")))]
+  ""
+  "zero_extendbiqi2"
+  )
+
+
+(define_insn "extendbiqi2"
+  [(set (match_operand:QI 0 "register_operand" "=d")
+	(sign_extend:QI (match_operand:BI 1 "pred_register_operand" "z")))]
+  ""
+  "sign_extendbiqi2"
+  )
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -814,8 +868,8 @@
   "two_islots+bmu")
 (define_insn_reservation "cu_32"  2 (and (eq_attr "itype"  "cu") (eq_attr "isize"  "2"))
   "two_islots+(cu0|cu1)")
-(define_insn_reservation "cu_cmp_32"  3 (and (eq_attr "itype"  "cu_cmp") (eq_attr "isize"  "2"))
-  "two_islots+(cu0|cu1)")
+(define_insn_reservation "cu_cmp_32"  2 (and (eq_attr "itype"  "cu_cmp") (eq_attr "isize"  "2"))
+  "two_islots+(cu0|cu1)")  ;; cmp to PCU latency is the problem, to CU/LSU/BMU should be one cycle faster
 (define_insn_reservation "lsu_32" 1 (and (eq_attr "itype" "lsu") (eq_attr "isize"  "2"))
   "two_islots+(lsu0|lsu1)")
 (define_insn_reservation "pcu_32" 1 (and (eq_attr "itype" "pcu") (eq_attr "isize"  "2"))
@@ -831,6 +885,7 @@
 (define_insn_reservation "lsu_32_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "2"))
   "two_islots+lsu0+lsu1+bus_spec")
 
+;;    (define_bypass number out_insn_names in_insn_names [guard])  ;; Define latencies for the pred bits. I.e. 1 for CU and BMU use, 2 for PCU use and 2 for LSU mem writes while 1 for remaining LSUs.
 
 
 ;; Local variables:

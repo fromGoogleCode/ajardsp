@@ -35,7 +35,9 @@
 `define UART_HALF_BIT_TIME 217
 
 module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
-               LCD_E, LCD_RS, LCD_RW, LCD_D, IRQ);
+               LCD_E, LCD_RS, LCD_RW, LCD_D,
+               IRQ,
+               ROT_A, ROT_B, ROT_CENTER);
 
    input clk;
    input rst;
@@ -47,6 +49,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
    output [7:0] LED;
    input        IRQ;
+
+   input        ROT_A, ROT_B, ROT_CENTER;
 
    wire         rx_en;
    wire [7:0]   rx_byte;
@@ -63,7 +67,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
    reg          core_halt_r;
    wire         core_halt_w;
 
-   reg [7:0]    imem_addr_r;
+   reg [7:0]    imem_addr_0_r;
+   reg [7:0]    imem_addr_1_r;
    reg [7:0]    imem_word_0_r;
    reg [7:0]    imem_word_1_r;
    reg [7:0]    imem_word_2_r;
@@ -75,7 +80,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
    wire [63:0]  imem_data_64_w;
    reg          imem_wen;
 
-   reg [7:0]    dmem_addr_r;
+   reg [7:0]    dmem_addr_0_r;
+   reg [7:0]    dmem_addr_1_r;
    reg [7:0]    dmem_byte0_r;
    reg [7:0]    dmem_byte1_r;
    reg [7:0]    dmem_byte2_r;
@@ -95,7 +101,7 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
              CMD_START     = 8'hc3,
              CMD_READ_DMEM = 8'hc4;
 
-   parameter S_WRITE_IMEM_ADDR   = 0,
+   parameter   S_WRITE_IMEM_ADDR_0 = 0,
                S_WRITE_IMEM_DATA_0 = 1,
                S_WRITE_IMEM_DATA_1 = 2,
                S_WRITE_IMEM_DATA_2 = 3,
@@ -105,23 +111,27 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
                S_WRITE_IMEM_DATA_6 = 7,
                S_WRITE_IMEM_DATA_7 = 8,
 
-               S_WRITE_DMEM_ADDR   = 9,
+               S_WRITE_DMEM_ADDR_0 = 9,
                S_WRITE_DMEM_DATA_0 = 11,
                S_WRITE_DMEM_DATA_1 = 12,
                S_WRITE_DMEM_DATA_2 = 13,
                S_WRITE_DMEM_DATA_3 = 14,
 
-               S_READ_DMEM_ADDR   = 15,
+               S_READ_DMEM_ADDR_0 = 15,
                S_READ_DMEM_DATA_0 = 16,
                S_READ_DMEM_DATA_1 = 17,
                S_READ_DMEM_DATA_2 = 18,
                S_READ_DMEM_DATA_3 = 19,
 
+               S_WRITE_IMEM_ADDR_1 = 21,
+               S_WRITE_DMEM_ADDR_1 = 22,
+               S_READ_DMEM_ADDR_1  = 23,
+
                S_IDLE = 20;
 
-   assign LCD_E       = gpio_w[6];
+   assign LCD_E       = gpio_w[4];
    assign LCD_RS      = gpio_w[5];
-   assign LCD_RW      = gpio_w[4];
+   assign LCD_RW      = 0;
    assign LCD_D[3:0]  = gpio_w[3:0];
 
    assign LED = rst ? 8'haa : {6'h0, core_halt_r, core_rst_r};
@@ -150,17 +160,19 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
                          .rst_core(rst | core_rst_r | core_halt_r),
                          .rst_mem(rst),
 
-                         .ext_imem_wr_addr_i(imem_addr_r),
+                         .ext_imem_wr_addr_i({imem_addr_1_r, imem_addr_0_r}),
                          .ext_imem_wr_data_i(imem_data_64_w),
                          .ext_imem_wr_en_i(imem_wen),
 
-                         .ext_dmem_addr_i(dmem_addr_r),
+//                         .ext_dmem_addr_i({dmem_addr_1_r, dmem_addr_0_r}),
+                         .ext_dmem_addr_i(dmem_addr_0_r),
                          .ext_dmem_wr_data_i(dmem_wr_data_32_w),
                          .ext_dmem_wr_en_i(dmem_wen),
                          .ext_dmem_rd_data_o(dmem_rd_data_32_w),
                          .ext_dmem_rd_en_i(dmem_ren),
 
                          .core_halt_o(core_halt_w),
+                         .gpio_i({13'h0, ROT_A, ROT_B, ROT_CENTER}),
                          .gpio_o(gpio_w),
                          .interrupt_req_i(IRQ)
                          );
@@ -188,7 +200,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
         if (rst) begin
            state <= S_IDLE;
-           dmem_addr_r <= 0;
+           dmem_addr_0_r <= 0;
+           dmem_addr_1_r <= 0;
            core_rst_r <= 1;
         end
         else if (rx_en) begin
@@ -198,13 +211,13 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
              S_IDLE: begin
                 case (rx_byte)
                   CMD_LOAD_IMEM: begin
-                     state <= S_WRITE_IMEM_ADDR;
+                     state <= S_WRITE_IMEM_ADDR_0;
                   end
                   CMD_LOAD_DMEM: begin
-                     state <= S_WRITE_DMEM_ADDR;
+                     state <= S_WRITE_DMEM_ADDR_0;
                   end
                   CMD_READ_DMEM: begin
-                     state <= S_READ_DMEM_ADDR;
+                     state <= S_READ_DMEM_ADDR_0;
                   end
                   CMD_RESET: begin
                      core_rst_r <= 1;
@@ -217,8 +230,13 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
              /* IMEM - load */
 
-             S_WRITE_IMEM_ADDR: begin
-                imem_addr_r <= rx_byte;
+             S_WRITE_IMEM_ADDR_0: begin
+                imem_addr_0_r <= rx_byte;
+                state <= S_WRITE_IMEM_ADDR_1;
+             end
+
+             S_WRITE_IMEM_ADDR_1: begin
+                imem_addr_1_r <= rx_byte;
                 state <= S_WRITE_IMEM_DATA_0;
              end
 
@@ -265,8 +283,13 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
              /* DMEM - load */
 
-             S_WRITE_DMEM_ADDR: begin
-                dmem_addr_r <= rx_byte;
+             S_WRITE_DMEM_ADDR_0: begin
+                dmem_addr_0_r <= rx_byte;
+                state <= S_WRITE_DMEM_ADDR_1;
+             end
+
+             S_WRITE_DMEM_ADDR_1: begin
+                dmem_addr_1_r <= rx_byte;
                 state <= S_WRITE_DMEM_DATA_0;
              end
 
@@ -293,8 +316,13 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
              /* DMEM - read */
 
-             S_READ_DMEM_ADDR: begin
-                dmem_addr_r <= rx_byte;
+             S_READ_DMEM_ADDR_0: begin
+                dmem_addr_0_r <= rx_byte;
+                state <= S_READ_DMEM_ADDR_1;
+             end
+
+             S_READ_DMEM_ADDR_1: begin
+                dmem_addr_1_r <= rx_byte;
                 state <= S_IDLE;
              end
 
@@ -341,7 +369,7 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
         case (dmem_read_state)
           dmem_read_wait: begin
-             if (state == S_READ_DMEM_ADDR)
+             if (state == S_READ_DMEM_ADDR_1)
                begin
                   dmem_read_next_state = dmem_read_wait2;
                end

@@ -92,12 +92,14 @@
 /* 32 bit encoding */
 #define LSU_ITYPE_MVTS_16    (0x1 << 4)
 #define LSU_ITYPE_MVFS_16    (0x2 << 4)
-#define LSU_ITYPE_LD_IMM_16  (0x3 << 4)
+//#define LSU_ITYPE_LD_IMM_16  (0x3 << 4)
 #define LSU_ITYPE_LD_OFF_16  (0x4 << 4)
 #define LSU_ITYPE_LD_OFF_32  (0x5 << 4)
 #define LSU_ITYPE_ST_OFF_16  (0x6 << 4)
 #define LSU_ITYPE_ST_OFF_32  (0x7 << 4)
 #define LSU_ITYPE_ADDPTR_16  (0x8 << 4)
+#define LSU_ITYPE_LD_IMM_PTR_16  (0x9 << 4)
+#define LSU_ITYPE_LD_IMM_ACC_16  (0xa << 4)
 
 #define INSN_ENC_32 (1 << 29)
 
@@ -1031,19 +1033,19 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "ldimm16",
     .size = INST_32,
-    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_16 | FU_LSU,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_ACC_16 | FU_LSU,
     .nr_operands = 2,
 
     .operands = {
       {
 	.type = REG,
 	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.width  = 4,
+	.encode = encode_acc_half,
       },
       {
 	.type = INTEGER,
-	.offset = 13,
+	.offset = 12,
 	.width  = 16,
 	.encode = encode_int,
       },
@@ -1053,19 +1055,41 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "ldimm16",
     .size = INST_32,
-    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_16 | FU_LSU,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_PTR_16 | FU_LSU,
     .nr_operands = 2,
 
     .operands = {
       {
 	.type = REG,
 	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.width  = 4,
+	.encode = encode_ptr,
+      },
+      {
+	.type = INTEGER,
+	.offset = 12,
+	.width  = 16,
+	.encode = encode_int,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "ldimm16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_PTR_16 | FU_LSU,
+    .nr_operands = 2,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 4,
+	.encode = encode_ptr,
       },
       {
 	.type = SYMBOL_REF,
-	.offset = 13,
+	.offset = 12,
 	.width  = 16,
 	.encode = encode_symref,
       },
@@ -1080,14 +1104,14 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_int,
       },
       {
@@ -1109,14 +1133,14 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
       {
 	.type = SYMBOL_REF,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_symref,
       },
       {
@@ -1138,14 +1162,14 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_int,
       },
       {
@@ -1166,14 +1190,14 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_int,
       },
       {
@@ -1194,14 +1218,14 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
       {
 	.type = SYMBOL_REF,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_symref,
       },
       {
@@ -1222,14 +1246,14 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_int,
       },
       {
@@ -1249,14 +1273,14 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_int,
       },
     },
@@ -1572,7 +1596,7 @@ inst_def_t ajardsp_insns[] = {
       {
 	.type = INTEGER,
 	.offset = 24,
-	.width  = 6,
+	.width  = 5,
 	.encode = encode_int,
       },
 

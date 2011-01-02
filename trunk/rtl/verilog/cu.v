@@ -408,7 +408,8 @@ module cu(clk,
    always @(inst_pipe_2_r or res_r or pred_tst_bit_i)
      begin
 	res_idx_o  = 0;
-	res_wen_o  = (inst_pipe_2_r[1] == 0 || pred_tst_bit_i) && inst_pipe_2_r[15:0] != 0;
+	res_wen_o  = (inst_pipe_2_r[1] == 0 || (pred_tst_bit_i ^ inst_pipe_2_r[INSN_PRED_NEG_BIT]))
+          && inst_pipe_2_r[15:0] != 0;
         res_mask_o = 3'b111;
 	res_data_o = res_r;
 

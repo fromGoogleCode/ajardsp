@@ -18,6 +18,9 @@
 ;; along with GCC; see the file COPYING3.  If not see
 ;; <http://www.gnu.org/licenses/>.
 
+(define_predicate "predicate_operator"
+  (match_code "eq,ne"))
+
 (define_predicate "pred_register_operand"
   (match_operand 0 "register_operand")
 {

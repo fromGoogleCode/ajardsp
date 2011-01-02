@@ -40,6 +40,8 @@
 
 #define DMEM_UNINIT_VALUE 0xdead;
 
+#define PRED_NEG_BIT (1 << 28)
+
 extern inst_def_t ajardsp_insns[];
 extern char *outfile;
 
@@ -68,8 +70,10 @@ struct {
   {"modsel",  8},
   {"mod0",    9},
   {"mod1",   10},
-
   {"bitrev", 11},
+
+  {"retipc", 12},
+  {"pred",   13},
 
   {"gpio",   31},
   {NULL, 0}
@@ -360,6 +364,9 @@ int try_assemble_inst_bundle(inst_bundle_t *ib_p)
           if (0 == strncmp(inst_p->pred, "pred", 4)) {
             int reg;
             reg = atoi(&inst_p->pred[4]);
+            if (inst_p->pred_neg) {
+              pattern |= PRED_NEG_BIT;
+            }
             pattern &= 0x3fffffff;
             pattern |= (reg & 0x3) << 30;
           }

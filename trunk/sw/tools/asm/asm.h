@@ -53,6 +53,7 @@ typedef struct operand {
 
 typedef struct instruction {
   char *pred;
+  int pred_neg;
   char *mnemonic;
   operand_t *ops_p;
   int lineno;

@@ -46,6 +46,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
                    core_halt_o,
 
+                   gpio_i,
                    gpio_o,
 
                    interrupt_req_i
@@ -71,6 +72,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    output       core_halt_o;
 
+   input  [15:0] gpio_i;
    output [15:0] gpio_o;
 
    input         interrupt_req_i;
@@ -282,6 +284,9 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    assign gpio_o   = gpio_r;
 
+   assign spec_regs_rd_data_w = (spec_regs_ren_w && spec_regs_raddr_w == SPEC_REGS_ADDR_GPIO)
+     ? gpio_i : 16'hzzzz;
+
    always @(posedge clk)
      begin
         if (rst_core)
@@ -454,7 +459,15 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
                    .wr_1_idx_i(cu_1_pred_0_wr_idx_w),
                    .wr_1_wen_i(cu_1_pred_0_wr_wen_w),
-                   .wr_1_bit_i(cu_1_pred_0_wr_bit_w));
+                   .wr_1_bit_i(cu_1_pred_0_wr_bit_w),
+
+                   .spec_regs_waddr_i(spec_regs_waddr_w),
+                   .spec_regs_raddr_i(spec_regs_raddr_w),
+                   .spec_regs_ren_i(spec_regs_ren_w),
+                   .spec_regs_wen_i(spec_regs_wen_w),
+                   .spec_regs_data_i(spec_regs_wr_data_w),
+                   .spec_regs_data_o(spec_regs_rd_data_w)
+                   );
 
 
    pcu pcu_0(.clk(clk),
@@ -545,11 +558,13 @@ module ajardsp_top(clk, rst_core, rst_mem,
                      .spec_regs_data_o(spec_regs_rd_data_w)
                      );
 
-
    lsu lsu_0(.clk(clk),
              .rst(rst_core),
 
              .inst(lsu_0_inst),
+
+             .pred_tst_idx_o(pred_0_lsu_0_rd_idx_w),
+             .pred_tst_bit_i(pred_0_lsu_0_rd_bit_w),
 
              //.ptr_rd_en_o(),
              .ptr_rd_idx_o(lsu_0_ptr_rd_idx_w),
@@ -604,6 +619,9 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .rst(rst_core),
 
              .inst(lsu_1_inst),
+
+             .pred_tst_idx_o(pred_0_lsu_1_rd_idx_w),
+             .pred_tst_bit_i(pred_0_lsu_1_rd_bit_w),
 
              //.ptr_rd_en_o(),
              .ptr_rd_idx_o(lsu_1_ptr_rd_idx_w),
