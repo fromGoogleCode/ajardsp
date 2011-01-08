@@ -18,6 +18,9 @@
    along with GCC; see the file COPYING3.  If not see
    <http://www.gnu.org/licenses/>. */
 
+
+extern const struct real_format ajardsp_single_format;
+
 /* ------------------------------------------------------------------------------*
  *                      Data Sizes, Layout and Memory                            *
  * ------------------------------------------------------------------------------*/
