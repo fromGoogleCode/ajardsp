@@ -40,6 +40,8 @@
 
 #define DMEM_UNINIT_VALUE 0xdead;
 
+#define PRED_NEG_BIT (1 << 28)
+
 extern inst_def_t ajardsp_insns[];
 extern char *outfile;
 
@@ -51,6 +53,7 @@ static uint16 imem_addr = 0;
 static uint16 dmem[0x10000];
 static uint16 dmem_addr = 0;
 
+static FILE *lineno_fp;
 struct {
   char *name;
   uint32 reg;
@@ -59,6 +62,21 @@ struct {
   {"sp", 2},
   {"satctrl", 3},
   {"mulsign", 4},
+
+  {"masksel", 5},
+  {"mask0",   6},
+  {"mask1",   7},
+
+  {"modsel",  8},
+  {"mod0",    9},
+  {"mod1",   10},
+  {"bitrev", 11},
+
+  {"retipc", 12},
+  {"pred",   13},
+  {"bkrepcnt",   14},
+
+  {"gpio",   31},
   {NULL, 0}
 };
 
@@ -347,6 +365,9 @@ int try_assemble_inst_bundle(inst_bundle_t *ib_p)
           if (0 == strncmp(inst_p->pred, "pred", 4)) {
             int reg;
             reg = atoi(&inst_p->pred[4]);
+            if (inst_p->pred_neg) {
+              pattern |= PRED_NEG_BIT;
+            }
             pattern &= 0x3fffffff;
             pattern |= (reg & 0x3) << 30;
           }
@@ -412,6 +433,11 @@ void init(void)
 
   imem_addr = 0;
 
+  {
+    char str[64];
+    sprintf(str, "%s.lineno", outfile);
+    lineno_fp = fopen(str, "w");
+  }
 }
 
 void output_hex(void)
@@ -548,6 +574,7 @@ int asm_do_pass_1(inst_bundle_t *ib_p, data_element_t *data_p)
       }
     }
     else {
+      fprintf(lineno_fp, "0x%04X:%d\n", imem_addr, ib_p->insts_p->lineno);
       if (RES_GOOD != try_assemble_inst_bundle(ib_p)) {
         fprintf(stderr, "Assemble failure for instruction packet starting around line: %d\n", ib_p->insts_p->lineno);
         exit(1);

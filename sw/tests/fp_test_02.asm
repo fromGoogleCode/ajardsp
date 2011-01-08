@@ -54,8 +54,11 @@ output:
         ldinc16 $ptr4, $acc1l
       | ldinc16 $ptr5, $acc0l
 
+	ldimm16 $ptr0, 4
+	mvts16 $ptr0, $bkrepcnt
+	nop
         /* Loop kernel */
-        bkrep #loop_end, 4
+        bkrep #loop_end
 
         fpadd $acc0l, $acc1l, $acc2l
         ldinc16 $ptr4, $acc1l

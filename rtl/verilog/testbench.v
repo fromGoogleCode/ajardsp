@@ -33,6 +33,24 @@
 module testbench;
 
    reg clk, rst;
+   wire interrupt;
+   wire [15:0] gpio_w;
+   reg [31:0]  cycle;
+
+
+`ifdef INTCYCLE
+   assign interrupt = (cycle == `INTCYCLE) ? 1'b1 : 1'b0;
+`else
+   assign interrupt = gpio_w[0];
+`endif
+
+   always @(posedge clk)
+     begin
+        if (rst)
+          cycle <= 0;
+        else
+          cycle <= cycle + 1;
+     end
 
    ajardsp_top ajardsp_0(.clk(clk),
                          .rst_core(rst),
@@ -48,7 +66,9 @@ module testbench;
                          .ext_dmem_rd_data_o(),
                          .ext_dmem_rd_en_i(0),
 
-                         .core_halt_o()
+                         .core_halt_o(),
+                         .gpio_o(gpio_w),
+                         .interrupt_req_i(interrupt)
                          );
 
 
@@ -59,6 +79,7 @@ module testbench;
 
       rst = 1;
       #5 rst = 0;
+
       #100000 $finish;
    end
 

@@ -34,6 +34,9 @@
 
 $workdir = "workdir";
 $rtldir  = "../../rtl/verilog/";
+$crt_file = "../tools/crt.s";
+
+$cflags = " -Os -O3 -fno-inline -minsert-nops -fdump-rtl-all";
 
 $asm_pass_cnt = 0;
 $asm_fail_cnt = 0;
@@ -42,8 +45,7 @@ $sim_fail_cnt = 0;
 $ver_pass_cnt = 0;
 $ver_fail_cnt = 0;
 
-
-$sim_command_base = "cver +incdir+$rtldir $rtldir/testbench.v $rtldir/ajardsp_top.v $rtldir/vliwfetch.v $rtldir/vliwdec.v $rtldir/pcu.v $rtldir/lsu.v $rtldir/sp.v $rtldir/ptrrf.v $rtldir/dmem.v $rtldir/imem.v $rtldir/accrf.v $rtldir/cu.v $rtldir/curegs.v $rtldir/int_addsub.v $rtldir/int_mul.v $rtldir/fp_add.v $rtldir/fp_mul.v $rtldir/pred.v";
+$sim_command_base = "cver +incdir+$rtldir $rtldir/testbench.v $rtldir/ajardsp_top.v $rtldir/vliwfetch.v $rtldir/vliwdec.v $rtldir/pcu.v $rtldir/lsu.v $rtldir/sp.v $rtldir/ptrrf.v $rtldir/dmem.v $rtldir/imem.v $rtldir/accrf.v $rtldir/cu.v $rtldir/bmu.v $rtldir/curegs.v $rtldir/int_addsub.v $rtldir/int_mul.v $rtldir/pred.v $rtldir/fp_add.v $rtldir/fp_mul.v";
 
 $debug = 0;
 $target = 0;
@@ -60,7 +62,7 @@ foreach $arg (@ARGV) {
         $verbose = 1;
     }
     else {
-        push(@asm_files, $arg);
+        push(@input_files, $arg);
     }
 }
 
@@ -70,13 +72,50 @@ if ($debug) {
 
 system("mkdir $workdir 2> /dev/null");
 
-if (!defined(@asm_files)) {
-    @asm_files = glob("*.asm");
+if (!defined(@input_files)) {
+    @input_files = glob("*.asm");
 }
 
-foreach $asm_file (@asm_files) {
-    $asm_file =~ /([^.]+)\.asm/;
-    $base_name = $1;
+foreach $input_file (@input_files) {
+
+    print "\n";
+
+    if ($input_file =~ /\.c$/) {
+        $input_file =~ /([^.]+)\.c/;
+        $base_name = $1;
+
+        # Before we do anything make sure that we start clean
+        system("rm -f $workdir/$base_name.*");
+
+        $intermediate_asm_file = "$workdir/$base_name.s";
+
+        $asm_file = $workdir . "/" . $base_name . ".asm";
+
+        if (0 == system("ajardsp-gcc -S -o $intermediate_asm_file $input_file $cflags > /dev/null 2> /dev/null")) {
+            printf("%-64s [PASSED]\n", "Compiling '$input_file'");
+        }
+        else {
+            printf("%-64s [FAILED]\n", "Compiling '$input_file'");
+            next;
+        }
+        system("cat $crt_file $intermediate_asm_file > $asm_file") && die "Failed to prepend $crt_file\n";
+
+        # Avoid comparing the stack area as it is likely to change
+        $mem_match_size = 0x1000/2;
+    }
+    elsif ($input_file =~ /\.asm$/) {
+        $input_file =~ /([^.]+)\.asm/;
+        $base_name = $1;
+
+        # Before we do anything make sure that we start clean
+        system("rm -f $workdir/$base_name.*");
+
+        $asm_file = $input_file;
+        $mem_match_size = 0x10000;
+    }
+    else {
+        die "Unknown file format for $input_file\n";
+    }
 
     $asm_command = "../tools/asm/ajardsp-asm -o=$workdir/$base_name $asm_file";
 
@@ -86,10 +125,6 @@ foreach $asm_file (@asm_files) {
 
     $sim_command = $sim_command_base . $sim_command_def;
 
-    # Before we do anything make sure that we start clean
-    system("rm -f $workdir/$base_name.*");
-
-    print "\n";
     #### Assemble - begin ####
     if (0 == system($asm_command)) {
         printf("%-64s [PASSED]\n", "Assembling '$asm_file'");
@@ -121,6 +156,9 @@ foreach $asm_file (@asm_files) {
         #### Simulation - begin ####
         print "Sim command: $sim_command\n" if $verbose;
 
+        @ENV{"AJARDSP_SIMDEBUG_ASM_PATH"}    = $asm_file;
+        @ENV{"AJARDSP_SIMDEBUG_LINENO_PATH"} = "$workdir/$base_name.lineno";
+
         open(SIM_CMD, "$sim_command |") or die "Can't run simulation command: $sim_command\n";
         @sim_stdout = <SIM_CMD>;
 
@@ -144,11 +182,11 @@ foreach $asm_file (@asm_files) {
         system("mv verilog.log $workdir/$base_name.verilog.log");
 
         if ($sim_errors == 0) {
-            printf("%-51s cycles=%-5d [PASSED]\n", "RTL simulation of DSP with input '$asm_file'", $sim_cycles);
+            printf("%-51s cycles=%-5d [PASSED]\n", "Simulation (RTL) with input '$asm_file'", $sim_cycles);
             $sim_pass_cnt++;
         }
         else {
-            printf("%-64s [->FAILED<-]\n", "Sim (RTL) DSP with input '$asm_file'");
+            printf("%-64s [->FAILED<-]\n", "Simulation (RTL) with input '$asm_file'");
             $sim_fail_cnt++;
             next;
         }
@@ -157,13 +195,20 @@ foreach $asm_file (@asm_files) {
 
     #### Verify - begin ####
     $ref_file = $base_name . ".ref";
-    if (-e $ref_file) {
-        if (0 == system("diff $ref_file $workdir/$base_name.res > /dev/null")) {
-            printf("%-64s [PASSED]\n", "Verifying DMEM contents after '$asm_file'");
+    $ref_file_comp = $ref_file . ".gz";
+
+    if (-e $ref_file || -e $ref_file_comp) {
+        if (-e $ref_file_comp) {
+            $ref_file = "$workdir/$ref_file";
+            system("zcat $ref_file_comp > $ref_file");
+        }
+#        if (0 == system("diff $ref_file $workdir/$base_name.res > /dev/null")) {
+        if (mems_match($ref_file, "$workdir/$base_name.res", $mem_match_size)) {
+            printf("%-64s [PASSED]\n", "Verifying DMEM contents ($mem_match_size words) after '$asm_file'");
             $ver_pass_cnt++;
         }
         else {
-            printf("%-64s [->FAILED<-]\n", "Verifying DMEM contents after '$asm_file'");
+            printf("%-64s [->FAILED<-]\n", "Verifying DMEM contents ($mem_match_size words) after '$asm_file'");
             $ver_fail_cnt++;
             next;
         }
@@ -179,3 +224,24 @@ printf("\nStatistics:\n" .
        $asm_pass_cnt, $asm_fail_cnt,
        $sim_pass_cnt, $sim_fail_cnt,
        $ver_pass_cnt, $ver_fail_cnt);
+
+
+sub mems_match {
+    $file_0 = $_[0];
+    $file_1 = $_[1];
+    $lines_to_cmp = $_[2];
+
+    open FILE_0, $file_0 or return 0;
+    open FILE_1, $file_1 or return 0;
+
+    @lines_0 = <FILE_0>;
+    @lines_1 = <FILE_1>;
+
+    for ($i = 0; $i < $lines_to_cmp; $i++) {
+        if ($lines_0[$i] != $lines_1[$i]) {
+            return 0;
+        }
+    }
+
+    return 1;
+}

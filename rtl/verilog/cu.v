@@ -39,12 +39,15 @@ module cu(clk,
           mulsign_i,
 
 	  op_0_idx_o,
+          op_0_ren_o,
 	  op_0_data_i,
 
 	  op_1_idx_o,
+          op_1_ren_o,
 	  op_1_data_i,
 
 	  op_2_idx_o,
+          op_2_ren_o,
 	  op_2_data_i,
 
 	  res_idx_o,
@@ -71,20 +74,24 @@ module cu(clk,
 
    output [2:0]	  op_0_idx_o;
    reg    [2:0]   op_0_idx_o;
-   input [31:0]   op_0_data_i;
+   output reg     op_0_ren_o;
+   input [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_0_data_i;
 
    output [2:0]   op_1_idx_o;
    reg    [2:0]   op_1_idx_o;
-   input [31:0]   op_1_data_i;
+   output reg     op_1_ren_o;
+   input [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_1_data_i;
 
    output [2:0]   op_2_idx_o;
    reg    [2:0]   op_2_idx_o;
-   input [31:0]   op_2_data_i;
+   output reg     op_2_ren_o;
+   input [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_2_data_i;
 
    output [2:0]   res_idx_o;
    output 	  res_wen_o;
-   output [1:0]	  res_mask_o;
-   output [31:0]  res_data_o;
+
+   output [2:0]	  res_mask_o;
+   output [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res_data_o;
 
    output [1:0]   pred_tst_idx_o;
    input          pred_tst_bit_i;
@@ -102,9 +109,9 @@ module cu(clk,
    reg [31:0] inst_pipe_3_r;
    reg [31:0] inst_pipe_4_r;
 
-   reg [31:0] op_0_r;
-   reg [31:0] op_1_r;
-   reg [31:0] op_2_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_0_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_1_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] op_2_r;
 
    reg [15:0] op_0_16_r;
    reg [15:0] op_1_16_r;
@@ -112,14 +119,14 @@ module cu(clk,
    reg        op_0_16_pos;
    reg        op_1_16_pos;
 
-   reg [31:0] res;
-   reg [31:0] res_r;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res_r;
 
-   reg [31:0]  addsub_op_0_w;
-   reg [31:0]  addsub_op_1_w;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] addsub_op_0_w;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] addsub_op_1_w;
    reg         addsub_sub_en_w;
    reg         addsub_sat_en_w;
-   wire [31:0] addsub_res_w;
+   wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] addsub_res_w;
 
    reg [15:0]  mul_op_0_w;
    reg [15:0]  mul_op_1_w;
@@ -138,14 +145,13 @@ module cu(clk,
 
    reg [2:0]   res_early_idx_w;
    reg         res_early_wen_w;
-   reg [1:0]   res_early_mask_w;
-   reg [15:0]  res_early_data_w;
+   reg [2:0]   res_early_mask_w;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res_early_data_w;
 
    reg [2:0]   res_late_idx_w;
    reg         res_late_wen_w;
-   reg [1:0]   res_late_mask_w;
-   reg [15:0]  res_late_data_w;
-
+   reg [2:0]   res_late_mask_w;
+   reg [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] res_late_data_w;
 
    int_addsub addsub(.op_a_i(addsub_op_0_w),
                      .op_b_i(addsub_op_1_w),
@@ -218,16 +224,7 @@ module cu(clk,
 
 	     op_0_r <= op_0_data_i;
              op_1_r <= op_1_data_i;
-
-             /* MAC16 specific CU local bypass logic */
-             if (op_2_idx_o == res_idx_o)
-               begin
-                  op_2_r <= res_r;
-               end
-             else
-               begin
-                  op_2_r <= op_2_data_i;
-               end
+             op_2_r <= op_2_data_i;
 
              if (op_0_16_pos)
                op_0_16_r <= op_0_data_i[31:16];
@@ -250,6 +247,10 @@ module cu(clk,
 	op_1_idx_o = 0;
         op_2_idx_o = 0;
 
+        op_0_ren_o = 0;
+	op_1_ren_o = 0;
+        op_2_ren_o = 0;
+
         op_0_16_pos = 0;
         op_1_16_pos = 0;
 
@@ -260,23 +261,29 @@ module cu(clk,
              case (inst_pipe_0_r[8:4])
                CU_ITYPE_CMP_16: begin
                   op_0_idx_o = inst_pipe_0_r[12:10];
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[9];
  	          op_1_idx_o = inst_pipe_0_r[16:14];
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[13];
                end
 
                CU_ITYPE_FP_ADD: begin
                   op_0_idx_o = inst_pipe_0_r[12:10];
                   op_0_16_pos = inst_pipe_0_r[9];
+                  op_0_ren_o = 1;
                   op_1_idx_o = inst_pipe_0_r[16:14];
                   op_1_16_pos = inst_pipe_0_r[13];
+                  op_1_ren_o = 1;
                end
 
                CU_ITYPE_FP_MUL: begin
                   op_0_idx_o = inst_pipe_0_r[12:10];
                   op_0_16_pos = inst_pipe_0_r[9];
+                  op_0_ren_o = 1;
                   op_1_idx_o = inst_pipe_0_r[16:14];
                   op_1_16_pos = inst_pipe_0_r[13];
+                  op_1_ren_o = 1;
                   fp_mul_begin_w = 1;
                end
              endcase // case (inst_pipe_0_r[7:4])
@@ -289,41 +296,54 @@ module cu(clk,
 
 	       CU_ITYPE_ADD_32: begin
 	          op_0_idx_o = inst_pipe_0_r[9:7];
+                  op_0_ren_o = 1;
 	          op_1_idx_o = inst_pipe_0_r[12:10];
+                  op_1_ren_o = 1;
 	       end
 
 	       CU_ITYPE_SUB_32: begin
 	          op_0_idx_o = inst_pipe_0_r[9:7];
+                  op_0_ren_o = 1;
 	          op_1_idx_o = inst_pipe_0_r[12:10];
+                  op_1_ren_o = 1;
 	       end
 
 	       CU_ITYPE_ADD_16: begin
 	          op_0_idx_o  = inst_pipe_0_r[10:8];
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[7];
 	          op_1_idx_o  = inst_pipe_0_r[14:12];
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[11];
 	       end
 
 	       CU_ITYPE_SUB_16: begin
 	          op_0_idx_o  = inst_pipe_0_r[10:8];
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[7];
 	          op_1_idx_o  = inst_pipe_0_r[14:12];
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[11];
 	       end
 
 	       CU_ITYPE_MPY_16: begin
 	          op_0_idx_o  = {1'b0, inst_pipe_0_r[9:8]};
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[7];
 	          op_1_idx_o  = {1'b0, inst_pipe_0_r[12:11]};
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[10];
 	       end
 
 	       CU_ITYPE_MAC_16: begin
 	          op_0_idx_o  = {1'b0, inst_pipe_0_r[9:8]};
+                  op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[7];
 	          op_1_idx_o  = {1'b0, inst_pipe_0_r[12:11]};
+                  op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[10];
                   op_2_idx_o  = inst_pipe_0_r[15:13];
+                  op_2_ren_o = 1;
 	       end
 
 	       default: begin
@@ -462,8 +482,9 @@ module cu(clk,
    always @(inst_pipe_2_r or res_r or pred_tst_bit_i)
      begin
 	res_early_idx_w  = 0;
-	res_early_wen_w  = (inst_pipe_2_r[1] == 0 || pred_tst_bit_i) && inst_pipe_2_r[15:0] != 0;
-        res_early_mask_w = 2'b11;
+	res_early_wen_w  = (inst_pipe_2_r[1] == 0 || (pred_tst_bit_i ^ inst_pipe_2_r[INSN_PRED_NEG_BIT]))
+          && inst_pipe_2_r[15:0] != 0;
+        res_early_mask_w = 3'b111;
 	res_early_data_w = res_r;
 
         pred_set_idx_o = 0;
@@ -499,6 +520,14 @@ module cu(clk,
  	            end
  	          endcase
                end
+
+               CU_ITYPE_FP_ADD: begin
+                  res_early_wen_w  = 0;
+               end
+
+               CU_ITYPE_FP_MUL: begin
+                  res_early_wen_w  = 0;
+               end
              endcase
           end
         else
@@ -517,17 +546,17 @@ module cu(clk,
 	       CU_ITYPE_ADD_16: begin
 	          res_early_idx_w = inst_pipe_2_r[10:8];
                   if (inst_pipe_2_r[7])
-                    res_early_mask_w = 2'b10;
+                    res_early_mask_w = 3'b010;
                   else
-                    res_early_mask_w = 2'b01;
+                    res_early_mask_w = 3'b001;
 	       end
 
 	       CU_ITYPE_SUB_16: begin
 	          res_early_idx_w = inst_pipe_2_r[10:8];
                   if (inst_pipe_2_r[7])
-                    res_early_mask_w = 2'b10;
+                    res_early_mask_w = 3'b010;
                   else
-                    res_early_mask_w = 2'b01;
+                    res_early_mask_w = 3'b001;
 	       end
 
 	       CU_ITYPE_MPY_16: begin
@@ -549,7 +578,7 @@ module cu(clk,
      begin
 	res_late_idx_w  = 0;
 	res_late_wen_w  = 0;  /* cannot be predicatable yet... */
-        res_late_mask_w = 2'b11;
+        res_late_mask_w = 3'b111;
 	res_late_data_w = 0;
 
         if (inst_pipe_4_r[INSN_SIZE_BIT] & inst_pipe_4_r[INSN_ENC_BIT])
@@ -560,9 +589,9 @@ module cu(clk,
                   res_late_data_w = fp_add_res_w;
                   res_late_idx_w = inst_pipe_4_r[20:18];
                   if (inst_pipe_4_r[17])
-                    res_late_mask_w = 2'b10;
+                    res_late_mask_w = 3'b010;
                   else
-                    res_late_mask_w = 2'b01;
+                    res_late_mask_w = 3'b001;
                end
 
  	       CU_ITYPE_FP_MUL: begin
@@ -570,9 +599,9 @@ module cu(clk,
                   res_late_data_w = fp_mul_res_w;
                   res_late_idx_w = inst_pipe_4_r[20:18];
                   if (inst_pipe_4_r[17])
-                    res_late_mask_w = 2'b10;
+                    res_late_mask_w = 3'b010;
                   else
-                    res_late_mask_w = 2'b01;
+                    res_late_mask_w = 3'b001;
                end
              endcase
           end

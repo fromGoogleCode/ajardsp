@@ -43,6 +43,7 @@ extern int lineno;
 %}
 
 %union {
+  struct {char *str; int lineno;} mnemonic;
   int ival;
   char *str;
   void *op_p;
@@ -56,10 +57,11 @@ extern int lineno;
 %token TOK_PAR_OPEN
 %token TOK_PAR_CLOSE
 %token TOK_IF
+%token TOK_NOT
 %token TOK_ALIGN
 
 %token <ival> TOK_INTEGER
-%token <str>  TOK_MNEMONIC
+%token <mnemonic>  TOK_MNEMONIC
 %token <str>  TOK_REGISTER
 %token <str>  TOK_SYMBOL_REF
 %token <str>  TOK_LABEL
@@ -148,34 +150,53 @@ instruction: TOK_MNEMONIC operand_list
            {
              instruction_t *inst_p = calloc(1, sizeof(instruction_t));
              inst_p->pred = NULL;
-             inst_p->mnemonic = $1;
+             inst_p->mnemonic = $1.str;
              inst_p->ops_p = $2;
-             inst_p->lineno = lineno;
+             inst_p->lineno = $1.lineno;
              $$ = inst_p;
            }
 	   | TOK_MNEMONIC
            {
              instruction_t *inst_p = calloc(1, sizeof(instruction_t));
              inst_p->pred = NULL;
-             inst_p->mnemonic = $1;
-             inst_p->lineno = lineno;
+             inst_p->mnemonic = $1.str;
+             inst_p->lineno = $1.lineno;
              $$ = inst_p;
            }
            | TOK_IF TOK_PAR_OPEN TOK_REGISTER TOK_PAR_CLOSE TOK_MNEMONIC operand_list
            {
              instruction_t *inst_p = calloc(1, sizeof(instruction_t));
              inst_p->pred = $3;
-             inst_p->mnemonic = $5;
+             inst_p->mnemonic = $5.str;
              inst_p->ops_p = $6;
-             inst_p->lineno = lineno;
+             inst_p->lineno = $5.lineno;
              $$ = inst_p;
            }
 	   | TOK_IF TOK_PAR_OPEN TOK_REGISTER TOK_PAR_CLOSE TOK_MNEMONIC
            {
              instruction_t *inst_p = calloc(1, sizeof(instruction_t));
              inst_p->pred = $3;
-             inst_p->mnemonic = $5;
-             inst_p->lineno = lineno;
+             inst_p->mnemonic = $5.str;
+             inst_p->lineno = $5.lineno;
+             $$ = inst_p;
+           }
+           | TOK_IF TOK_PAR_OPEN TOK_NOT TOK_REGISTER TOK_PAR_CLOSE TOK_MNEMONIC operand_list
+           {
+             instruction_t *inst_p = calloc(1, sizeof(instruction_t));
+             inst_p->pred = $4;
+             inst_p->pred_neg = 1;
+             inst_p->mnemonic = $6.str;
+             inst_p->ops_p = $7;
+             inst_p->lineno = $6.lineno;
+             $$ = inst_p;
+           }
+	   | TOK_IF TOK_PAR_OPEN TOK_NOT TOK_REGISTER TOK_PAR_CLOSE TOK_MNEMONIC
+           {
+             instruction_t *inst_p = calloc(1, sizeof(instruction_t));
+             inst_p->pred = $4;
+             inst_p->pred_neg = 1;
+             inst_p->mnemonic = $6.str;
+             inst_p->lineno = $6.lineno;
              $$ = inst_p;
            }
 	   ;
@@ -281,6 +302,8 @@ extern FILE *yyin;
 char *outfile;
 char *inputfile;
 
+enum {code_sections, data_sections} lookfor_state = code_sections;
+
 yyerror(const char *msg)
 {
   fprintf(stderr, "%s:%d: %s around '%s'\n", inputfile, lineno, msg, yytext);
@@ -295,8 +318,6 @@ void print_usage(void)
 int main(int argc, char **argv)
 {
   int i;
-
-  init();
 
   yyin = NULL;
 
@@ -328,11 +349,22 @@ int main(int argc, char **argv)
     print_usage();
   }
 
-  if (yyparse() == 0) {
-    inst_bundle_t *ib_p = code_section_p;
+  init();
 
-    if (RES_GOOD == asm_gen_opcodes(ib_p)) {
-      return 0;
+  /* Parse twice; once for .code sections and once for .data sections */
+
+  lookfor_state = code_sections;
+  lineno = 1;
+  if (yyparse() == 0) {
+    rewind(yyin);
+    lookfor_state = data_sections;
+    lineno = 1;
+    if (yyparse() == 0) {
+      inst_bundle_t *ib_p = code_section_p;
+
+      if (RES_GOOD == asm_gen_opcodes(ib_p)) {
+        return 0;
+      }
     }
   }
 

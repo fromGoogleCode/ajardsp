@@ -30,6 +30,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// Possible instruction bundles
+//
+// 4 = 2 + 2
+// 4 = 2 + 1 + 1
+// 4 = 1 + 2 + 1
+// 4 = 1 + 1 + 2
+// 4 = 1 + 1 + 1 + 1
+//
+// 3 = 2 + 1
+// 3 = 1 + 2
+// 3 = 1 + 1 + 1
+//
+// 2 = 2
+// 2 = 1 + 1
+//
+// 1 = 1
+//
+
 module vliwdec(vliw_inst,
                vliw_len,
                inst_0_valid,
@@ -64,6 +82,7 @@ module vliwdec(vliw_inst,
    reg           inst_3_valid;
    reg [31:0]    inst_3;
 
+   reg           invalid_packet;
 
    always @(vliw_inst)
      begin
@@ -81,6 +100,7 @@ module vliwdec(vliw_inst,
 
         inst_3_valid = 0;
         inst_3       = 32'h0;
+        invalid_packet = 0;
 
 
         if (vliw_inst[0] == 1)
@@ -95,7 +115,8 @@ module vliwdec(vliw_inst,
                        if (vliw_inst[33] == 1)
                          begin  //inst_1 32bits
                             // Invalid VLIW packet
-                            $stop;
+                            //$stop;
+                            invalid_packet = 1;
                          end
                        else
                          begin  //inst_1 16bits
@@ -103,7 +124,6 @@ module vliwdec(vliw_inst,
                             inst_2_valid = 1;
                             inst_2 = {16'h0, vliw_inst[63:48]};
                             vliw_len = 4;
-
                          end
                     end // if (vliw_inst[32] == 1)
                   else
@@ -138,10 +158,19 @@ module vliwdec(vliw_inst,
                             vliw_len = 3;
 
                             if (vliw_inst[32] == 1)
-                              begin  //inst_2 in prallel with inst_3
-                                 inst_3_valid = 1;
-                                 inst_3 = {16'h0, vliw_inst[63:48]};
-                                 vliw_len = 4;
+                              begin
+                                 begin //inst_2 in prallel with inst_3
+                                    inst_3_valid = 1;
+                                    inst_3 = {16'h0, vliw_inst[63:48]};
+                                    vliw_len = 4;
+                                 end
+                              end
+                            else
+                              begin
+                                 if (vliw_inst[33] == 1)
+                                   begin
+                                      vliw_len = 4;
+                                   end
                               end
 
                          end // else: !if(vliw_inst[17] == 1)

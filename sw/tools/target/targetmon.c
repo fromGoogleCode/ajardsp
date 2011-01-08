@@ -37,8 +37,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#define DMEM_SIZE 128
-#define IMEM_SIZE 128
+#define DMEM_SIZE 256
+#define IMEM_SIZE 1024
 
 #define CMD_WRITE_IMEM 0xc0
 #define CMD_WRITE_DMEM 0xc1
@@ -67,7 +67,7 @@ void target_start(int fd)
 void target_write_dmem(int fd, char* dmemfile, int length)
 {
   unsigned char cmd = CMD_WRITE_DMEM;
-  unsigned char addr = 0;
+  unsigned short addr = 0;
   int i;
   FILE* fp;
 
@@ -96,7 +96,7 @@ void target_write_dmem(int fd, char* dmemfile, int length)
     }
 
     addr+=2;
-    length--;
+    length-=2;
 
   }
   fclose(fp);
@@ -105,7 +105,7 @@ void target_write_dmem(int fd, char* dmemfile, int length)
 void target_read_dmem(int fd, char* filename, int read_length, int file_length)
 {
   unsigned char cmd = CMD_READ_DMEM;
-  unsigned char addr = 0;
+  unsigned short addr = 0;
   int i;
   FILE* fp;
 
@@ -138,7 +138,7 @@ void target_read_dmem(int fd, char* filename, int read_length, int file_length)
 void target_write_imem(int fd, char* imemfile, int length)
 {
   unsigned char cmd = CMD_WRITE_IMEM;
-  unsigned char addr = 0;
+  unsigned short addr = 0;
   int i;
   FILE* fp;
 
