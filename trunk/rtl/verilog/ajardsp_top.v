@@ -209,6 +209,10 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [2:0]    bmu_0_accrf_0_res_wr_mask_w;
    wire [`AJARDSP_CONFIG_ACC_GUARD_BITS+31:0] bmu_0_accrf_0_res_wr_data_w;
 
+   wire [2:0]    pcu_0_ptrrf_0_rd_idx_w;
+   wire          pcu_0_ptrrf_0_rd_en_w;
+   wire [31:0]   pcu_0_ptrrf_0_rd_data_w;
+
    wire [1:0]    pred_0_pcu_0_rd_idx_w;
    wire          pred_0_pcu_0_rd_bit_w;
 
@@ -307,7 +311,8 @@ module ajardsp_top(clk, rst_core, rst_mem,
    assign core_halt_o = pcu_0_dmem_0_halt_w;
 
    assign lsu_0_ptr_2nd_rd_data_w = lsu_1_ptr_rd_data_w;
-   assign lsu_0_lsu_1_ptr_rd_idx_w = lsu_0_ptr_2nd_rd_en_w ? lsu_0_ptr_2nd_rd_idx_w : lsu_1_ptr_rd_idx_w;
+/*   assign pcu_0_ptrrf_0_rd_data_w = lsu_1_ptr_rd_data_w; */
+   assign lsu_0_lsu_1_ptr_rd_idx_w = /* pcu_0_ptrrf_0_rd_en_w ? pcu_0_ptrrf_0_rd_idx_w : */ (lsu_0_ptr_2nd_rd_en_w ? lsu_0_ptr_2nd_rd_idx_w : lsu_1_ptr_rd_idx_w);
 
    imem imem_0(.clk(clk),
                .rst(rst_mem),
@@ -489,7 +494,11 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .spec_regs_data_o(spec_regs_rd_data_w),
 
              .interrupt_req_i(interrupt_req_i),
-             .invalidate_insns_o(invalidate_insns_w)
+             .invalidate_insns_o(invalidate_insns_w),
+
+             .ptr_rd_en_o(pcu_0_ptrrf_0_rd_en_w),
+             .ptr_rd_idx_o(pcu_0_ptrrf_0_rd_idx_w),
+             .ptr_rd_data_i(pcu_0_ptrrf_0_rd_data_w)
              );
 
 

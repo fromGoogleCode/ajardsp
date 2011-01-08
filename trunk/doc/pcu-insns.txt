@@ -1,0 +1,79 @@
+assign true_32bit_insn = insn[1] & insn[29];
+
+16 bit instructions have 4 operation encoding bits (currently  in use out of 16)
+32 bit instructions have 4 operation encoding bits (currently  in use out of 16)
+
+
+16-bit instructions:
+-------------------
+
+Mnemonic  : eint
+Description: Enable interrupts.
+Operation : InterruptFlag = 1
+Size      : 16
+Encoding  : {[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : dint
+Description: Disable interrupts.
+Operation : InterruptFlag = 0
+Size      : 16
+Encoding  : {[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b0,[0]=P}
+
+Mnemonic  : calla
+Description: Call function with absolute address from register
+Operand_0 : $ptr0-$ptr7
+Operation : RETPC = PC; PC = Operand_0
+Size      : 16
+Encoding  : {[13:12]=DS,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : bra
+Description: Branch to address from register
+Operand_0 : $ptr0-$ptr7
+Operation : PC = Operand_0
+Size      : 16
+Encoding  : {[13:12]=DS,[10:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : rets
+Description: Return from subroutine
+Operation : PC = RETPC
+Size      : 16
+Encoding  : {[13:12]=DS,[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : reti
+Description: Return from interrupt
+Operation : PC = RETIPC
+Size      : 16
+Encoding  : {[13:12]=DS,[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : halt
+Description: Halt execution
+Operation : HALT
+Size      : 16
+Encoding  : {[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b1,[0]=P}
+
+
+
+32-bit instructions:
+-------------------
+
+Mnemonic  : calla
+Description: Call function with immediate absolute address
+Operand_0 : 16 bit immediate value
+Operation : RETPC = PC; PC = Operand_0
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28]=PRI,[25:24]=DS,[23:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : bra
+Description: Branch to immediate absolute address
+Operand_0 : 16 bit immediate value
+Operation : PC = Operand_0
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28]=PRI,[25:24]=DS,[23:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : bkrep
+Description: Begin block-repeat loop
+Operand_0 : Immediate symbolic value for block-repeat end address (two instruction packets before actual loop-end)
+Operand_1 : Iteration count from $ptr0-$ptr7
+Operation :
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T=1'b1,[28]=PRI,[26:24]=OP1,[23:8]=OP0,[7:4]=IC=,[3:2]=FU=2'b00,[1]=S=1'b1,[0]=P}

@@ -58,8 +58,11 @@ output:
         ldinc32 $ptr6, $acc3
       | ldinc32 $ptr7, $acc2
 
+        ldimm16 $ptr3, 7
+	mvts16 $ptr3, $bkrepcnt
+	nop
         /* Loop kernel */
-        bkrep #loop_end, 7
+        bkrep #loop_end
 
         mac16 $acc1l, $acc0l, $acc4
       | mac16 $acc1h, $acc0h, $acc5

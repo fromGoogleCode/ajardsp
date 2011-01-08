@@ -82,6 +82,7 @@ module vliwdec(vliw_inst,
    reg           inst_3_valid;
    reg [31:0]    inst_3;
 
+   reg           invalid_packet;
 
    always @(vliw_inst)
      begin
@@ -99,6 +100,7 @@ module vliwdec(vliw_inst,
 
         inst_3_valid = 0;
         inst_3       = 32'h0;
+        invalid_packet = 0;
 
 
         if (vliw_inst[0] == 1)
@@ -113,7 +115,8 @@ module vliwdec(vliw_inst,
                        if (vliw_inst[33] == 1)
                          begin  //inst_1 32bits
                             // Invalid VLIW packet
-                            $stop;
+                            //$stop;
+                            invalid_packet = 1;
                          end
                        else
                          begin  //inst_1 16bits
@@ -121,7 +124,6 @@ module vliwdec(vliw_inst,
                             inst_2_valid = 1;
                             inst_2 = {16'h0, vliw_inst[63:48]};
                             vliw_len = 4;
-
                          end
                     end // if (vliw_inst[32] == 1)
                   else
