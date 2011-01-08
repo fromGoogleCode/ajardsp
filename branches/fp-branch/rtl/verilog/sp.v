@@ -129,13 +129,13 @@ module sp(clk, rst,
                begin
                   sp_r <= spec_regs_data_i;
                end
-             else if (push_1_en_i || pop_0_en_i)
-               begin
-                  sp_r <= sp_1_o;
-               end
              else if (pop_1_en_i)
                begin
                   sp_r <= sp_1_o + width_1_i;
+               end
+             else if (push_1_en_i || pop_0_en_i)
+               begin
+                  sp_r <= sp_1_o;
                end
              else if (push_0_en_i)
                begin

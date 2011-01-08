@@ -1,0 +1,15 @@
+mhwloop
+Target Report Mask(HWLOOP)
+Generate HW loop instructions when possible.
+
+mvliw-pack
+Target Report Mask(VLIW_PACK)
+Bundle instructions into VLIW packets.
+
+mdis-pro-epilogue
+Target Report Mask(DIS_PROEPILOGUE)
+Disable generation of prologe and epiloge instructions.
+
+minsert-nops
+Target Report Mask(INSERT_NOPS)
+Insert NOP instructions to satisfy pipeline restrictions.

@@ -1,0 +1,131 @@
+assign true_32bit_insn = insn[1] & insn[29];
+
+16 bit instructions have 3 operation encoding bits (currently 0 in use out of 8)
+32 bit instructions have 5 operation encoding bits (currently 0 in use out of 32)
+
+Mnemonic  : and32
+Description: Performs logical and of two 32-bit register operands and stores the result into a third register operand.
+Operand_0 : $acc0 to $acc7   (3 bits)
+Operand_1 : $acc0 to $acc7   (3 bits)
+Operand_2 : $acc0 to $acc7   (3 bits)
+Operation : Operand_2 = Operand_0 AND Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : or32
+Description: Performs logical or of two 32-bit register operands and stores the result into a third register operand.
+Operand_0 : $acc0 to $acc7   (3 bits)
+Operand_1 : $acc0 to $acc7   (3 bits)
+Operand_2 : $acc0 to $acc7   (3 bits)
+Operation : Operand_2 = Operand_0 OR Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : xor32
+Description: Performs logical exclusive or of two 32-bit register operands and stores the result into a third register operand.
+Operand_0 : $acc0 to $acc7   (3 bits)
+Operand_1 : $acc0 to $acc7   (3 bits)
+Operand_2 : $acc0 to $acc7   (3 bits)
+Operation : Operand_2 = Operand_0 XOR Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : not32
+Description: Performs logical not of one 32-bit register operand and stores the result into a second register operand.
+Operand_0 : $acc0 to $acc7   (3 bits)
+Operand_2 : $acc0 to $acc7   (3 bits)
+Operation : Operand_2 = NOT Operand_0
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : shiftra32
+Description: Performs arithmetic right shift of a 32-bit register operand and stores the result into a second register operand. The shift amount is given by a 16-bit register.
+Operand_0 : $acc0 to $acc7   (3 bits)
+Operand_1 : $acc0l to $acc7h (4 bits)
+Operand_2 : $acc0 to $acc7   (3 bits)
+Operation : Operand_2 = Operand_0 SHIFT Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[23]=ShiftDirLeft=1'b0,[22]=ShiftArith=1'b1,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : shiftll32
+Description: Performs logical left shift of a 32-bit register operand and stores the result into a second register operand. The shift amount is given by a 16-bit register.
+Operand_0 : $acc0 to $acc7   (3 bits)
+Operand_1 : $acc0l to $acc7h (4 bits)
+Operand_2 : $acc0 to $acc7   (3 bits)
+Operation : Operand_2 = Operand_0 SHIFT Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[23]=ShiftDirLeft=1'b1,[22]=ShiftArith=1'b0,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : shiftrl32
+Description: Performs logical right shift of a 32-bit register operand and stores the result into a second register operand. The shift amount is given by a 16-bit register.
+Operand_0 : $acc0 to $acc7   (3 bits)
+Operand_1 : $acc0l to $acc7h (4 bits)
+Operand_2 : $acc0 to $acc7   (3 bits)
+Operation : Operand_2 = Operand_0 SHIFT Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[23]=ShiftDirLeft=1'b0,[22]=ShiftArith=1'b0,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+
+
+Mnemonic  : and16
+Description: Performs logical and of two 16-bit register operands and stores the result into a third register operand.
+Operand_0 : $acc0l to $acc7h   (4 bits)
+Operand_1 : $acc0l to $acc7h   (4 bits)
+Operand_2 : $acc0l to $acc7h   (4 bits)
+Operation : Operand_2 = Operand_0 AND Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16=1'b1,[20:17]=OP2,[16:13]=OP1,[12:9]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : or16
+Description: Performs logical or of two 16-bit register operands and stores the result into a third register operand.
+Operand_0 : $acc0l to $acc7h   (4 bits)
+Operand_1 : $acc0l to $acc7h   (4 bits)
+Operand_2 : $acc0l to $acc7h   (4 bits)
+Operation : Operand_2 = Operand_0 OR Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16=1'b1,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : xor16
+Description: Performs logical exclusive or of two 16-bit register operands and stores the result into a third register operand.
+Operand_0 : $acc0l to $acc7h   (4 bits)
+Operand_1 : $acc0l to $acc7h   (4 bits)
+Operand_2 : $acc0l to $acc7h   (4 bits)
+Operation : Operand_2 = Operand_0 XOR Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16=1'b1,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : not16
+Description: Performs logical not of one 16-bit register operand and stores the result into a second register operand.
+Operand_0 : $acc0l to $acc7h   (4 bits)
+Operand_1 : $acc0l to $acc7h   (4 bits)
+Operand_2 : $acc0l to $acc7h   (4 bits)
+Operation : Operand_2 = NOT Operand_0
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[21]=OPSize16=1'b1,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : shiftra16
+Description: Performs arithmetic right shift of a 16-bit register operand and stores the result into a second register operand. The shift amount is given by a 16-bit register.
+Operand_0 : $acc0l to $acc7h (4 bits)
+Operand_1 : $acc0l to $acc7h (4 bits)
+Operand_2 : $acc0l to $acc7h (4 bits)
+Operation : Operand_2 = Operand_0 SHIFT Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[23]=ShiftDirLeft=1'b0,[22]=ShiftArith=1'b1,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : shiftll16
+Description: Performs logical left shift of a 16-bit register operand and stores the result into a second register operand. The shift amount is given by a 16-bit register.
+Operand_0 : $acc0l to $acc7h (4 bits)
+Operand_1 : $acc0l to $acc7h (4 bits)
+Operand_2 : $acc0l to $acc7h (4 bits)
+Operation : Operand_2 = Operand_0 SHIFT Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[23]=ShiftDirLeft=1'b1,[22]=ShiftArith=1'b0,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}
+
+Mnemonic  : shiftrl16
+Description: Performs logical right shift of a 16-bit register operand and stores the result into a second register operand. The shift amount is given by a 16-bit register.
+Operand_0 : $acc0l to $acc7h (4 bits)
+Operand_1 : $acc0l to $acc7h (4 bits)
+Operand_2 : $acc0l to $acc7h (4 bits)
+Operation : Operand_2 = Operand_0 SHIFT Operand_1
+Size      : 32
+Encoding  : {[31:30]=PR,[29]=T,[23]=ShiftDirLeft=1'b0,[22]=ShiftArith=1'b0,[21]=OPSize16,[20:18]=OP2,[16:14]=OP1,[12:10]=OP0,[8:4]=IC=,[3:2]=FU=2'b10,[1]=S=1'b1,[0]=P}

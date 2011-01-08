@@ -33,13 +33,15 @@
 /**********************************************
  * General - begin
  **********************************************/
-parameter INSN_PAR_BIT  =  0,
-          INSN_SIZE_BIT =  1,
-          INSN_ENC_BIT  = 29;
+parameter INSN_PAR_BIT      =  0,
+          INSN_SIZE_BIT     =  1,
+          INSN_PRED_NEG_BIT = 28,
+          INSN_ENC_BIT      = 29;
 
 parameter ITYPE_PCU = 2'b00,
           ITYPE_LSU = 2'b01,
-          ITYPE_CU  = 2'b10;
+          ITYPE_CU  = 2'b10,
+          ITYPE_BMU = 2'b11;
 
 /**********************************************
  * General - end
@@ -53,6 +55,9 @@ parameter PCU_ITYPE_BKREP    = 4'h1,
           PCU_ITYPE_CALL_ABS = 4'h2,
           PCU_ITYPE_RETS     = 4'h3,
           PCU_ITYPE_JUMP_ABS = 4'h4,
+          PCU_ITYPE_RETI     = 4'h5,
+          PCU_ITYPE_EINT     = 4'h6,
+          PCU_ITYPE_DINT     = 4'h7,
           PCU_ITYPE_HALT     = 4'hf;
 
 /**********************************************
@@ -88,7 +93,10 @@ parameter LSU_ITYPE_MVTS_16   = 4'h1,
           LSU_ITYPE_LD_OFF_16 = 4'h4,
           LSU_ITYPE_LD_OFF_32 = 4'h5,
           LSU_ITYPE_ST_OFF_16 = 4'h6,
-          LSU_ITYPE_ST_OFF_32 = 4'h7;
+          LSU_ITYPE_ST_OFF_32 = 4'h7,
+          LSU_ITYPE_ADDPTR_16 = 4'h8,
+          LSU_ITYPE_LD_IMM_PTR_16 = 4'h9,
+          LSU_ITYPE_LD_IMM_ACC_16 = 4'ha;
 
 /**********************************************
  * LSU - end
@@ -127,22 +135,15 @@ parameter cmp_eq = 3'b000,
  * BMU - begin
  **********************************************/
 
-/* 16 bit encoded instuctions */
-parameter BMU_ITYPE_AND_16 = 3'h1,
-	  BMU_ITYPE_NOT_16 = 3'h2,
-          BMU_ITYPE_OR_16  = 3'h3,
-	  BMU_ITYPE_XOR_16 = 3'h4,
-
-          BMU_ITYPE_AND_32 = 3'h5,
-	  BMU_ITYPE_NOT_32 = 3'h6,
-          BMU_ITYPE_OR_32  = 3'h7,
-          BMU_ITYPE_XOR_32 = 3'h8,
-
-          BMU_ITYPE_SHIFT_16 = 3'h9,
-          BMU_ITYPE_SHIFT_32 = 3'ha;
-
 /* 32 bit encoded instuctions */
+parameter BMU_ITYPE_AND_16_32    = 5'h1,
+	  BMU_ITYPE_NOT_16_32    = 5'h2,
+          BMU_ITYPE_OR_16_32     = 5'h3,
+	  BMU_ITYPE_XOR_16_32    = 5'h4,
+          BMU_ITYPE_SHIFTA_16_32 = 5'h5,
+          BMU_ITYPE_SHIFTL_16_32 = 5'h6;
 
+parameter BMU_OP_SIZE16_BIT = 21;
 
 /**********************************************
  * BMU - end

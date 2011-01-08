@@ -32,6 +32,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <gtk/gtk.h>
 #include <glib.h>
 #include <pthread.h>
@@ -45,6 +46,26 @@ enum
   NUM_COLS
 };
 
+typedef struct {
+  GtkTreeIter *Iter_p;
+  int addr;
+  int bp;
+  char *str;
+} SourceFileLine_t;
+
+typedef struct {
+  int addr;
+} BreakPoint_t;
+
+GList *BreakPoint_List_p = NULL;
+
+static SourceFileLine_t SourceFileLines[1024];
+static int SourceFileLinesMax = 0;
+
+static GtkTreeModel* SourceTreeModel = NULL;
+static GtkTreeView*  SourceTreeView  = NULL;
+
+static GtkListStore* SourceListStore_p = NULL;
 static GtkListStore* RegListStore_p = NULL;
 static GtkListStore* MemListStore_p = NULL;
 static GtkWidget *CycleLabel = NULL;
@@ -52,41 +73,21 @@ static GtkWidget *CycleLabel = NULL;
 extern int MemoryCurr[];
 extern int MemoryPrev[];
 
-#if STANDALONE
-Reg_t RegsOfInterest[] = {
-  {"testbench.ajardsp_0.pcu_0.pc_i", "pc", -1, NULL},
-
-  {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr0", 0, NULL},
-  {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr1", 1, NULL},
-  {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr2", 2, NULL},
-  {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr3", 3, NULL},
-  {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr4", 4, NULL},
-  {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr5", 5, NULL},
-  {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr6", 6, NULL},
-  {"testbench.ajardsp_0.ptrrf_0.ptr_regs", "$ptr7", 7, NULL},
-
-  {"testbench.ajardsp_0.accrf_0.acc_regs_low", "$acc0l", 0, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_high", "$acc0h", 0, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_low", "$acc1l", 1, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_high", "$acc1h", 1, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_low", "$acc2l", 2, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_high", "$acc2h", 2, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_low", "$acc3l", 3, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_high", "$acc3h", 3, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_low", "$acc4l", 4, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_high", "$acc4h", 4, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_low", "$acc5l", 5, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_high", "$acc5h", 5, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_low", "$acc6l", 6, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_high", "$acc6h", 6, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_low", "$acc7l", 7, NULL},
-  {"testbench.ajardsp_0.accrf_0.acc_regs_high", "$acc7h", 7, NULL},
-
-};
-
-#else
 extern Reg_t RegsOfInterest[];
-#endif
+
+int BreakPoint_Hit(void)
+{
+  GList *Curr_p = g_list_first(BreakPoint_List_p);
+
+  while (Curr_p) {
+    if (((BreakPoint_t *)Curr_p->data)->addr == SimReadReg(RegsOfInterest[0].path)) {
+      return 1;
+    }
+    Curr_p = g_list_next(Curr_p);
+  }
+
+  return 0;
+}
 
 
 uint16 FlToFl16(float flnum);
@@ -203,6 +204,20 @@ Memory_DataFunc(GtkTreeViewColumn *col,
 
     sprintf(buf, "%04X", MemoryCurr[MemAddr]);
 
+#if 0
+    {
+      int i;
+
+      g_object_set(renderer, "background-set", FALSE, NULL);
+
+      for (i = 0; i < 8; i++) {
+        if (RegsOfInterest[i + 14].CurrValue == MemAddr) {
+          g_object_set(renderer, "background", "Yellow", "background-set", TRUE, NULL);
+        }
+      }
+    }
+#endif
+
     if (MemoryCurr[MemAddr] == MemoryPrev[MemAddr]) {
       g_object_set(renderer, "foreground-set", FALSE, NULL);
     }
@@ -239,6 +254,52 @@ void PipelineGuiUpdate(FuDesc_t* FuDesc_p)
       gtk_label_set_text(GTK_LABEL(FuDesc_p->PipeStages[i].RegLabel_p),
                          buf);
     }
+  }
+
+  gdk_threads_leave();
+}
+
+void SourceGuiUpdate(void)
+{
+  int i;
+
+  gdk_threads_enter();
+
+  for (i = 1; i < SourceFileLinesMax; i++) {
+    /* Just touch every Flags column so that it gets redrawn (the magic happens from there) */
+    gtk_list_store_set(SourceListStore_p, SourceFileLines[i].Iter_p,
+                       0, 0, -1);
+
+#if 1
+    if (RegsOfInterest[0].CurrValue == SourceFileLines[i].addr) {
+      /* Make source line visible */
+
+      GtkTreePath *start_path;
+      GtkTreePath *end_path;
+      GtkTreePath *curr_path;
+
+      gtk_tree_view_get_visible_range(SourceTreeView,
+                                      &start_path,
+                                      &end_path);
+
+      curr_path = gtk_tree_model_get_path(SourceTreeModel, SourceFileLines[i].Iter_p);
+
+      if (gtk_tree_path_compare(start_path, curr_path) >= 0 || gtk_tree_path_compare(curr_path, end_path) >= 0) {
+
+        gtk_tree_view_scroll_to_cell(SourceTreeView,
+                                     curr_path,
+                                     NULL,
+                                     TRUE,
+                                     0.2,
+                                     0.0);
+      }
+
+      gtk_tree_path_free(start_path);
+      gtk_tree_path_free(end_path);
+      gtk_tree_path_free(curr_path);
+
+    }
+#endif
   }
 
   gdk_threads_leave();
@@ -378,9 +439,7 @@ RegValueEdited(GtkCellRendererText *cell,
 
   fprintf(stderr, "Register cell edited: %s = 0x%04X\n", RegName_p, NewValue);
 
-#ifndef STANDALONE
   RegUpdateValueInDesign(RegName_p, NewValue);
-#endif
 }
 
 
@@ -541,6 +600,265 @@ CreateMemoryViewAndModel(void)
   return treeview;
 }
 
+static void Source_RowActivated (GtkTreeView        *treeview,
+                                 GtkTreePath        *path,
+                                 GtkTreeViewColumn  *col,
+                                 gpointer            userdata)
+{
+  GtkTreeModel *model;
+  GtkTreeIter   iter;
+
+  model = gtk_tree_view_get_model(treeview);
+
+  if (gtk_tree_model_get_iter(model, &iter, path)) {
+    int LineNo;
+    gtk_tree_model_get(model, &iter, 1, &LineNo, -1);
+
+    if (!SourceFileLines[LineNo].bp) {
+      /* set breakpoint */
+
+      if (SourceFileLines[LineNo].addr != -1) {
+        /* valid address */
+        BreakPoint_t *bp_p;
+
+        bp_p = g_malloc(sizeof(BreakPoint_t));
+
+        bp_p->addr = SourceFileLines[LineNo].addr;
+
+        BreakPoint_List_p = g_list_append(BreakPoint_List_p, bp_p);
+
+        SourceFileLines[LineNo].bp = 1;
+      }
+    }
+    else {
+      /* remove breakpoint */
+      GList *Curr_p = g_list_first(BreakPoint_List_p);
+
+      SourceFileLines[LineNo].bp = 0;
+
+      while (Curr_p) {
+        if (((BreakPoint_t *)Curr_p->data)->addr == SourceFileLines[LineNo].addr) {
+          g_free(Curr_p->data);
+          BreakPoint_List_p = g_list_delete_link(BreakPoint_List_p, Curr_p);
+          break;
+        }
+
+        Curr_p = g_list_next(Curr_p);
+      }
+    }
+
+  }
+}
+
+static void Source_Init(char *asm_file, char *lineno_file)
+{
+  FILE *asm_fp;
+  FILE *lineno_fp;
+  int lineno = 0;
+  char linebuf[256];
+  char *line_p;
+
+  struct {
+    int addr;
+    int lineno;
+  } lineno_info[1024];
+  int max_lineno_info = 0;
+
+  lineno_fp = fopen(lineno_file, "r");
+  while (!feof(lineno_fp)) {
+    fscanf(lineno_fp, "0x%x:%d\n", &lineno_info[max_lineno_info].addr, &lineno_info[max_lineno_info].lineno);
+    max_lineno_info++;
+  }
+  fclose(lineno_fp);
+
+  asm_fp = fopen(asm_file, "r");
+
+  while (!feof(asm_fp)) {
+    lineno++;
+    if (fgets(linebuf, sizeof(linebuf), asm_fp)) {
+
+#if 0
+      /* Strip trailing blanks and '\n' */
+      line_p = &linebuf[strlen(linebuf)];
+      while (line_p > linebuf && (*line_p == '\n' || *line_p == ' ' || *line_p == '\t' || *line_p == '\0')) {
+        *line_p = '\0';
+        line_p--;
+      }
+
+      /* Strip leading blanks */
+      line_p = &linebuf[0];
+      while (*line_p == ' ' || *line_p == '\t') {
+        line_p++;
+      }
+#else
+      linebuf[strlen(linebuf) - 1] = '\0';
+      line_p = &linebuf[0];
+#endif
+
+      SourceFileLines[lineno].bp = 0;
+      SourceFileLines[lineno].addr = -1;
+      {
+        int i;
+        for (i = 0; i < max_lineno_info; i++) {
+          if (lineno_info[i].lineno == lineno) {
+            SourceFileLines[lineno].addr = lineno_info[i].addr;
+          }
+        }
+      }
+      SourceFileLines[lineno].str = strdup(linebuf);
+
+      SourceFileLines[lineno].Iter_p = malloc(sizeof(GtkTreeIter));
+      gtk_list_store_append(SourceListStore_p, SourceFileLines[lineno].Iter_p);
+      gtk_list_store_set(SourceListStore_p, SourceFileLines[lineno].Iter_p,
+                         1, lineno, -1);
+    }
+  }
+  SourceFileLinesMax = lineno;
+
+  fclose(asm_fp);
+}
+
+static void
+Source_DataFunc(GtkTreeViewColumn *col,
+                GtkCellRenderer   *renderer,
+                GtkTreeModel      *model,
+                GtkTreeIter       *iter,
+                gpointer           user_data)
+{
+  int ColumnIndex = (int)user_data;
+  int LineNo;
+
+  gtk_tree_model_get(model, iter, 1, &LineNo, -1);
+
+  if (ColumnIndex == 0) {
+    gchar buf[16] = "   ";
+
+    if (SourceFileLines[LineNo].bp) {
+      buf[0] = 'B';
+    }
+
+    if (RegsOfInterest[0].CurrValue == SourceFileLines[LineNo].addr) {
+      buf[1] = '-';
+      buf[2] = '>';
+    }
+
+    g_object_set(renderer, "foreground-set", FALSE, NULL); /* print this normal */
+    g_object_set(renderer, "background", "Pink", "background-set", TRUE, NULL);
+    g_object_set(renderer, "text", buf, NULL);
+  }
+  else if (ColumnIndex == 1) {
+    gchar buf[16];
+    if (SourceFileLines[LineNo].addr != -1) {
+      sprintf(buf, "0x%04X", SourceFileLines[LineNo].addr);
+    }
+    else {
+      sprintf(buf, "");
+    }
+    g_object_set(renderer, "foreground-set", FALSE, NULL); /* print this normal */
+    g_object_set(renderer, "background", "Pink", "background-set", TRUE, NULL);
+    g_object_set(renderer, "text", buf, NULL);
+  }
+  else if (ColumnIndex == 2) {
+    gchar buf[16];
+    sprintf(buf, "%d", LineNo);
+    g_object_set(renderer, "foreground-set", FALSE, NULL); /* print this normal */
+    g_object_set(renderer, "background", "Gray", "background-set", TRUE, NULL);
+    g_object_set(renderer, "text", buf, NULL);
+  }
+  else if (ColumnIndex == 3) {
+    gchar buf[256];
+    sprintf(buf, "%s", SourceFileLines[LineNo].str);
+    g_object_set(renderer, "foreground-set", FALSE, NULL); /* print this normal */
+    g_object_set(renderer, "background", "White", "background-set", TRUE, NULL);
+    g_object_set(renderer, "text", buf, NULL);
+  }
+  else {
+    assert(0);
+  }
+}
+
+
+static GtkWidget *
+CreateSourceViewAndModel(void)
+{
+  GtkTreeViewColumn   *col;
+  GtkCellRenderer     *renderer;
+  GtkWidget           *treeview;
+  GtkTreeModel        *model;
+  gchar                buf[64];
+  int                  i;
+
+  treeview =  gtk_tree_view_new();
+  SourceTreeView = (GtkTreeView*)treeview;
+
+  gtk_tree_view_set_enable_search(GTK_TREE_VIEW(treeview), FALSE);
+
+  SourceListStore_p = gtk_list_store_new(4,
+                                         G_TYPE_INT, G_TYPE_INT,
+                                         G_TYPE_INT, G_TYPE_INT);
+
+  SourceTreeModel = model = GTK_TREE_MODEL(SourceListStore_p);
+
+  gtk_tree_view_set_model(GTK_TREE_VIEW(treeview), model);
+
+  /* Marker column */
+  renderer = gtk_cell_renderer_text_new ();
+  g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (0));
+
+  gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (treeview),
+                                               -1, "", renderer,
+                                               "text", 0,
+                                               NULL);
+
+  col = gtk_tree_view_get_column(GTK_TREE_VIEW(treeview), 0);
+  gtk_tree_view_column_set_cell_data_func(col, renderer, Source_DataFunc, GINT_TO_POINTER(0), NULL);
+
+
+  /* LPM address column */
+  renderer = gtk_cell_renderer_text_new ();
+  g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (1));
+
+  gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (treeview),
+                                               -1, "Addr", renderer,
+                                               "text", 1,
+                                               NULL);
+
+  col = gtk_tree_view_get_column(GTK_TREE_VIEW(treeview), 1);
+  gtk_tree_view_column_set_cell_data_func(col, renderer, Source_DataFunc, GINT_TO_POINTER(1), NULL);
+
+  /* Lineno column */
+  renderer = gtk_cell_renderer_text_new ();
+  g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (2));
+
+  gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (treeview),
+                                               -1, "Line", renderer,
+                                               "text", 2,
+                                               NULL);
+
+  col = gtk_tree_view_get_column(GTK_TREE_VIEW(treeview), 2);
+  gtk_tree_view_column_set_cell_data_func(col, renderer, Source_DataFunc, GINT_TO_POINTER(2), NULL);
+
+  /* Source line column */
+  renderer = gtk_cell_renderer_text_new ();
+  g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (3));
+
+  gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (treeview),
+                                               -1, "Source", renderer,
+                                               "text", 3,
+                                               NULL);
+
+  col = gtk_tree_view_get_column(GTK_TREE_VIEW(treeview), 3);
+  gtk_tree_view_column_set_cell_data_func(col, renderer, Source_DataFunc, GINT_TO_POINTER(3), NULL);
+
+
+  gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(treeview)), GTK_SELECTION_NONE);
+
+  g_signal_connect(treeview, "row-activated", (GCallback) Source_RowActivated, NULL);
+
+  return treeview;
+}
+
+
 FuDesc_t PCU_Desc = {
   "PCU",
   2,
@@ -556,6 +874,28 @@ FuDesc_t PCU_Desc = {
     },
   }
 };
+
+FuDesc_t BMU_Desc = {
+  "BMU",
+  3,
+  {
+    {
+      "DEC",
+      "testbench.ajardsp_0.bmu_0.inst_pipe_0_r"
+    },
+
+    {
+      "EXEC",
+      "testbench.ajardsp_0.bmu_0.inst_pipe_1_r"
+    },
+
+    {
+      "WB",
+      "testbench.ajardsp_0.bmu_0.inst_pipe_2_r"
+    },
+  }
+};
+
 
 FuDesc_t CU_0_Desc = {
   "CU 0",
@@ -668,7 +1008,7 @@ GtkWidget* FunctionalUnitPipelineWidget(FuDesc_t* Fu_p)
 pthread_mutex_t SimSyncCondMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  SimSyncCond      = PTHREAD_COND_INITIALIZER;
 
-enum {SYNC_MODE_STEP, SYNC_MODE_RUN, SYNC_MODE_STOP} SimSyncMode = SYNC_MODE_STEP;
+enum {SYNC_MODE_STEP, SYNC_MODE_RUN, SYNC_MODE_STOP, SYNC_MODE_QUIT} SimSyncMode = SYNC_MODE_STEP;
 
 int SimCyclesLeftToRun = 0;
 
@@ -680,21 +1020,28 @@ void WaitForGUI(void)
     SimReadOutRegisters();
     SimReadOutMemory();
 
+    SourceGuiUpdate();
+
     PipelineGuiUpdate(&PCU_Desc);
+    PipelineGuiUpdate(&BMU_Desc);
     PipelineGuiUpdate(&CU_0_Desc);
     PipelineGuiUpdate(&CU_1_Desc);
     PipelineGuiUpdate(&LSU_0_Desc);
     PipelineGuiUpdate(&LSU_1_Desc);
 
+
     pthread_cond_wait(&SimSyncCond, &SimSyncCondMutex);
     break;
 
   case SYNC_MODE_RUN:
-    if (--SimCyclesLeftToRun == 0) {
+    if (--SimCyclesLeftToRun == 0 || BreakPoint_Hit()) {
       SimReadOutRegisters();
       SimReadOutMemory();
 
+      SourceGuiUpdate();
+
       PipelineGuiUpdate(&PCU_Desc);
+      PipelineGuiUpdate(&BMU_Desc);
       PipelineGuiUpdate(&CU_0_Desc);
       PipelineGuiUpdate(&CU_1_Desc);
       PipelineGuiUpdate(&LSU_0_Desc);
@@ -702,6 +1049,10 @@ void WaitForGUI(void)
 
       pthread_cond_wait(&SimSyncCond, &SimSyncCondMutex);
     }
+    break;
+
+  case SYNC_MODE_QUIT:
+    exit(0);
     break;
 
   default:
@@ -747,13 +1098,49 @@ static void RunButtonCallBack(GtkWidget *widget,
   pthread_cond_signal(&SimSyncCond);
 }
 
+static GtkWidget *CtrlWindow;
+static GtkWidget *SourceWindow;
+static GtkWidget *SourceScrollWindow;
+static GtkWidget *RegWindow;
+static GtkWidget *RegScrollWindow;
+static GtkWidget *MemWindow;
+static GtkWidget *MemScrollWindow;
+
+static char dot_ajardsp_simdebug_file_path[64];
+
+static void PreQuitCallBack(void)
+{
+  int x, y, w, h;
+  FILE *window_pos_fp;
+
+  /* Store window geometry */
+  window_pos_fp = fopen(dot_ajardsp_simdebug_file_path, "w");
+  if (window_pos_fp) {
+
+    gtk_window_get_position (GTK_WINDOW (CtrlWindow), &x, &y);
+    gtk_window_get_size (GTK_WINDOW (CtrlWindow), &w, &h);
+    fprintf(window_pos_fp, "%d,%d,%d,%d\n", x, y, w, h);
+
+    gtk_window_get_position (GTK_WINDOW (SourceWindow), &x, &y);
+    gtk_window_get_size (GTK_WINDOW (SourceWindow), &w, &h);
+    fprintf(window_pos_fp, "%d,%d,%d,%d\n", x, y, w, h);
+
+    gtk_window_get_position (GTK_WINDOW (RegWindow), &x, &y);
+    gtk_window_get_size (GTK_WINDOW (RegWindow), &w, &h);
+    fprintf(window_pos_fp, "%d,%d,%d,%d\n", x, y, w, h);
+
+    gtk_window_get_position (GTK_WINDOW (MemWindow), &x, &y);
+    gtk_window_get_size (GTK_WINDOW (MemWindow), &w, &h);
+    fprintf(window_pos_fp, "%d,%d,%d,%d\n", x, y, w, h);
+
+    fclose(window_pos_fp);
+  }
+
+  gtk_main_quit();
+}
 
 void* GuiMainThread(void* arg_p)
 {
-  GtkWidget *CtrlWindow;
-  GtkWidget *RegWindow;
-  GtkWidget *MemWindow;
-  GtkWidget *MemScrollWindow;
   GtkWidget *StepButton;
   GtkWidget *StopButton;
   GtkWidget *RunButton;
@@ -768,6 +1155,9 @@ void* GuiMainThread(void* arg_p)
   GtkWidget *hbox2;
   GtkWidget *vbox;
 
+  char *asm_path;
+  char *lineno_path;
+
   /* init threads */
   gdk_threads_enter();
 
@@ -775,7 +1165,7 @@ void* GuiMainThread(void* arg_p)
 
   /* Control Window - begin */
   CtrlWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  g_signal_connect(CtrlWindow, "delete_event", gtk_main_quit, NULL);
+  g_signal_connect(CtrlWindow, "delete_event", PreQuitCallBack, NULL);
   gtk_container_set_border_width (GTK_CONTAINER (CtrlWindow), 10);
 
   StepButton = gtk_button_new();
@@ -832,6 +1222,7 @@ void* GuiMainThread(void* arg_p)
 
   /* Add all the FU pipelines to the hbox */
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&PCU_Desc));
+  gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&BMU_Desc));
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&CU_0_Desc));
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&CU_1_Desc));
   gtk_container_add(GTK_CONTAINER(hbox), FunctionalUnitPipelineWidget(&LSU_0_Desc));
@@ -843,18 +1234,63 @@ void* GuiMainThread(void* arg_p)
   gtk_widget_show_all(CtrlWindow);
   /* Control Window - end */
 
+  /* Source Window - begin */
+  asm_path    = getenv("AJARDSP_SIMDEBUG_ASM_PATH");
+  lineno_path = getenv("AJARDSP_SIMDEBUG_LINENO_PATH");
+
+  if (asm_path && lineno_path) {
+    SourceWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_default_size(GTK_WINDOW(SourceWindow), 320, 600);
+
+    SourceScrollWindow = gtk_scrolled_window_new (NULL, NULL);
+
+    gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(SourceScrollWindow),
+                                        GTK_SHADOW_ETCHED_IN);
+
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(SourceScrollWindow),
+                                   GTK_POLICY_AUTOMATIC,
+                                   GTK_POLICY_ALWAYS);
+
+    g_signal_connect(SourceWindow, "delete_event", PreQuitCallBack, NULL);
+
+    view = CreateSourceViewAndModel();
+
+    gtk_container_add(GTK_CONTAINER(SourceWindow), SourceScrollWindow);
+    gtk_container_add(GTK_CONTAINER(SourceScrollWindow), view);
+
+    gtk_window_set_title(GTK_WINDOW(SourceWindow), "Source");
+
+    Source_Init(asm_path, lineno_path);
+
+    gtk_widget_show_all(SourceWindow);
+  }
+  /* Source Window - end */
 
   /* Register Window - begin */
   RegWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  g_signal_connect(RegWindow, "delete_event", gtk_main_quit, NULL);
+  RegScrollWindow = gtk_scrolled_window_new (NULL, NULL);
+
+  gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(RegScrollWindow),
+                                      GTK_SHADOW_ETCHED_IN);
+
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(RegScrollWindow),
+                                 GTK_POLICY_NEVER,
+                                 GTK_POLICY_AUTOMATIC);
+
+  g_signal_connect(RegWindow, "delete_event", PreQuitCallBack, NULL);
 
   view = CreateRegisterViewAndModel();
 
+#if 0
   vbox = gtk_vbox_new(FALSE, 2);
 
   gtk_container_add(GTK_CONTAINER(vbox), get_format_menu());
   gtk_container_add(GTK_CONTAINER(vbox), view);
   gtk_container_add(GTK_CONTAINER(RegWindow), vbox);
+#else
+  gtk_container_add(GTK_CONTAINER(RegScrollWindow), view);
+  gtk_container_add(GTK_CONTAINER(RegWindow), RegScrollWindow);
+#endif
   gtk_window_set_title(GTK_WINDOW(RegWindow), "Registers");
 
   gtk_widget_show_all(RegWindow);
@@ -875,8 +1311,7 @@ void* GuiMainThread(void* arg_p)
                                  GTK_POLICY_NEVER,
                                  GTK_POLICY_ALWAYS);
 
-
-  g_signal_connect(MemWindow, "delete_event", gtk_main_quit, NULL);
+  g_signal_connect(MemWindow, "delete_event", PreQuitCallBack, NULL);
 
   view = CreateMemoryViewAndModel();
 
@@ -888,24 +1323,40 @@ void* GuiMainThread(void* arg_p)
   gtk_widget_show_all(MemWindow);
   /* Memory Window - end */
 
-#if STANDALONE
+  sprintf(dot_ajardsp_simdebug_file_path, "%s/.ajardsp-simdebug", getenv("HOME"));
+
+  /* Restore window geometry */
   {
-  Reg_t* Regs_p = RegsOfInterest;
-  int RegsLength = sizeof(RegsOfInterest)/sizeof(RegsOfInterest[0]);
-  int i;
+    int x, y, w, h;
+    FILE *window_pos_fp;
 
-  for (i = 0; i < RegsLength; i++) {
-    Regs_p[i].Iter_p = malloc(sizeof(GtkTreeIter));
-    gtk_list_store_append(RegListStore_p, Regs_p[i].Iter_p);
-    gtk_list_store_set(RegListStore_p, Regs_p[i].Iter_p,
-                       COL_REG_NAME, i,
-                       -1);
+    window_pos_fp = fopen(dot_ajardsp_simdebug_file_path, "r");
+    if (window_pos_fp) {
 
+      fscanf(window_pos_fp, "%d,%d,%d,%d\n", &x, &y, &w, &h);
+      gtk_window_move (GTK_WINDOW (CtrlWindow), x, y);
+      gtk_window_resize (GTK_WINDOW (CtrlWindow), w, h);
+
+      fscanf(window_pos_fp, "%d,%d,%d,%d\n", &x, &y, &w, &h);
+      gtk_window_move (GTK_WINDOW (SourceWindow), x, y);
+      gtk_window_resize (GTK_WINDOW (SourceWindow), w, h);
+
+      fscanf(window_pos_fp, "%d,%d,%d,%d\n", &x, &y, &w, &h);
+      gtk_window_move (GTK_WINDOW (RegWindow), x, y);
+      gtk_window_resize (GTK_WINDOW (RegWindow), w, h);
+
+      fscanf(window_pos_fp, "%d,%d,%d,%d\n", &x, &y, &w, &h);
+      gtk_window_move (GTK_WINDOW (MemWindow), x, y);
+      gtk_window_resize (GTK_WINDOW (MemWindow), w, h);
+
+      fclose(window_pos_fp);
+    }
   }
-  }
-#endif
 
   gtk_main();
+
+  SimSyncMode = SYNC_MODE_QUIT;
+  pthread_cond_signal(&SimSyncCond);
 
   gdk_threads_leave();
 
@@ -922,15 +1373,3 @@ void StartGUI(void)
   pthread_create(&gui_tid, NULL, GuiMainThread, NULL);
   sleep(1);
 }
-
-#if STANDALONE
-int main(int argc, char** argv)
-{
-  g_thread_init(NULL);
-  gdk_threads_init();
-
-  GuiMainThread(NULL);
-
-  return 0;
-}
-#endif

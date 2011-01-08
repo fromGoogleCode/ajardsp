@@ -1,5 +1,6 @@
 /*
- *  Dot product of 32 elements. Fast version (needs CU local bypass logic).
+ *  Dot product of 32 elements. Fast version.
+ *  Requires (from config.v): AJARDSP_CONFIG_ENABLE_ACCRF_BYPASS
  */
 
 .data
@@ -58,8 +59,11 @@ output:
         ldinc32 $ptr6, $acc3
       | ldinc32 $ptr7, $acc2
 
+        ldimm16 $ptr3, 3
+	mvts16 $ptr3, $bkrepcnt
+	nop
         /* Loop kernel */
-        bkrep #loop_end, 3
+        bkrep #loop_end
 
         /* Loop body begins here */
 

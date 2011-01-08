@@ -32,7 +32,16 @@ output:
 	mvts16 $acc4h, $sp
         nop
         nop
+        ldimm16 $acc4l, 0x4440
+      | ldimm16 $acc4h, 0x444f
+        ldimm16 $acc5l, 0x5550
+      | ldimm16 $acc5h, 0x555f
+        ldimm16 $acc6l, 0x6660
+      | ldimm16 $acc6h, 0x666f
+        ldimm16 $acc7l, 0x7770
+      | ldimm16 $acc7h, 0x777f
 
+        call #function_0
         push16 $acc0l | push16 $acc0h
         push16 $acc1l | push16 $acc1h
         nop
@@ -58,7 +67,7 @@ foobar2:
 	nop
 .align 4
 foobar:
-        push16 $retpc
+        ldimm16 $ptr5, 0xbabe | push16 $retpc
         call #foobar2
         nop
         nop
@@ -70,3 +79,31 @@ foobar:
 	nop
 
 
+.align 4
+function_0:
+        /* prologue - begin */
+        mvfs16 $ptr7, $sp | push16 $ptr7
+        push16 $retpc
+        addptr16 $ptr7, -32 /* make room for locals */
+        nop
+        mvts16 $ptr7, $sp | mvfs16 $ptr7, $sp
+        nop
+        push16 $ptr7 /* sp before locals*/| push16 $acc0l  /* dummy align push */
+
+        push32 $acc4| push32 $acc5
+        push32 $acc6| push32 $acc7
+        /* prologue - end */
+
+        nop
+        nop
+
+        /* epilogue - begin */
+        pop32 $acc7 | pop32 $acc6
+        pop32 $acc5 | pop32 $acc4
+        pop16 $acc0l | pop16 $sp
+        nop
+        pop16 $retpc | pop16 $ptr7
+        rets
+        nop
+        nop
+        /* epilogue - end */

@@ -30,6 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+`include "config.v"
+
 module predbits(clk,
                 rst,
 
@@ -48,14 +50,26 @@ module predbits(clk,
                 rd_4_idx_i,
                 rd_4_bit_o,
 
+                rd_5_idx_i,
+                rd_5_bit_o,
+
                 wr_0_idx_i,
                 wr_0_wen_i,
                 wr_0_bit_i,
 
                 wr_1_idx_i,
                 wr_1_wen_i,
-                wr_1_bit_i);
+                wr_1_bit_i,
 
+                spec_regs_raddr_i,
+                spec_regs_waddr_i,
+                spec_regs_ren_i,
+                spec_regs_wen_i,
+                spec_regs_data_i,
+                spec_regs_data_o
+                );
+
+`include "specregs.v"
 
    input   clk;
    input   rst;
@@ -75,6 +89,9 @@ module predbits(clk,
    input [1:0] rd_4_idx_i;
    output      rd_4_bit_o;
 
+   input [1:0] rd_5_idx_i;
+   output      rd_5_bit_o;
+
    input [1:0] wr_0_idx_i;
    input       wr_0_wen_i;
    input       wr_0_bit_i;
@@ -83,33 +100,98 @@ module predbits(clk,
    input       wr_1_wen_i;
    input       wr_1_bit_i;
 
-   reg  [3:0]  pred_reg_r;
+   input [5:0]   spec_regs_raddr_i;
+   input [5:0]   spec_regs_waddr_i;
+   input         spec_regs_ren_i;
+   input         spec_regs_wen_i;
+   input  [15:0] spec_regs_data_i;
+   output [15:0] spec_regs_data_o;
+
+   reg  [3:0]  pred_reg_r, pred_reg_2_r;
    wire [3:0]  pred_reg_w;
 
+`ifdef AJARDSP_CONFIG_ENABLE_PRED_BYPASS
+
+   integer     i, j;
+
+   reg         pred_2_r[0:3];
+   wire [3:0]  pred_2_w;
+
+   reg [1:0]   wr_idx_w[0:1];
+   reg         wr_en_w[0:1];
+   reg         wr_bit_w[0:1];
+
+   assign pred_reg_w = {pred_2_w[3:1], 1'b1};
+
+   assign pred_2_w = {pred_2_r[3], pred_2_r[2], pred_2_r[1], pred_2_r[0]};
+
+   always @(wr_0_idx_i   or wr_1_idx_i   or
+            wr_0_wen_i   or wr_1_wen_i   or
+            wr_0_bit_i   or wr_1_bit_i)
+     begin
+
+        wr_idx_w[0] = wr_0_idx_i;
+        wr_idx_w[1] = wr_1_idx_i;
+
+        wr_en_w[0] = wr_0_wen_i;
+        wr_en_w[1] = wr_1_wen_i;
+
+        wr_bit_w[0] = wr_0_bit_i;
+        wr_bit_w[1] = wr_1_bit_i;
+
+        for (i = 0; i < 4; i = i + 1)
+          begin
+             pred_2_r[i] = pred_reg_r[i];
+
+             for (j = 0; j < 2; j = j + 1)
+               begin
+                  if (wr_en_w[j] && i == wr_idx_w[j])
+                    begin
+                       pred_2_r[i] = wr_bit_w[j];
+                    end
+               end
+          end
+     end
+
+`else
+
    assign pred_reg_w = {pred_reg_r[3:1], 1'b1};
+
+`endif
 
    assign rd_0_bit_o = pred_reg_w[rd_0_idx_i];
    assign rd_1_bit_o = pred_reg_w[rd_1_idx_i];
    assign rd_2_bit_o = pred_reg_w[rd_2_idx_i];
    assign rd_3_bit_o = pred_reg_w[rd_3_idx_i];
    assign rd_4_bit_o = pred_reg_w[rd_4_idx_i];
+   assign rd_5_bit_o = pred_reg_w[rd_5_idx_i];
+
+   assign spec_regs_data_o = (spec_regs_ren_i && spec_regs_raddr_i == SPEC_REGS_ADDR_PRED)
+     ? pred_reg_r : 16'hzzzz;
 
    always @(posedge clk)
      begin
         if (rst)
           begin
-             pred_reg_r <= 0;
+             pred_reg_r <= 1;
           end
         else
           begin
-             if (wr_0_wen_i)
+             if (spec_regs_wen_i && spec_regs_waddr_i == SPEC_REGS_ADDR_PRED)
                begin
-                  pred_reg_r[wr_0_idx_i] <= wr_0_bit_i;
+                  pred_reg_r <= spec_regs_data_i;
                end
-
-             if (wr_1_wen_i)
+             else
                begin
-                  pred_reg_r[wr_1_idx_i] <= wr_1_bit_i;
+                  if (wr_0_wen_i)
+                    begin
+                       pred_reg_r[wr_0_idx_i] <= wr_0_bit_i;
+                    end
+
+                  if (wr_1_wen_i)
+                    begin
+                       pred_reg_r[wr_1_idx_i] <= wr_1_bit_i;
+                    end
                end
           end // else: !if(rst)
      end // always @ (posedge clk)

@@ -36,12 +36,27 @@
 #define FU_PCU (0 << 2)
 #define FU_LSU (1 << 2)
 #define FU_CU  (2 << 2)
+#define FU_BMU (3 << 2)
 
 #define PCU_ITYPE_BKREP    (0x1 << 4)
 #define PCU_ITYPE_CALL_ABS (0x2 << 4)
 #define PCU_ITYPE_RETS     (0x3 << 4)
 #define PCU_ITYPE_JUMP_ABS (0x4 << 4)
 #define PCU_ITYPE_HALT     (0xf << 4)
+#define PCU_ITYPE_RETI     (0x5 << 4)
+#define PCU_ITYPE_EINT     (0x6 << 4)
+#define PCU_ITYPE_DINT     (0x7 << 4)
+
+#define BMU_OP_SIZE_16     (1 << 21)
+
+#define BMU_SHIFT_LEFT     (1 << 23)
+
+#define BMU_ITYPE_AND_16_32    (0x01 << 4)
+#define	BMU_ITYPE_NOT_16_32    (0x02 << 4)
+#define BMU_ITYPE_OR_16_32     (0x03 << 4)
+#define BMU_ITYPE_XOR_16_32    (0x04 << 4)
+#define BMU_ITYPE_SHIFTA_16_32 (0x05 << 4)
+#define BMU_ITYPE_SHIFTL_16_32 (0x06 << 4)
 
 #define CU_ITYPE_ADD_16 (1 << 4)
 #define CU_ITYPE_SUB_16 (2 << 4)
@@ -79,11 +94,14 @@
 /* 32 bit encoding */
 #define LSU_ITYPE_MVTS_16    (0x1 << 4)
 #define LSU_ITYPE_MVFS_16    (0x2 << 4)
-#define LSU_ITYPE_LD_IMM_16  (0x3 << 4)
+//#define LSU_ITYPE_LD_IMM_16  (0x3 << 4)
 #define LSU_ITYPE_LD_OFF_16  (0x4 << 4)
 #define LSU_ITYPE_LD_OFF_32  (0x5 << 4)
 #define LSU_ITYPE_ST_OFF_16  (0x6 << 4)
 #define LSU_ITYPE_ST_OFF_32  (0x7 << 4)
+#define LSU_ITYPE_ADDPTR_16  (0x8 << 4)
+#define LSU_ITYPE_LD_IMM_PTR_16  (0x9 << 4)
+#define LSU_ITYPE_LD_IMM_ACC_16  (0xa << 4)
 
 #define INSN_ENC_32 (1 << 29)
 
@@ -99,6 +117,403 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
     },
   },
+
+  /* BMU instructions */
+
+  {
+    .mnemonic = "and32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_AND_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "or32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_OR_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "xor32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_XOR_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "not32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_NOT_16_32 | FU_BMU,
+    .nr_operands = 2,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftra32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_SHIFTA_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftrl32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_ITYPE_SHIFTL_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftll32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_SHIFT_LEFT | BMU_ITYPE_SHIFTL_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 10,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 18,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "and16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_AND_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "or16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_OR_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "xor16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_XOR_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "not16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_NOT_16_32 | FU_BMU,
+    .nr_operands = 2,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftra16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_SHIFTA_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftrl16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_ITYPE_SHIFTL_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
+  {
+    .mnemonic = "shiftll16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | BMU_OP_SIZE_16 | BMU_SHIFT_LEFT | BMU_ITYPE_SHIFTL_16_32 | FU_BMU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 17,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+
+    },
+  },
+
 
   /* CU instructions for the new encoding */
 
@@ -264,7 +679,7 @@ inst_def_t ajardsp_insns[] = {
 
 
   {
-    .mnemonic = "cmpeq16",
+    .mnemonic = "cmp16eq",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_EQ | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -293,7 +708,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmpne16",
+    .mnemonic = "cmp16ne",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_NE | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -322,7 +737,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmplt16",
+    .mnemonic = "cmp16lt",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_LT | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -351,7 +766,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmple16",
+    .mnemonic = "cmp16le",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_LE | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -380,7 +795,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmpgt16",
+    .mnemonic = "cmp16gt",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_GT | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -409,7 +824,7 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "cmpge16",
+    .mnemonic = "cmp16ge",
     .size = INST_32,
     .pattern = INSN_ENC_32 | CMP_GE | CU_ITYPE_CMP_16 | FU_CU,
     .nr_operands = 3,
@@ -679,19 +1094,19 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "ldimm16",
     .size = INST_32,
-    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_16 | FU_LSU,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_ACC_16 | FU_LSU,
     .nr_operands = 2,
 
     .operands = {
       {
 	.type = REG,
 	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.width  = 4,
+	.encode = encode_acc_half,
       },
       {
 	.type = INTEGER,
-	.offset = 13,
+	.offset = 12,
 	.width  = 16,
 	.encode = encode_int,
       },
@@ -701,24 +1116,74 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "ldimm16",
     .size = INST_32,
-    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_16 | FU_LSU,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_PTR_16 | FU_LSU,
     .nr_operands = 2,
 
     .operands = {
       {
 	.type = REG,
 	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.width  = 4,
+	.encode = encode_ptr,
+      },
+      {
+	.type = INTEGER,
+	.offset = 12,
+	.width  = 16,
+	.encode = encode_int,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "ldimm16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_PTR_16 | FU_LSU,
+    .nr_operands = 2,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 4,
+	.encode = encode_ptr,
       },
       {
 	.type = SYMBOL_REF,
-	.offset = 13,
+	.offset = 12,
 	.width  = 16,
 	.encode = encode_symref,
       },
     },
   },
+  {
+    .mnemonic = "ldoff16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_OFF_16 | FU_LSU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 25,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = INTEGER,
+	.offset = 13,
+	.width  = 12,
+	.encode = encode_int,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
+      },
+    },
+  },
+
 
   {
     .mnemonic = "ldoff16",
@@ -729,21 +1194,21 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.offset = 25,
+	.width  = 3,
+	.encode = encode_ptr,
       },
       {
-	.type = INTEGER,
+	.type = SYMBOL_REF,
 	.offset = 13,
-	.width  = 13,
-	.encode = encode_int,
+	.width  = 12,
+	.encode = encode_symref,
       },
       {
 	.type = REG,
-	.offset = 26,
-	.width  = 3,
-	.encode = encode_ptr,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
       },
 
     },
@@ -758,23 +1223,22 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 9,
+	.offset = 25,
 	.width  = 3,
-	.encode = encode_acc,
+	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_int,
       },
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 9,
 	.width  = 3,
-	.encode = encode_ptr,
+	.encode = encode_acc,
       },
-
     },
   },
 
@@ -787,23 +1251,50 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.offset = 25,
+	.width  = 3,
+	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_int,
       },
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "stoff16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_ST_OFF_16 | FU_LSU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
-
+      {
+	.type = SYMBOL_REF,
+	.offset = 13,
+	.width  = 12,
+	.encode = encode_symref,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
+      },
     },
   },
 
@@ -816,23 +1307,43 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 9,
+	.offset = 25,
 	.width  = 3,
-	.encode = encode_acc,
+	.encode = encode_ptr,
       },
       {
 	.type = INTEGER,
 	.offset = 13,
-	.width  = 13,
+	.width  = 12,
 	.encode = encode_int,
       },
       {
 	.type = REG,
-	.offset = 26,
+	.offset = 9,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "addptr16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_ADDPTR_16 | FU_LSU,
+    .nr_operands = 2,
+    .operands = {
+      {
+	.type = REG,
+	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
-
+      {
+	.type = INTEGER,
+	.offset = 13,
+	.width  = 12,
+	.encode = encode_int,
+      },
     },
   },
 
@@ -1073,23 +1584,104 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "bra",
     .size = INST_32,
+    .pattern = INSN_ENC_32 | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "bra.2ds",
+    .size = INST_32,
+    .pattern = (2 << 24) | INSN_ENC_32 | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "bra.1ds",
+    .size = INST_32,
+    .pattern = (1 << 24) | INSN_ENC_32 | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+#if 0
+  {
+    .mnemonic = "bra",
+    .size = INST_16,
     .pattern = PCU_ITYPE_JUMP_ABS | FU_PCU,
     .nr_operands = 1,
 
     .operands = {
       {
-	.type = SYMBOL_REF,
+	.type = REG,
 	.offset = 8,
-	.width  = 16,
-	.encode = encode_symref,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
 
   {
+    .mnemonic = "bra.2ds",
+    .size = INST_16,
+    .pattern = (2 << 12) | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "bra.1ds",
+    .size = INST_16,
+    .pattern = (1 << 12) | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+#endif
+
+  {
     .mnemonic = "call",
     .size = INST_32,
-    .pattern = PCU_ITYPE_CALL_ABS | FU_PCU,
+    .pattern = INSN_ENC_32 | PCU_ITYPE_CALL_ABS | FU_PCU,
     .nr_operands = 1,
 
     .operands = {
@@ -1103,17 +1695,147 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "rets",
+    .mnemonic = "call.2ds",
     .size = INST_32,
+    .pattern = (2 << 24) | INSN_ENC_32 | PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "call.1ds",
+    .size = INST_32,
+    .pattern = (1 << 24) | INSN_ENC_32 | PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+
+#if 0
+  {
+    .mnemonic = "call",
+    .size = INST_16,
+    .pattern = PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "call.2ds",
+    .size = INST_16,
+    .pattern = (2 << 12) | PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "call.1ds",
+    .size = INST_16,
+    .pattern = (1 << 12) | PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+#endif
+  {
+    .mnemonic = "rets",
+    .size = INST_16,
     .pattern = PCU_ITYPE_RETS | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "rets.2ds",
+    .size = INST_16,
+    .pattern = (2 << 12) | PCU_ITYPE_RETS | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "rets.1ds",
+    .size = INST_16,
+    .pattern = (1 << 12) | PCU_ITYPE_RETS | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "reti",
+    .size = INST_16,
+    .pattern = PCU_ITYPE_RETI | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "reti.2ds",
+    .size = INST_16,
+    .pattern = (2 << 12) | PCU_ITYPE_RETI | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "reti.1ds",
+    .size = INST_16,
+    .pattern = (1 << 12) | PCU_ITYPE_RETI | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "eint",
+    .size = INST_16,
+    .pattern = PCU_ITYPE_EINT | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "dint",
+    .size = INST_16,
+    .pattern = PCU_ITYPE_DINT | FU_PCU,
     .nr_operands = 0,
   },
 
   {
     .mnemonic = "bkrep",
     .size = INST_32,
-    .pattern = PCU_ITYPE_BKREP | FU_PCU,
-    .nr_operands = 2,
+    .pattern = INSN_ENC_32 | PCU_ITYPE_BKREP | FU_PCU,
+    .nr_operands = 1,
 
     .operands = {
       {
@@ -1122,19 +1844,12 @@ inst_def_t ajardsp_insns[] = {
 	.width  = 16,
 	.encode = encode_symref,
       },
-      {
-	.type = INTEGER,
-	.offset = 24,
-	.width  = 6,
-	.encode = encode_int,
-      },
-
     },
   },
 
   {
     .mnemonic = "halt",
-    .size = INST_32,
+    .size = INST_16,
     .pattern = PCU_ITYPE_HALT | FU_PCU,
     .nr_operands = 0,
   },

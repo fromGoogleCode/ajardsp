@@ -24,14 +24,14 @@ output:
         ldimm16 $ptr3, 10
         nop
         nop
-        ldoff16 $acc3h, -1, $ptr3
-        ldoff16 $acc3h, 0, $ptr3
-        ldoff16 $acc3h, 1, $ptr3
-        ldoff32 $acc7, -2, $ptr3
+        ldoff16 $ptr3,-1, $acc3h
+        ldoff16 $ptr3, 0, $acc3h
+        ldoff16 $ptr3, 1, $acc3h
+        ldoff32 $ptr3,-2, $acc7
         nop
         nop
-        stoff32 $acc7, -4, $ptr3
-        stoff32 $acc7, 2, $ptr3 | stoff16 $acc7h, -5, $ptr3
+        stoff32 $ptr3, -4, $acc7
+        stoff32 $ptr3, 2, $acc7 | stoff16 $ptr3, -5, $acc7h
 
 
         ldimm16 $acc0l, 0xffff

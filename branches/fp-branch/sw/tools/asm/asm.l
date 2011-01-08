@@ -36,6 +36,7 @@
 #include <assert.h>
 
 static enum {initial, code, data, comment} current_state = initial, last_state = initial;
+extern enum {code_sections, data_sections} lookfor_state;
 int lineno = 1;
 
 %}
@@ -50,6 +51,7 @@ int lineno = 1;
 ".code" {last_state = current_state; current_state = code; BEGIN CODE;}
 ".data" {last_state = current_state; current_state = data; BEGIN DATA;}
 
+";#".*$       {lineno++;};
 "/*" {last_state = current_state; current_state = comment; BEGIN COMMENT;}
 <COMMENT>.    ;
 <COMMENT>\n   {lineno++;};
@@ -72,24 +74,25 @@ int lineno = 1;
                 }
               }
 
-<CODE>"|" {return TOK_PIPE;}
-<CODE>"," {return TOK_COMMA;}
-<CODE>"(" {return TOK_PAR_OPEN;}
-<CODE>")" {return TOK_PAR_CLOSE;}
-<CODE>"if" {return TOK_IF;}
-<CODE>".align" {return TOK_ALIGN;}
+<CODE>"|" {if (lookfor_state == code_sections) return TOK_PIPE;}
+<CODE>"," {if (lookfor_state == code_sections) return TOK_COMMA;}
+<CODE>"(" {if (lookfor_state == code_sections) return TOK_PAR_OPEN;}
+<CODE>")" {if (lookfor_state == code_sections) return TOK_PAR_CLOSE;}
+<CODE>"if" {if (lookfor_state == code_sections) return TOK_IF;}
+<CODE>"!"  {if (lookfor_state == code_sections) return TOK_NOT;}
+<CODE>".align" {if (lookfor_state == code_sections) return TOK_ALIGN;}
 
-<CODE>"$"[a-z0-9]+                  {yylval.str  = strdup(&yytext[1]); return TOK_REGISTER;}
-<CODE>"#"[_0-9a-zA-Z]+              {yylval.str  = strdup(&yytext[1]); return TOK_SYMBOL_REF;}
-<CODE>"-"?("0x"[0-9a-fA-F]+|[0-9]+) {yylval.ival = strtol(yytext, NULL, 0); return TOK_INTEGER;}
-<CODE>[a-z][_0-9a-z]*               {yylval.str  = strdup(yytext); return TOK_MNEMONIC;}
-<CODE>^[_0-9a-zA-Z]+":"             {yylval.str  = strdup(yytext); yylval.str[strlen(yylval.str) - 1] = '\0'; return TOK_LABEL;}
+<CODE>"$"[a-z0-9]+                  {if (lookfor_state == code_sections) {yylval.str  = strdup(&yytext[1]); return TOK_REGISTER;}}
+<CODE>"#"[._0-9a-zA-Z]+             {if (lookfor_state == code_sections) {yylval.str  = strdup(&yytext[1]); return TOK_SYMBOL_REF;}}
+<CODE>"-"?("0x"[0-9a-fA-F]+|[0-9]+) {if (lookfor_state == code_sections) {yylval.ival = strtol(yytext, NULL, 0); return TOK_INTEGER;}}
+<CODE>[a-z][._0-9a-z]*              {if (lookfor_state == code_sections) {yylval.mnemonic.str = strdup(yytext); yylval.mnemonic.lineno = lineno; return TOK_MNEMONIC;}}
+<CODE>^[._0-9a-zA-Z]+":"            {if (lookfor_state == code_sections) {yylval.str  = strdup(yytext); yylval.str[strlen(yylval.str) - 1] = '\0'; return TOK_LABEL;}}
 
-<DATA>".word" {return TOK_DATA_WORD;}
-<DATA>".skip" {return TOK_DATA_SKIP;}
-<DATA>"-"?("0x"[0-9a-fA-F]+|[0-9]+) {yylval.ival = strtol(yytext, NULL, 0); return TOK_DATA_INTEGER;}
-<DATA>"#"[_0-9a-zA-Z]+              {yylval.str  = strdup(&yytext[1]); return TOK_DATA_SYMBOL_REF;}
-<DATA>^[_0-9a-zA-Z]+":"             {yylval.str  = strdup(yytext); yylval.str[strlen(yylval.str) - 1] = '\0'; return TOK_DATA_LABEL;}
+<DATA>".word" {if (lookfor_state == data_sections) {return TOK_DATA_WORD;}}
+<DATA>".skip" {if (lookfor_state == data_sections) {return TOK_DATA_SKIP;}}
+<DATA>"-"?("0x"[0-9a-fA-F]+|[0-9]+) {if (lookfor_state == data_sections) {yylval.ival = strtol(yytext, NULL, 0); return TOK_DATA_INTEGER;}}
+<DATA>"#"[._0-9a-zA-Z]+             {if (lookfor_state == data_sections) {yylval.str  = strdup(&yytext[1]); return TOK_DATA_SYMBOL_REF;}}
+<DATA>^[._0-9a-zA-Z]+":"            {if (lookfor_state == data_sections) {yylval.str  = strdup(yytext); yylval.str[strlen(yylval.str) - 1] = '\0'; return TOK_DATA_LABEL;}}
 
 [ \t]  ;  /* Ignore whitespace*/
 [\n]  {lineno++;} ;
