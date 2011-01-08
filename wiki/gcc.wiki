@@ -22,27 +22,6 @@ diff --unified -r orig/gcc-4.5.0/config.sub gcc-4.5.0/config.sub
  		# Motorola 68HC11/12.
  		basic_machine=$basic_machine-unknown
  		os=-none
-diff --unified -r orig/gcc-4.5.0/gcc/c-cppbuiltin.c gcc-4.5.0/gcc/c-cppbuiltin.c
---- orig/gcc-4.5.0/gcc/c-cppbuiltin.c	2009-11-25 11:55:54.000000000 +0100
-+++ gcc-4.5.0/gcc/c-cppbuiltin.c	2010-05-28 20:36:26.240097738 +0200
-@@ -617,7 +617,7 @@
-   /* And decfloat.h needs this.  */
-   builtin_define_with_int_value ("__DEC_EVAL_METHOD__",
-                                  TARGET_DEC_EVAL_METHOD);
--
-+#if 0
-   builtin_define_float_constants ("FLT", "F", "%s", float_type_node);
-   /* Cast the double precision constants.  This is needed when single
-      precision constants are specified or when pragma FLOAT_CONST_DECIMAL64
-@@ -625,7 +625,7 @@
-      macros that include a cast.  */
-   builtin_define_float_constants ("DBL", "L", "((double)%s)", double_type_node);
-   builtin_define_float_constants ("LDBL", "L", "%s", long_double_type_node);
--
-+#endif
-   /* For decfloat.h.  */
-   builtin_define_decimal_float_constants ("DEC32", "DF", dfloat32_type_node);
-   builtin_define_decimal_float_constants ("DEC64", "DD", dfloat64_type_node);
 diff --unified -r orig/gcc-4.5.0/gcc/config.gcc gcc-4.5.0/gcc/config.gcc
 --- orig/gcc-4.5.0/gcc/config.gcc	2010-04-07 12:34:00.000000000 +0200
 +++ gcc-4.5.0/gcc/config.gcc	2010-07-14 12:03:47.730501702 +0200
@@ -84,7 +63,7 @@ The last step is expected to fail with a message similar to
 
 {{{
 ...
-checking for ajardsp-gcc... /home/markus/gcc_work/build-ajardsp/./gcc/xgcc -B/home/markus/gcc_work/build-ajardsp/./gcc/ -B/usr/local/ajardsp/bin/ -B/usr/local/ajardsp/lib/ -isystem /usr/local/ajardsp/include -isystem /usr/local/ajardsp/sys-include   
+checking for ajardsp-gcc... /home/markus/gcc_work/build-ajardsp/./gcc/xgcc -B/home/markus/gcc_work/build-ajardsp/./gcc/ -B/usr/local/ajardsp/bin/ -B/usr/local/ajardsp/lib/ -isystem /usr/local/ajardsp/include -isystem /usr/local/ajardsp/sys-include
 checking for suffix of object files... configure: error: in `/home/markus/gcc_work/build-ajardsp/ajardsp/libgcc':
 configure: error: cannot compute suffix of object files: cannot compile
 See `config.log' for more details.
@@ -94,7 +73,7 @@ make: *** [all] Error 2
 $
 }}}
 
-As a last step create a symbolic link for ajardsp-gcc.
+And as a final step we create a symbolic link for ajardsp-gcc.
 
 {{{
 $ cd ~/ajardsp-gcc-build/gcc
