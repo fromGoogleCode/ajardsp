@@ -55,8 +55,11 @@ output:
         nop
         nop
 
+        ldimm16 $ptr3, 3
+	mvts16 $ptr3, $bkrepcnt
+	nop
         /* Loop kernel */
-        bkrep #loop_end, 3
+        bkrep #loop_end
 
         /* Loop body begins here */
 

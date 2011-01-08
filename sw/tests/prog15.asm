@@ -1,5 +1,5 @@
 /*
- *  Dot product of 16 elements
+ *  Dot product of 16 elements with compare branch loop
  */
 
 .data
@@ -28,30 +28,27 @@ output:
       | ldimm16 $ptr3, #input
         ldimm16 $ptr2, #output
 
-        nop
+        ldimm16 $acc5l, 8
+      | ldimm16 $acc5h, 1
+
         /* Loop prologue */
         ldinc32 $ptr4, $acc1
       | ldinc32 $ptr3, $acc0
 
-        ldimm16 $ptr7, 7
-	mvts16 $ptr7, $bkrepcnt
-	nop
+        nop /* needed for two cycle latency on update of $ptr registers */
         /* Loop kernel */
-        bkrep #loop_end
-
+loop_start:
         mpy16 $acc1l, $acc0l, $acc2
       | mpy16 $acc1h, $acc0h, $acc3
       | ldinc32 $ptr4, $acc1
       | ldinc32 $ptr3, $acc0
-        nop
-loop_end:
+        sub16 $acc5l, $acc5h  /* has a latency of two so result will not be used until next iteration */
+        cmp16ne $acc5l, $acc5h, $pred1
         nop
         add32 $acc6, $acc2, $acc6
       | add32 $acc7, $acc3, $acc7
+        if ($pred1) bra #loop_start
         /* Loop body ends here */
-
-        nop
-        nop
         add32 $acc6, $acc7, $acc0
         nop
         nop

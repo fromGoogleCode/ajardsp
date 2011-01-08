@@ -44,5 +44,6 @@ parameter SPEC_REGS_ADDR_RETPC      = 6'h1,
           SPEC_REGS_ADDR_BITREV     = 6'hb,
           SPEC_REGS_ADDR_RETIPC     = 6'hc,
           SPEC_REGS_ADDR_PRED       = 6'hd,
+          SPEC_REGS_ADDR_BKREP_CNT  = 6'he,
 
           SPEC_REGS_ADDR_GPIO       = 6'h1f;

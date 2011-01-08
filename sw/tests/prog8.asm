@@ -26,8 +26,10 @@ output:
       | ldimm16 $ptr3, #input
         ldimm16 $ptr2, #output
         nop
-
-        bkrep #loop_end, 15
+        ldimm16 $ptr7, 15
+	mvts16 $ptr7, $bkrepcnt
+	nop
+        bkrep #loop_end
         ldinc16 $ptr4, $acc1h
       | ldinc16 $ptr3, $acc0l
         nop

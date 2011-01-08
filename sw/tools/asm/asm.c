@@ -74,6 +74,7 @@ struct {
 
   {"retipc", 12},
   {"pred",   13},
+  {"bkrepcnt",   14},
 
   {"gpio",   31},
   {NULL, 0}

@@ -52,6 +52,82 @@
 #include "tree-pass.h"
 
 /* ------------------------------------------------------------------------------*
+ *                              Floating point support                           *
+ * ------------------------------------------------------------------------------*/
+
+/* Decode half-precision floats.  This routine is used both for the IEEE
+   ARM alternative encodings.  */
+void
+decode_ieee_half (const struct real_format *fmt, REAL_VALUE_TYPE *r,
+		  const long *buf);
+
+
+static void
+encode_ajardsp_float(const struct real_format *fmt, long *buf,
+                     const REAL_VALUE_TYPE *r)
+{
+  unsigned long image, sig, exp;
+  unsigned long sign = r->sign;
+
+  image = sign << 15;
+  /* r->sig stores the significand with the implicit leading 1 present */
+  sig = (r->sig[SIGSZ-1] >> (HOST_BITS_PER_LONG - 8 - 1)) & 0xff;
+
+  switch (r->cl)
+    {
+    case rvc_zero:
+      break;
+
+    case rvc_inf:
+      /* not supported */
+      break;
+
+    case rvc_nan:
+      /* not supported */
+      break;
+
+    case rvc_normal:
+      /* Recall that IEEE numbers are interpreted as 1.F x 2**exp,
+	 whereas the intermediate representation is 0.F x 2**exp.
+	 Which means we're off by one.  */
+
+      exp = REAL_EXP (r) + 63 - 1;
+
+      image |= exp << 8;
+      image |= sig;
+      break;
+
+    default:
+      gcc_unreachable ();
+    }
+
+  buf[0] = image;
+}
+
+
+const struct real_format ajardsp_single_format =
+  {
+    encode_ajardsp_float,
+    decode_ieee_half,
+    2,
+    9,  /* includes implicit 1 */
+    9,  /* includes implicit 1 */
+    -125,
+    129,
+    15,
+    15,
+    true,
+    false,
+    false,
+    false,
+    false,
+    true,
+    false,
+    false
+  };
+
+
+/* ------------------------------------------------------------------------------*
  *                              Nop insertion pass                               *
  * ------------------------------------------------------------------------------*/
 
@@ -191,7 +267,7 @@ void nop_delay_slots(void)
     {
       if ((JUMP_P(insn) || CALL_P(insn)) && get_attr_dslots(insn) != DSLOTS_0)
         {
-          int nnops = 3;
+          int nnops = 0;
           int i;
 
           for (i = 0; i < nnops; i++)

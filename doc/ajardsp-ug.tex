@@ -261,7 +261,9 @@ instruction is predicatable.
 
     [29] & 32-bit encoding & If set the instruction opcode uses the
     32-bit encoding space. If not set 16-bit encoding space is
-    used. \\ \hline [3:2] & Functional Unit &
+    used. \\ \hline
+    [28] & Invert predicate & Negates the value of the selected predicate bit.\\ \hline
+    [3:2] & Functional Unit &
     \begin{tabular}{ | l | l |}
       \cellcolor{lightgray} Value & \cellcolor{lightgray} Description \\ \hline
       2'b00 & PCU (Program Control Unit)  \\ \hline
@@ -330,6 +332,9 @@ multiple of its size.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
 \chapter{Instruction set}
+\newpage
+\section{Program Control Unit (PCU) instructions}
+\input{pcu-insns.tex}
 \newpage
 \section{Bit Manipulation Unit (BMU) instructions}
 \input{bmu-insns.tex}

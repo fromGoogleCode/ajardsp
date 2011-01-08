@@ -20,6 +20,8 @@
 
 #include "target.h"
 
+extern const struct real_format ajardsp_single_format;
+
 extern int
 symbolic_operand (rtx op, enum machine_mode mode);
 extern int

@@ -63,9 +63,11 @@ output:
 
         /* Loop prologue */
 
-
+        ldimm16 $ptr7, 31
+	mvts16 $ptr7, $bkrepcnt
+	nop
         /* Loop kernel */
-        bkrep #loop_end, 31
+        bkrep #loop_end
 
         /* Loop body begins here */
         ldinc16 $ptr0, $acc1l

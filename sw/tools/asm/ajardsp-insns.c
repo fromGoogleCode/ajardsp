@@ -1523,23 +1523,104 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "bra",
     .size = INST_32,
+    .pattern = INSN_ENC_32 | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "bra.2ds",
+    .size = INST_32,
+    .pattern = (2 << 24) | INSN_ENC_32 | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "bra.1ds",
+    .size = INST_32,
+    .pattern = (1 << 24) | INSN_ENC_32 | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+#if 0
+  {
+    .mnemonic = "bra",
+    .size = INST_16,
     .pattern = PCU_ITYPE_JUMP_ABS | FU_PCU,
     .nr_operands = 1,
 
     .operands = {
       {
-	.type = SYMBOL_REF,
+	.type = REG,
 	.offset = 8,
-	.width  = 16,
-	.encode = encode_symref,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
 
   {
+    .mnemonic = "bra.2ds",
+    .size = INST_16,
+    .pattern = (2 << 12) | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "bra.1ds",
+    .size = INST_16,
+    .pattern = (1 << 12) | PCU_ITYPE_JUMP_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+#endif
+
+  {
     .mnemonic = "call",
     .size = INST_32,
-    .pattern = PCU_ITYPE_CALL_ABS | FU_PCU,
+    .pattern = INSN_ENC_32 | PCU_ITYPE_CALL_ABS | FU_PCU,
     .nr_operands = 1,
 
     .operands = {
@@ -1553,29 +1634,138 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
-    .mnemonic = "rets",
+    .mnemonic = "call.2ds",
     .size = INST_32,
+    .pattern = (2 << 24) | INSN_ENC_32 | PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "call.1ds",
+    .size = INST_32,
+    .pattern = (1 << 24) | INSN_ENC_32 | PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 8,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+    },
+  },
+
+#if 0
+  {
+    .mnemonic = "call",
+    .size = INST_16,
+    .pattern = PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "call.2ds",
+    .size = INST_16,
+    .pattern = (2 << 12) | PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "call.1ds",
+    .size = INST_16,
+    .pattern = (1 << 12) | PCU_ITYPE_CALL_ABS | FU_PCU,
+    .nr_operands = 1,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+    },
+  },
+#endif
+  {
+    .mnemonic = "rets",
+    .size = INST_16,
     .pattern = PCU_ITYPE_RETS | FU_PCU,
     .nr_operands = 0,
   },
 
   {
+    .mnemonic = "rets.2ds",
+    .size = INST_16,
+    .pattern = (2 << 12) | PCU_ITYPE_RETS | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "rets.1ds",
+    .size = INST_16,
+    .pattern = (1 << 12) | PCU_ITYPE_RETS | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
     .mnemonic = "reti",
-    .size = INST_32,
+    .size = INST_16,
     .pattern = PCU_ITYPE_RETI | FU_PCU,
     .nr_operands = 0,
   },
 
   {
+    .mnemonic = "reti.2ds",
+    .size = INST_16,
+    .pattern = (2 << 12) | PCU_ITYPE_RETI | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
+    .mnemonic = "reti.1ds",
+    .size = INST_16,
+    .pattern = (1 << 12) | PCU_ITYPE_RETI | FU_PCU,
+    .nr_operands = 0,
+  },
+
+  {
     .mnemonic = "eint",
-    .size = INST_32,
+    .size = INST_16,
     .pattern = PCU_ITYPE_EINT | FU_PCU,
     .nr_operands = 0,
   },
 
   {
     .mnemonic = "dint",
-    .size = INST_32,
+    .size = INST_16,
     .pattern = PCU_ITYPE_DINT | FU_PCU,
     .nr_operands = 0,
   },
@@ -1583,8 +1773,8 @@ inst_def_t ajardsp_insns[] = {
   {
     .mnemonic = "bkrep",
     .size = INST_32,
-    .pattern = PCU_ITYPE_BKREP | FU_PCU,
-    .nr_operands = 2,
+    .pattern = INSN_ENC_32 | PCU_ITYPE_BKREP | FU_PCU,
+    .nr_operands = 1,
 
     .operands = {
       {
@@ -1593,19 +1783,12 @@ inst_def_t ajardsp_insns[] = {
 	.width  = 16,
 	.encode = encode_symref,
       },
-      {
-	.type = INTEGER,
-	.offset = 24,
-	.width  = 5,
-	.encode = encode_int,
-      },
-
     },
   },
 
   {
     .mnemonic = "halt",
-    .size = INST_32,
+    .size = INST_16,
     .pattern = PCU_ITYPE_HALT | FU_PCU,
     .nr_operands = 0,
   },

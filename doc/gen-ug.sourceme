@@ -1,4 +1,6 @@
+./gen-insns-tex.pl pcu-insns.txt > pcu-insns.tex
 ./gen-insns-tex.pl bmu-insns.txt > bmu-insns.tex
 ./gen-insns-tex.pl cu-insns.txt > cu-insns.tex
 ./gen-insns-tex.pl lsu-insns.txt > lsu-insns.tex
 pdflatex ajardsp-ug.tex
+
