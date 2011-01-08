@@ -55,16 +55,27 @@
  *                              Floating point support                           *
  * ------------------------------------------------------------------------------*/
 
-/* Decode half-precision floats.  This routine is used both for the IEEE
-   ARM alternative encodings.  */
-void
-decode_ieee_half (const struct real_format *fmt, REAL_VALUE_TYPE *r,
-		  const long *buf);
+static void
+decode_ajardsp_float (const struct real_format *fmt, REAL_VALUE_TYPE *r,
+                      const long *buf)
+{
+  unsigned long image = buf[0] & 0xffff;
+  bool sign = (image >> 15) & 1;
+  int exp = (image >> 8) & 0xef;
 
+  memset (r, 0, sizeof (*r));
+  image <<= (HOST_BITS_PER_LONG - 8 - 1);
+  image &= ~SIG_MSB;
+
+  r->cl = rvc_normal;
+  r->sign = sign;
+  SET_REAL_EXP (r, exp - 63 + 1);
+  r->sig[SIGSZ-1] = image | SIG_MSB;
+}
 
 static void
-encode_ajardsp_float(const struct real_format *fmt, long *buf,
-                     const REAL_VALUE_TYPE *r)
+encode_ajardsp_float (const struct real_format *fmt, long *buf,
+                      const REAL_VALUE_TYPE *r)
 {
   unsigned long image, sig, exp;
   unsigned long sign = r->sign;
@@ -104,11 +115,10 @@ encode_ajardsp_float(const struct real_format *fmt, long *buf,
   buf[0] = image;
 }
 
-
 const struct real_format ajardsp_single_format =
   {
     encode_ajardsp_float,
-    decode_ieee_half,
+    decode_ajardsp_float,
     2,
     9,  /* includes implicit 1 */
     9,  /* includes implicit 1 */
