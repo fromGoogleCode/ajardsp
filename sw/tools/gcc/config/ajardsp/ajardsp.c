@@ -468,14 +468,14 @@ print_operand(FILE *STREAM,rtx X,char CODE)
               at this place also, I am taking care of all other operands.*/
       if(GET_CODE(X) == REG)
         {
-          if (GET_MODE(X) == BImode || GET_MODE(X) == QImode)
+          if (GET_MODE(X) == BImode || GET_MODE(X) == QImode || GET_MODE(X) == QFmode)
             {
-
               fprintf(STREAM,"%s",reg_names[XINT(X,0)]);
             }
           else if (GET_MODE(X) == HImode)
             {
-              /* Note that we only print the first five (e.g. $acc3) characthers of register name if HImode (skip [lh]) */
+              /* Note that we only print the first five (e.g. $acc3) characthers
+                 of register name if HImode (skip [lh]) */
               int i;
               char* accstr;
               accstr = reg_names[XINT(X,0)];
@@ -746,6 +746,14 @@ hard_regno_mode_ok (int REGN, enum machine_mode MODE)
   if (MODE == BImode && 24 <= REGN && REGN <= 27)
     {
       return 1;
+    }
+
+  if(GET_MODE_CLASS(MODE) == MODE_FLOAT)
+    {
+      if (MODE == QFmode && (AJARDSP_REGNO_FIRST_PTR <= REGN && REGN <= AJARDSP_REGNO_LAST_ACC))
+        {
+          return 1;
+        }
     }
 
   if(GET_MODE_CLASS(MODE) == MODE_INT) {

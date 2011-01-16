@@ -18,7 +18,8 @@ PARFLAGS	= -ol std
 # Top
 SRC = 	../../rtl/verilog/top_top.v
 
-SRC +=	../../rtl/verilog/ajardsp_top.v \
+SRC +=	../../rtl/verilog/vgagraph.v \
+	../../rtl/verilog/ajardsp_top.v \
 	../../rtl/verilog/imem.v \
 	../../rtl/verilog/dmem.v \
 	../../rtl/verilog/cu.v \

@@ -80,7 +80,7 @@
 ;;Definition of instruction attributes
 ;;====================================
 
-(define_attr "itype" "bmu,cu,cu_cmp,lsu,lsu_spec,lsu_all,pcu"
+(define_attr "itype" "bmu,cu,cu_cmp,cu_fp,lsu,lsu_spec,lsu_all,pcu"
   (const_string "pcu"))
 
 (define_attr "isize" "1,2"
@@ -560,6 +560,30 @@
 [(set_attr "itype" "bmu")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Floating point
+;;===============
+
+(define_insn "addqf3"
+  [(set (match_operand:QF 0 "register_operand" "=d")
+        (plus:QF (match_operand:QF 1 "register_operand" "d")
+                 (match_operand:QF 2 "register_operand" "d"))
+        )]
+  ""
+  "fpadd %1, %2, %0"
+  [(set_attr "itype" "cu_fp")
+   (set_attr "isize" "2")])
+
+(define_insn "mulqf3"
+  [(set (match_operand:QF 0 "register_operand" "=d")
+        (mult:QF (match_operand:QF 1 "register_operand" "d")
+                 (match_operand:QF 2 "register_operand" "d"))
+        )]
+  ""
+  "fpmul %1, %2, %0"
+  [(set_attr "itype" "cu_fp")
+   (set_attr "isize" "2")])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Function calls
 ;;===============
 
@@ -698,7 +722,7 @@
         [(set (pc) (label_ref (match_operand 0 "" "")))]
         ""
         {
-                return "brr #%l0";
+                return "bra #%l0";
         }
 [(set_attr "itype" "pcu")
  (set_attr "dslots" "2")])
@@ -854,7 +878,7 @@
 (define_reservation "one_islot" "(islot0|islot1|islot2|islot3)")
 (define_reservation "two_islots" "((islot0+(islot1|islot2|islot3))|(islot1+(islot0|islot2|islot3))|(islot2+(islot0|islot1|islot3))|(islot3+(islot0|islot1|islot2)))")
 
-;; Define reservations for insturction types.
+;; Define reservations for instruction types.
 (define_insn_reservation "bmu_16"  2 (and (eq_attr "itype" "bmu") (eq_attr "isize"  "1"))
   "one_islot+bmu")
 (define_insn_reservation "cu_16"   2 (and (eq_attr "itype"  "cu") (eq_attr "isize"  "1"))
@@ -870,6 +894,8 @@
   "two_islots+(cu0|cu1)")
 (define_insn_reservation "cu_cmp_32"  2 (and (eq_attr "itype"  "cu_cmp") (eq_attr "isize"  "2"))
   "two_islots+(cu0|cu1)")  ;; cmp to PCU latency is the problem, to CU/LSU/BMU should be one cycle faster
+(define_insn_reservation "cu_fp_32"  4 (and (eq_attr "itype"  "cu_fp") (eq_attr "isize"  "2"))
+  "two_islots+(cu0|cu1)")
 (define_insn_reservation "lsu_32" 1 (and (eq_attr "itype" "lsu") (eq_attr "isize"  "2"))
   "two_islots+(lsu0|lsu1)")
 (define_insn_reservation "pcu_32" 1 (and (eq_attr "itype" "pcu") (eq_attr "isize"  "2"))
