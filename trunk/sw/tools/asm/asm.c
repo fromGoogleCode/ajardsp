@@ -76,6 +76,7 @@ struct {
   {"pred",   13},
   {"bkrepcnt",   14},
 
+  {"gpio2",  30},
   {"gpio",   31},
   {NULL, 0}
 };

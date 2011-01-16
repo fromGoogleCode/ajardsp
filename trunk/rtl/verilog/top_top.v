@@ -37,7 +37,13 @@
 module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
                LCD_E, LCD_RS, LCD_RW, LCD_D,
                IRQ,
-               ROT_A, ROT_B, ROT_CENTER);
+               ROT_A, ROT_B, ROT_CENTER,
+               VGA_RED,
+               VGA_GREEN,
+               VGA_BLUE,
+               VGA_HSYNC,
+               VGA_VSYNC,
+               );
 
    input clk;
    input rst;
@@ -46,6 +52,12 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
    output LCD_E, LCD_RS, LCD_RW;
    output [3:0] LCD_D;
+
+   output       VGA_RED,
+                VGA_GREEN,
+                VGA_BLUE,
+                VGA_HSYNC,
+                VGA_VSYNC;
 
    output [7:0] LED;
    input        IRQ;
@@ -95,6 +107,10 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
    wire [15:0]  gpio_w;
 
+   wire         graph_rst_x_w;
+   wire [15:0]  graph_y_data_w;
+   wire         graph_y_wen_w;
+
    parameter CMD_LOAD_IMEM = 8'hc0,
              CMD_LOAD_DMEM = 8'hc1,
              CMD_RESET     = 8'hc2,
@@ -141,6 +157,21 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
 
    assign dmem_wr_data_32_w = {dmem_byte2_r, dmem_byte3_r, dmem_byte0_r, dmem_byte1_r};
 
+   vgagraph graph_0(.CLK_50_MHZ(clk),
+                    .RST(rst),
+
+                    .VGA_RED(VGA_RED),
+                    .VGA_GREEN(VGA_GREEN),
+                    .VGA_BLUE(VGA_BLUE),
+                    .VGA_HSYNC(VGA_HSYNC),
+                    .VGA_VSYNC(VGA_VSYNC),
+
+                    .graph_rst_x_i(graph_rst_x_w),
+                    .graph_y_data_i(graph_y_data_w),
+                    .graph_y_wen_i(graph_y_wen_w)
+                    );
+
+
    uart_rx rx_0(.clk(clk),
                 .rst(rst),
                 .rx_ack(rx_en),
@@ -174,7 +205,12 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
                          .core_halt_o(core_halt_w),
                          .gpio_i({13'h0, ROT_A, ROT_B, ROT_CENTER}),
                          .gpio_o(gpio_w),
-                         .interrupt_req_i(IRQ)
+                         .interrupt_req_i(IRQ),
+
+                         .gpio_2_o(graph_y_data_w),
+                         .gpio_2_ren_o(graph_rst_x_w),
+                         .gpio_2_wen_o(graph_y_wen_w)
+
                          );
 
    always @(posedge clk)

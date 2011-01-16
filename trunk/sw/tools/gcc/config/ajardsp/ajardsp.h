@@ -433,6 +433,9 @@ function_profiler(file,lab)
 
 extern int target_flags;
 
+#define READONLY_DATA_SECTION_ASM_OP                                      \
+".data"
+
 #define TEXT_SECTION_ASM_OP                                               \
 ".code"
 

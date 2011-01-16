@@ -49,6 +49,10 @@ module ajardsp_top(clk, rst_core, rst_mem,
                    gpio_i,
                    gpio_o,
 
+                   gpio_2_o,
+                   gpio_2_ren_o,
+                   gpio_2_wen_o,
+
                    interrupt_req_i
 
                    );
@@ -285,6 +289,14 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire          invalidate_insns_w;
 
    reg [15:0]    gpio_r;
+
+   output [15:0] gpio_2_o;
+   output        gpio_2_ren_o;
+   output        gpio_2_wen_o;
+
+   assign gpio_2_o     = spec_regs_wr_data_w;
+   assign gpio_2_ren_o = (spec_regs_ren_w && spec_regs_raddr_w == SPEC_REGS_ADDR_GPIO_2) ? 1'b1 : 1'b0;
+   assign gpio_2_wen_o = (spec_regs_wen_w && spec_regs_waddr_w == SPEC_REGS_ADDR_GPIO_2) ? 1'b1 : 1'b0;
 
    assign gpio_o   = gpio_r;
 
