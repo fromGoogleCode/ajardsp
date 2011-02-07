@@ -32,6 +32,7 @@
 
 module imem(clk,
 	    rst,
+            clk_en,
             ren_i,
 	    addr_i,
 	    inst_o,
@@ -43,6 +44,7 @@ module imem(clk,
 
    input clk;
    input rst;
+   input clk_en;
 
    input ren_i;
    input [13:0] addr_i;
@@ -66,7 +68,7 @@ module imem(clk,
 
    always @(posedge clk)
      begin
-        if (ren_i)
+        if (clk_en && ren_i)
           begin
 	     inst_o <= imemory[addr_i];
           end
@@ -90,7 +92,7 @@ module imem(clk,
 			   .CLK(clk),
 			   .DI(ext_imem_wr_data_i[31:0]),
 			   .DIP(4'h0),
-			   .EN(ren_i | ext_imem_wr_en_i),
+			   .EN(clk_en & (ren_i | ext_imem_wr_en_i)),
 			   .SSR(rst),
 			   .WE(ext_imem_wr_en_i));
 
@@ -104,7 +106,7 @@ module imem(clk,
 			    .CLK(clk),
 			    .DI(ext_imem_wr_data_i[63:32]),
 			    .DIP(4'h0),
-			    .EN(ren_i | ext_imem_wr_en_i),
+			    .EN(clk_en & (ren_i | ext_imem_wr_en_i)),
 			    .SSR(rst),
 			    .WE(ext_imem_wr_en_i));
 

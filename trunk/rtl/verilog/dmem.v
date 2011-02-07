@@ -32,6 +32,7 @@
 
 module dmem(clk,
 	    rst,
+            clk_en,
 
             dump_mem_i,
 
@@ -58,6 +59,7 @@ module dmem(clk,
 
    input clk;
    input rst;
+   input clk_en;
 
    input dump_mem_i;
 
@@ -102,12 +104,12 @@ module dmem(clk,
 
    always @(posedge clk)
      begin
-	if (rd_en_0_i)
+	if (clk_en & rd_en_0_i)
 	  begin
 	     rd_data_0_o <= {dmem[{addr_0_i[15:1], 1'b1}], dmem[{addr_0_i[15:1], 1'b0}]};
 	  end
 
-	if (wr_en_0_i)
+	if (clk_en & wr_en_0_i)
 	  begin
 	     if (mask_0_i[1])
 	       begin
@@ -124,12 +126,12 @@ module dmem(clk,
 
    always @(posedge clk)
      begin
-	if (rd_en_1_i)
+	if (clk_en & rd_en_1_i)
 	  begin
 	     rd_data_1_o <= {dmem[{addr_1_i[15:1], 1'b1}], dmem[{addr_1_i[15:1], 1'b0}]};
 	  end
 
-	if (wr_en_1_i)
+	if (clk_en & wr_en_1_i)
 	  begin
 	     if (mask_1_i[1])
 	       begin
@@ -183,8 +185,8 @@ module dmem(clk,
      .DIB(wr_data_1_i[31:16]),
      .DIPA(4'h0),
      .DIPB(4'h0),
-     .ENA(en_a_w),
-     .ENB(en_b_w),
+     .ENA(clk_en & en_a_w),
+     .ENB(clk_en & en_b_w),
      .SSRA(res),
      .SSRB(res),
      .WEA((wr_en_0_i & mask_0_i[1]) | ext_dmem_wr_en_i),
@@ -203,8 +205,8 @@ module dmem(clk,
      .DIB(wr_data_1_i[15:0]),
      .DIPA(4'h0),
      .DIPB(4'h0),
-     .ENA(en_a_w),
-     .ENB(en_b_w),
+     .ENA(clk_en & en_a_w),
+     .ENB(clk_en & en_b_w),
      .SSRA(res),
      .SSRB(res),
      .WEA((wr_en_0_i & mask_0_i[0]) | ext_dmem_wr_en_i),

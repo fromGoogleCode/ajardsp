@@ -40,6 +40,7 @@ module wb_sdram_ctrl(
                      wb_dat_o,
                      wb_adr_i,
 
+                     wb_cyc_i,
                      wb_sel_i,
                      wb_stb_i,
                      wb_we_i,
@@ -48,6 +49,7 @@ module wb_sdram_ctrl(
                      ddr_cke,
                      ddr_cmd,
                      ddr_data,
+                     ddr_dm,
                      ddr_dqs,
                      ddr_addr,
                      ddr_ba,
@@ -66,6 +68,7 @@ module wb_sdram_ctrl(
    output [31:0] wb_dat_o;
    input         wb_rst_i;
    input [3:0]   wb_sel_i;
+   input         wb_cyc_i;
    input         wb_stb_i;
    input         wb_we_i;
 
@@ -77,12 +80,12 @@ module wb_sdram_ctrl(
    output        ddr_cke;
    output [2:0]  ddr_cmd;
    inout [15:0]     ddr_data;
+   output [1:0]     ddr_dm;
    inout [1:0]      ddr_dqs;
    output [12:0]    ddr_addr;
    output [1:0]     ddr_ba;
 
    reg [7:0]     next_state, state_r;
-   reg [31:0]    addr_r;
    reg           rd_req, wr_req;
    wire          rd_ack, wr_ack;
 
@@ -90,8 +93,9 @@ module wb_sdram_ctrl(
 
    sdram_ctrl sdram_ctrl_0(.clk(clk), .rst(wb_rst_i),
                            .clk_n(clk_n),
-                           .user_addr(addr_r),
+                           .user_addr(wb_adr_i),
                            .user_write_data(wb_dat_i),
+                           .user_write_mask(4'b0000),
                            .user_read_data(wb_dat_o),
                            .user_read_req(rd_req),
                            .user_write_req(wr_req),
@@ -103,6 +107,7 @@ module wb_sdram_ctrl(
                            .ddr_cke(ddr_cke),
                            .ddr_cmd(ddr_cmd),
                            .ddr_data(ddr_data),
+                           .ddr_dm(ddr_dm),
                            .ddr_dqs(ddr_dqs),
                            .ddr_addr(ddr_addr),
                            .ddr_ba(ddr_ba)
@@ -113,20 +118,14 @@ module wb_sdram_ctrl(
         if (wb_rst_i)
           begin
              state_r <= wb_s_idle;
-             addr_r <= 0;
           end
         else
           begin
              state_r <= next_state;
-
-             if (next_state == wb_s_idle && wb_stb_i)
-               begin
-                  addr_r <= wb_adr_i;
-               end
           end
      end
 
-   always @(state_r or wb_stb_i or wb_we_i or rd_ack or wr_ack)
+   always @(state_r or wb_cyc_i or wb_stb_i or wb_we_i or rd_ack or wr_ack)
      begin
         next_state = state_r;
         wb_ack_o = 0;
@@ -136,7 +135,7 @@ module wb_sdram_ctrl(
         case (state_r)
 
           wb_s_idle: begin
-             if (wb_stb_i)
+             if (wb_cyc_i && wb_stb_i)
                begin
                   if (wb_we_i)
                     begin
@@ -152,26 +151,26 @@ module wb_sdram_ctrl(
           end
 
           wb_s_read: begin
-             if (rd_ack)
+             if (wb_cyc_i)
                begin
-                  next_state = wb_s_idle;
-                  wb_ack_o = 1;
+                  wb_ack_o = rd_ack;
+                  rd_req = wb_stb_i;
                end
              else
                begin
-                  rd_req = 1;
+                  next_state = wb_s_idle;
                end
           end
 
           wb_s_write: begin
-             if (wr_ack)
+             if (wb_cyc_i)
                begin
-                  next_state = wb_s_idle;
-                  wb_ack_o = 1;
+                  wb_ack_o = wr_ack;
+                  wr_req = wb_stb_i;
                end
              else
                begin
-                  wr_req = 1;
+                  next_state = wb_s_idle;
                end
           end
         endcase

@@ -39,6 +39,7 @@ module sdram_ctrl(clk,
                   user_write_req,
                   user_write_ack,
                   user_write_data,
+                  user_write_mask,
                   user_addr,
 
                   ddr_clk,
@@ -46,6 +47,7 @@ module sdram_ctrl(clk,
                   ddr_cke,
                   ddr_cmd,
                   ddr_data,
+                  ddr_dm,
                   ddr_dqs,
                   ddr_addr,
                   ddr_ba
@@ -56,6 +58,7 @@ module sdram_ctrl(clk,
    output reg [31:0] user_read_data;
    output reg        user_read_ack, user_write_ack;
    input [31:0] user_write_data;
+   input [3:0]  user_write_mask;
    input [31:0] user_addr;
    input        user_read_req, user_write_req;
 
@@ -63,6 +66,7 @@ module sdram_ctrl(clk,
    output reg   ddr_cke;
    output reg [2:0]  ddr_cmd;
    inout [15:0]      ddr_data;
+   output [1:0]      ddr_dm;
    inout [1:0]       ddr_dqs;
    output reg [12:0] ddr_addr;
    output reg [1:0]  ddr_ba;
@@ -70,14 +74,16 @@ module sdram_ctrl(clk,
 
    wire  clk, clk_n;
 
-   wire [15:0]       ddr_data_;
+   wire [15:0] ddr_data_;
 
    wire [31:0] read_data;
    reg [31:0] ddr_write_data;
 
    reg        ddr_data_oe;
+   reg [3:0]  write_mask;
 
    reg [31:0]  counter;
+   reg [31:0]  burst_addr;
 
    always @(posedge clk)
      begin
@@ -87,7 +93,7 @@ module sdram_ctrl(clk,
           counter <= counter + 1;
      end
 
-   assign ddr_dqs = ddr_data_oe ? {ddr_clk, ddr_clk} : 2'bz;
+   assign ddr_dqs  = ddr_data_oe ? {ddr_clk, ddr_clk} : 2'bz;
    assign ddr_data = ddr_data_oe ? ddr_data_ : 16'hzzzz;
 
    IDDR2  iddr2_0(.D(ddr_data[0]), .C0(clk), .C1(clk_n), .CE(1'b1),
@@ -163,6 +169,12 @@ module sdram_ctrl(clk,
    ODDR2 oddr2_15(.Q(ddr_data_[15]), .C0(clk), .C1(clk_n), .CE(1'b1),
                   .D0(ddr_write_data[15]), .D1(ddr_write_data[31]), .R(rst), .S(1'b0));
 
+   ODDR2 oddr2_16(.Q(ddr_dm[0]), .C0(clk), .C1(clk_n), .CE(1'b1),
+                  .D0(write_mask[0]), .D1(write_mask[2]), .R(rst), .S(1'b0));
+   ODDR2 oddr2_17(.Q(ddr_dm[1]), .C0(clk), .C1(clk_n), .CE(1'b1),
+                  .D0(write_mask[1]), .D1(write_mask[3]), .R(rst), .S(1'b0));
+
+
    parameter CC_200US = 100 * 200,
              CC_tRP   = 3,
              CC_tRFC  = 10,
@@ -237,6 +249,8 @@ module sdram_ctrl(clk,
         user_read_data = 0;
         user_write_ack = 0;
 
+        write_mask = user_write_mask;
+
         if (rst)
           begin
              ddr_state <= s_init_0;
@@ -244,6 +258,8 @@ module sdram_ctrl(clk,
 
              active_row_addr_r <= 0;
              cycle_counter <= CC_200US;
+
+             burst_addr <= 0;
           end
         else
           begin
@@ -252,6 +268,11 @@ module sdram_ctrl(clk,
                begin
                   cycle_counter <= cycle_counter - 1;
                end
+
+             burst_addr <= burst_addr + 2;
+
+
+             ddr_addr = {burst_addr[10], 1'b0, burst_addr[9:0]};
 
              case (ddr_state)
 
@@ -407,12 +428,15 @@ module sdram_ctrl(clk,
                          ddr_state <= s_write_cmd;
                        else if(user_read_req)
                          ddr_state <= s_read_cmd;
+
+                       if (user_write_req || user_read_req)
+                         burst_addr <= {1'b0, user_addr[31:1]};
                     end
                end
 
                s_write_cmd: begin
                   ddr_cmd = cmd_write;
-                  ddr_addr = {user_addr[10], 1'b0, user_addr[9:0]};
+                  ddr_addr = {burst_addr[10], 1'b0, burst_addr[9:0]};
                   ddr_write_data = user_write_data;
                   ddr_state <= s_write_data;
                end
@@ -420,8 +444,18 @@ module sdram_ctrl(clk,
                s_write_data: begin
                   ddr_write_data = user_write_data;
                   ddr_data_oe = 1;
-                  ddr_state <= s_write_wait_0;
                   user_write_ack = 1;
+                  if (user_write_req)
+                    begin
+                       ddr_cmd = cmd_write;
+                       ddr_addr = {burst_addr[10], 1'b0, burst_addr[9:0]};
+                       ddr_write_data = user_write_data;
+                    end
+                  else
+                    begin
+                       write_mask = 4'b1111;
+                       ddr_state <= s_write_wait_0;
+                    end
                end
 
                s_write_wait_0: begin
@@ -443,26 +477,32 @@ module sdram_ctrl(clk,
 
                s_read_cmd: begin
                   ddr_cmd = cmd_read;
-                  ddr_addr = {user_addr[10], 1'b0, user_addr[9:0]};
+                  ddr_addr = {burst_addr[10], 1'b0, burst_addr[9:0]};
                   ddr_state <= s_read_cl_0;
                end
 
                s_read_cl_0: begin
+                  ddr_cmd = cmd_read;
                   ddr_state <= s_read_cl_1;
                end
 
                s_read_cl_1: begin
+                  ddr_cmd = cmd_read;
                   ddr_state <= s_read_cl_2;
                end
 
                s_read_cl_2: begin
+                  ddr_cmd = cmd_read;
                   ddr_state <= s_read_data;
                end
 
                s_read_data: begin
                   user_read_ack = 1;
                   user_read_data = read_data;
-                  ddr_state <= s_row_active;
+                  if (user_read_req)
+                    ddr_cmd = cmd_read;
+                  else
+                    ddr_state <= s_row_active;
                end
 
              endcase

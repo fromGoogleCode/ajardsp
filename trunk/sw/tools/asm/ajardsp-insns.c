@@ -100,6 +100,8 @@
 #define LSU_ITYPE_ADDPTR_16  (0x8 << 4)
 #define LSU_ITYPE_LD_IMM_PTR_16  (0x9 << 4)
 #define LSU_ITYPE_LD_IMM_ACC_16  (0xa << 4)
+#define LSU_ITYPE_LD_EXT_32 (0xb << 4)
+#define LSU_ITYPE_ST_EXT_32 (0xc << 4)
 
 #define INSN_ENC_32 (1 << 29)
 
@@ -1517,6 +1519,63 @@ inst_def_t ajardsp_insns[] = {
       },
     },
   },
+
+  {
+    .mnemonic = "stext32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_ST_EXT_32 | FU_LSU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = REG,
+	.offset = 11,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "ldext32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_EXT_32 | FU_LSU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = REG,
+	.offset = 11,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+    },
+  },
+
 
   /* LSU instructions for the new encoding ends here */
 

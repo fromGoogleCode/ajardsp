@@ -31,10 +31,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* UART bit times are calculated for a 50Mhz clk and a baud rate of 115200 bps */
-`define UART_FULL_BIT_TIME 434
-`define UART_HALF_BIT_TIME 217
+// For 50mhz
+//`define UART_FULL_BIT_TIME 434
+//`define UART_HALF_BIT_TIME 217
 
-module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
+// For 25mhz
+`define UART_FULL_BIT_TIME 217
+`define UART_HALF_BIT_TIME 108
+
+module top_top(CLK_50_MHZ, RST,
+               LED, RS232_DTE_RXD, RS232_DTE_TXD,
                LCD_E, LCD_RS, LCD_RW, LCD_D,
                IRQ,
                ROT_A, ROT_B, ROT_CENTER,
@@ -45,8 +51,8 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
                VGA_VSYNC,
                );
 
-   input clk;
-   input rst;
+   input CLK_50_MHZ;
+   input RST;
    input RS232_DTE_RXD;
    output RS232_DTE_TXD;
 
@@ -63,6 +69,9 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
    input        IRQ;
 
    input        ROT_A, ROT_B, ROT_CENTER;
+
+   wire         clk, rst;
+   wire         dcm_locked;
 
    wire         rx_en;
    wire [7:0]   rx_byte;
@@ -156,6 +165,33 @@ module top_top(clk, rst, LED, RS232_DTE_RXD, RS232_DTE_TXD,
                             imem_word_4_r, imem_word_5_r, imem_word_6_r, imem_word_7_r};
 
    assign dmem_wr_data_32_w = {dmem_byte2_r, dmem_byte3_r, dmem_byte0_r, dmem_byte1_r};
+
+
+   assign rst = RST | !dcm_locked;
+
+   BUFG bufg0(.I(clk_fb_), .O(clk_fb));
+
+   DCM_SP #(.CLKDV_DIVIDE(2.0))
+   dcm_0(.CLK0(clk_fb_),
+         .CLK90(),
+         .CLK180(),
+         .CLK270(),
+         .CLK2X(),
+
+         .CLK2X180(),
+	 .CLKDV(clk),
+         .CLKFX(),
+         .CLKFX180(),
+         .LOCKED(dcm_locked),
+         .PSDONE(),
+         .STATUS(),
+	 .CLKFB(clk_fb),
+         .CLKIN(CLK_50_MHZ),
+         .DSSEN(),
+         .PSCLK(),
+         .PSEN(),
+         .PSINCDEC(),
+         .RST(RST));
 
    vgagraph graph_0(.CLK_50_MHZ(clk),
                     .RST(rst),

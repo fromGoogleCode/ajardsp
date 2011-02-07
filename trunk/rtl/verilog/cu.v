@@ -32,6 +32,7 @@
 
 module cu(clk,
 	  rst,
+          clk_en,
 
 	  inst,
 
@@ -67,6 +68,8 @@ module cu(clk,
 
    input clk;
    input rst;
+   input clk_en;
+
    input [31:0] inst;
 
    input [7:0]  satctrl_i;
@@ -162,7 +165,7 @@ module cu(clk,
 	     inst_pipe_1_r <= 32'h0;
 	     inst_pipe_2_r <= 32'h0;
 	  end
-	else
+	else if (clk_en)
 	  begin
 	     inst_pipe_0_r <= inst;
 	     inst_pipe_1_r <= inst_pipe_0_r;
@@ -179,7 +182,7 @@ module cu(clk,
 	     op_1_r <= 0;
              op_2_r <= 0;
 	  end
-	else
+	else if (clk_en)
 	  begin
 	     res_r <= res;
 
