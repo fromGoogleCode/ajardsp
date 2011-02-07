@@ -36,6 +36,7 @@ module vliwfetch(instmem_data,
 
 		 clk,
 		 rst,
+                 clk_en,
 
                  pc_o,
                  next_pc_o,
@@ -58,6 +59,7 @@ module vliwfetch(instmem_data,
 
    input 	 clk;
    input 	 rst;
+   input         clk_en;
 
    input 	 jump_enable;
    input [15:0]  jump_pc;
@@ -176,9 +178,10 @@ module vliwfetch(instmem_data,
              fetch_address <= 14'h0;
              fetch_state <= PRIMING_QUEUE_0;
              pc <= 16'h0;
+             jump_pc_r <= 0;
              insn_on_top <= 0;
 	  end
-	else
+	else if (clk_en)
 	  begin
 
              // Fetch next 64bit word from memory and advance the aligner queue when
@@ -247,7 +250,7 @@ module vliwfetch(instmem_data,
 
      end // always @ (posedge clk)
 
-`ifdef SIMULATION
+`ifdef SIMULATION_VERBOSE
 
    always @(posedge clk)
      begin

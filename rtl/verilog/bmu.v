@@ -34,6 +34,7 @@
 
 module bmu(clk,
 	   rst,
+           clk_en,
 
 	   inst,
 
@@ -59,6 +60,8 @@ module bmu(clk,
 
    input clk;
    input rst;
+   input clk_en;
+
    input [31:0] inst;
 
    output [2:0]	  op_0_idx_o;
@@ -116,7 +119,7 @@ module bmu(clk,
 	     inst_pipe_1_r <= 32'h0;
 	     inst_pipe_2_r <= 32'h0;
 	  end
-	else
+	else if (clk_en)
 	  begin
 	     inst_pipe_0_r <= inst;
 	     inst_pipe_1_r <= inst_pipe_0_r;
@@ -132,7 +135,7 @@ module bmu(clk,
 	     op_0_r <= 0;
 	     op_1_r <= 0;
 	  end
-	else
+	else if (clk_en)
 	  begin
 	     res_r <= res;
 

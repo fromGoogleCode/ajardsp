@@ -32,6 +32,8 @@
 
 module pcu(clk,
 	   rst,
+           clk_en,
+
 	   inst,
            pc_i,
            next_pc_i,
@@ -62,6 +64,7 @@ module pcu(clk,
 
    input clk;
    input rst;
+   input clk_en;
 
    input [31:0] inst;
    input [15:0] pc_i;
@@ -131,13 +134,16 @@ module pcu(clk,
           begin
              dslot_r <= 0;
           end
-        else if (jump_en)
+        else if (clk_en)
           begin
-             dslot_r <= 2'b11;
-          end
-        else
-          begin
-             dslot_r <= {1'b0, dslot_r[1]};
+             if (jump_en)
+               begin
+                  dslot_r <= 2'b11;
+               end
+             else
+               begin
+                  dslot_r <= {1'b0, dslot_r[1]};
+               end
           end
      end
 
@@ -147,13 +153,16 @@ module pcu(clk,
           begin
              invalidate_dslot_r <= 0;
           end
-        else if (req_dslots == 0 || req_dslots == 1)
+        else if (clk_en)
           begin
-             invalidate_dslot_r <= 1;
-          end
-        else
-          begin
-             invalidate_dslot_r <= 0;
+             if (req_dslots == 0 || req_dslots == 1)
+               begin
+                  invalidate_dslot_r <= 1;
+               end
+             else
+               begin
+                  invalidate_dslot_r <= 0;
+               end
           end
      end
 
@@ -163,13 +172,16 @@ module pcu(clk,
           begin
              interrupt_dslot_r <= 0;
           end
-        else if (interrupt_ack_o)
+        else if (clk_en)
           begin
-             interrupt_dslot_r <= 2'b01;
-          end
-        else
-          begin
-             interrupt_dslot_r <= {1'b0, interrupt_dslot_r[1]};
+             if (interrupt_ack_o)
+               begin
+                  interrupt_dslot_r <= 2'b01;
+               end
+             else
+               begin
+                  interrupt_dslot_r <= {1'b0, interrupt_dslot_r[1]};
+               end
           end
      end
 
@@ -179,23 +191,26 @@ module pcu(clk,
           begin
              interrupt_enable_r <= 0;
           end
-        else if (interrupt_ack_o)
+        else if (clk_en)
           begin
-             interrupt_enable_r <= 0;
-          end
-        else
-          begin
-             case (inst_pipe_0_r[7:4])
-               PCU_ITYPE_RETI: begin
-                  interrupt_enable_r <= 1;
-               end
-               PCU_ITYPE_EINT: begin
-                  interrupt_enable_r <= 1;
-               end
-               PCU_ITYPE_DINT: begin
+             if (interrupt_ack_o)
+               begin
                   interrupt_enable_r <= 0;
                end
-             endcase
+             else
+               begin
+                  case (inst_pipe_0_r[7:4])
+                    PCU_ITYPE_RETI: begin
+                       interrupt_enable_r <= 1;
+                    end
+                    PCU_ITYPE_EINT: begin
+                       interrupt_enable_r <= 1;
+                    end
+                    PCU_ITYPE_DINT: begin
+                       interrupt_enable_r <= 0;
+                    end
+                  endcase
+               end
           end
      end
 
@@ -207,7 +222,7 @@ module pcu(clk,
              bkrep_end_pc_r   <= 0;
              bkrep_cnt_r      <= 0;
           end
-        else
+        else if (clk_en)
           begin
              if (inst_pipe_0_r[INSN_SIZE_BIT] && inst_pipe_0_r[INSN_ENC_BIT] &&
                  PCU_ITYPE_BKREP == inst_pipe_0_r[7:4])
@@ -239,7 +254,7 @@ module pcu(clk,
              prev_pc_r <= 0;
              req_dslots_pipe_r <= 0;
 	  end
-	else
+	else if (clk_en)
 	  begin
 	     inst_pipe_0_r <= inst;
              inst_pipe_1_r <= inst_pipe_0_r;
@@ -264,7 +279,7 @@ module pcu(clk,
           begin
              retpc_r <= 0;
           end
-        else
+        else if (clk_en)
           begin
              if (spec_regs_wen_i && spec_regs_waddr_i == SPEC_REGS_ADDR_RETPC)
                begin
@@ -287,7 +302,7 @@ module pcu(clk,
           begin
              retipc_r <= 0;
           end
-        else
+        else if (clk_en)
           begin
              if (spec_regs_wen_i && spec_regs_waddr_i == SPEC_REGS_ADDR_RETIPC)
                begin

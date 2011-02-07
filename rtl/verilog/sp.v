@@ -30,7 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module sp(clk, rst,
+module sp(clk, rst, clk_en,
           sp_0_o,
           push_0_en_i,
           pop_0_en_i,
@@ -52,6 +52,7 @@ module sp(clk, rst,
 
    input clk;
    input rst;
+   input clk_en;
 
    output [15:0] sp_0_o;
    reg [15:0]    sp_0_o;
@@ -123,7 +124,7 @@ module sp(clk, rst,
           begin
              sp_r <= 0;
           end
-        else
+        else if (clk_en)
           begin
              if (spec_regs_wen_i && spec_regs_waddr_i == SPEC_REGS_ADDR_SP)
                begin

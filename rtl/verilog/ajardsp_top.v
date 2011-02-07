@@ -53,7 +53,15 @@ module ajardsp_top(clk, rst_core, rst_mem,
                    gpio_2_ren_o,
                    gpio_2_wen_o,
 
-                   interrupt_req_i
+                   interrupt_req_i,
+
+                   m_if_addr_o,
+                   m_if_data_o,
+                   m_if_data_i,
+                   m_if_read_req_o,
+                   m_if_write_req_o,
+                   m_if_read_ack_i,
+                   m_if_write_ack_i
 
                    );
 
@@ -80,6 +88,14 @@ module ajardsp_top(clk, rst_core, rst_mem,
    output [15:0] gpio_o;
 
    input         interrupt_req_i;
+
+   input [31:0]  m_if_data_i;
+   output [31:0] m_if_addr_o;
+   output [31:0] m_if_data_o;
+   output        m_if_read_req_o;
+   output        m_if_write_req_o;
+   output        m_if_read_ack_i;
+   output        m_if_write_ack_i;
 
    wire          jump_en_w;
    wire [15:0]   jump_pc_w;
@@ -232,6 +248,9 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire [1:0]    pred_0_cu_1_rd_idx_w;
    wire          pred_0_cu_1_rd_bit_w;
 
+   wire [1:0]    pred_0_bmu_0_rd_idx_w;
+   wire          pred_0_bmu_0_rd_bit_w;
+
    wire [1:0]    cu_0_pred_0_wr_idx_w;
    wire          cu_0_pred_0_wr_wen_w;
    wire          cu_0_pred_0_wr_bit_w;
@@ -294,6 +313,14 @@ module ajardsp_top(clk, rst_core, rst_mem,
    output        gpio_2_ren_o;
    output        gpio_2_wen_o;
 
+   wire          clk_en_w;
+
+   reg           m_if_stall_r;
+   wire          m_if_stall_w;
+
+   assign clk_en_w = ~m_if_stall_w;
+   assign m_if_stall_w = m_if_stall_r; // | m_if_read_req_o | m_if_write_req_o;
+
    assign gpio_2_o     = spec_regs_wr_data_w;
    assign gpio_2_ren_o = (spec_regs_ren_w && spec_regs_raddr_w == SPEC_REGS_ADDR_GPIO_2) ? 1'b1 : 1'b0;
    assign gpio_2_wen_o = (spec_regs_wen_w && spec_regs_waddr_w == SPEC_REGS_ADDR_GPIO_2) ? 1'b1 : 1'b0;
@@ -326,8 +353,21 @@ module ajardsp_top(clk, rst_core, rst_mem,
 /*   assign pcu_0_ptrrf_0_rd_data_w = lsu_1_ptr_rd_data_w; */
    assign lsu_0_lsu_1_ptr_rd_idx_w = /* pcu_0_ptrrf_0_rd_en_w ? pcu_0_ptrrf_0_rd_idx_w : */ (lsu_0_ptr_2nd_rd_en_w ? lsu_0_ptr_2nd_rd_idx_w : lsu_1_ptr_rd_idx_w);
 
+   always @(posedge clk)
+     begin
+        if (rst_core || m_if_read_ack_i || m_if_write_ack_i)
+          begin
+             m_if_stall_r <= 0;
+          end
+        else if (m_if_read_req_o || m_if_write_req_o)
+          begin
+             m_if_stall_r <= 1;
+          end
+     end
+
    imem imem_0(.clk(clk),
                .rst(rst_mem),
+               .clk_en(clk_en_w),
                .ren_i(imem_ren_w),
                .addr_i(imem_addr_w),
                .inst_o(imem_data_w),
@@ -340,6 +380,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    vliwfetch vliwfetch_0(.clk(clk),
                          .rst(rst_core),
+                         .clk_en(clk_en_w),
 
                          .instmem_ren(imem_ren_w),
                          .instmem_data(imem_data_w),
@@ -489,6 +530,8 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    pcu pcu_0(.clk(clk),
              .rst(rst_core),
+             .clk_en(clk_en_w),
+
              .inst(pcu_inst),
              .pc_i(vliwfetch_0_pcu_0_pc_w),
              .next_pc_i(vliwfetch_0_pcu_0_next_pc_w),
@@ -516,6 +559,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    dmem dmem_0(.clk(clk),
                .rst(rst_mem),
+               .clk_en(clk_en_w),
 
                .dump_mem_i(pcu_0_dmem_0_halt_w),
 
@@ -542,6 +586,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    sp sp_0(.clk(clk),
            .rst(rst_core),
+           .clk_en(clk_en_w),
            .sp_0_o(sp_0_lsu_0_sp_w),
            .push_0_en_i(lsu_0_sp_0_push_en_w),
            .pop_0_en_i(lsu_0_sp_0_pop_en_w),
@@ -581,6 +626,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    lsu lsu_0(.clk(clk),
              .rst(rst_core),
+             .clk_en(clk_en_w),
 
              .inst(lsu_0_inst),
 
@@ -633,11 +679,19 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .mask_1_i(lsuregs_0_mask_1_w),
              .mod_sel_i(lsuregs_0_mod_sel_w),
              .mod_0_i(lsuregs_0_mod_0_w),
-             .mod_1_i(lsuregs_0_mod_1_w)
+             .mod_1_i(lsuregs_0_mod_1_w),
+
+             .m_if_addr_o(m_if_addr_o),
+             .m_if_data_o(m_if_data_o),
+             .m_if_data_i(m_if_data_i),
+             .m_if_read_req_o(m_if_read_req_o),
+             .m_if_write_req_o(m_if_write_req_o)
+
              );
 
    lsu lsu_1(.clk(clk),
              .rst(rst_core),
+             .clk_en(clk_en_w),
 
              .inst(lsu_1_inst),
 
@@ -705,6 +759,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    cu cu_0(.clk(clk),
            .rst(rst_core),
+           .clk_en(clk_en_w),
 
            .inst(cu_0_inst),
 
@@ -738,6 +793,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    cu cu_1(.clk(clk),
            .rst(rst_core),
+           .clk_en(clk_en_w),
 
            .inst(cu_1_inst),
 
@@ -771,6 +827,7 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    bmu bmu_0(.clk(clk),
              .rst(rst_core),
+             .clk_en(clk_en_w),
 
              .inst(bmu_0_inst),
 
@@ -951,30 +1008,5 @@ module ajardsp_top(clk, rst_core, rst_mem,
           end
 
      end // always @ (inst_0_valid or inst_0 or inst_1_valid or inst_1 or...
-
-`ifdef SIMULATION
-   always @(posedge clk)
-     begin
-        $display("---");
-        print_disp_inst("PCU  ", pcu_inst);
-        print_disp_inst("LSU_0", lsu_0_inst);
-        print_disp_inst("LSU_1", lsu_1_inst);
-        print_disp_inst("CU_0 ", cu_0_inst);
-        print_disp_inst("CU_1 ", cu_1_inst);
-
-     end
-
-
-   task print_disp_inst;
-      input [256:0] str;
-      input [31:0]  inst;
-      begin
-         if (inst[1])
-           $display("%s: %h", str, inst);
-         else
-           $display("%s: %h", str, inst[15:0]);
-      end
-   endtask // print_inst
-`endif //  `ifdef SIMULATION
 
 endmodule // mydsp_top
