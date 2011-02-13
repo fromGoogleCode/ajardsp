@@ -37,136 +37,72 @@ module fp_mul(clk, rst, op_a_i, op_b_i, res_o, mo1,mo2);
    input clk;
    input rst;
 
-   input [15:0] op_a_i;
-   input [15:0] op_b_i;
+   input  [15:0] op_a_i;
+   input  [15:0] op_b_i;
    output reg [15:0] res_o;
    output reg [15:0] mo1,mo2;
 
 
    parameter mant_width = 8,
-               exp_width = 7;
+             exp_width = 7,
+             exp_offs  = 63;
    parameter sign_bit_pos = 15;
 
-   parameter INIT = 0,NORM = 1,OVRFLWHNDL = 2,RESRDY = 3;
+   reg [17:0] 	 imul, imul1, imul2;
+   reg [(mant_width+1):0] 	 iadd,iadd2;
+   reg [0:0] 			 isign,isign2, rst_is_zero,rst_is_zero2;
 
-   reg [1:0]         mstate;
-
-   reg [17:0]        imul, imul1, imul2;
-   reg [(mant_width+1):0] iadd, iadd1, iadd2;
-
-   initial
-     mstate <= INIT;
+   //initial
+   //  mstate <= INIT;
 
    always
      @(posedge clk) begin: process
-        if(rst)
-          begin
 
-             mstate <= INIT;
-             imul <= 0;
-             iadd <= 0;
-             res_o <= 0;
-          end
-        else
-          begin
-        case (mstate)
-          INIT:
-            begin
-               // generate mant and exp
-               imul1 = {9'b000000001,op_a_i[(mant_width-1):0]};
-               imul2 = {9'b000000001,op_b_i[(mant_width-1):0]};
-               imul <= imul1 * imul2;
-               iadd1 = {3'b000,op_a_i[(sign_bit_pos-1):mant_width]};
-               iadd2 = {3'b000,op_b_i[(sign_bit_pos-1):mant_width]};
-               iadd <= (iadd1 + iadd2)-(63);
-               res_o[sign_bit_pos]<=op_a_i[sign_bit_pos]^op_b_i[sign_bit_pos];
+       //inp op_a_i,op_b_i
 
-               //res_o <= 2;
-               mstate <= NORM;
-            end
+       //out imul
+       //    iadd
+       //    rst_is_zero
+	       // generate mant and exp
+	       imul <= {9'b000000001,op_a_i[(mant_width-1):0]} * {9'b000000001,op_b_i[(mant_width-1):0]};
+	       iadd <= {3'b000,op_a_i[(sign_bit_pos-1):mant_width]} + {3'b000,op_b_i[(sign_bit_pos-1):mant_width]};
+	       //res_o[sign_bit_pos]<=op_a_i[sign_bit_pos]^op_b_i[sign_bit_pos];
+	       isign <= op_a_i[sign_bit_pos]^op_b_i[sign_bit_pos];
+	if({op_a_i,op_b_i} == 0)
+	  rst_is_zero <= 1;
+	else
+	  rst_is_zero <= 0;
 
-          NORM:
-            begin
-               mo1 = imul;
-               mo2 = iadd;
+	//inp imul
+	//    iadd
+	//    isign
+	//    rst_is_zero
 
-               if(imul[mant_width*2+1])
-                 begin
-                    iadd <= (iadd+1);
-                    imul <= imul >> 9;
-                 end
-               else
-                 begin
-                    //iadd <= (iadd + 0);
-                    imul <= imul >> 8;
-                 end
-               //imul <= imul >> 2;
+	//out imul2
+	//    iadd2
+	//    isign2
+	//    rst_is_zero2
+	//NORM:
+	isign2 <= isign;
+	rst_is_zero2 <= rst_is_zero;
 
-               mstate <= OVRFLWHNDL;
-               // normalize mantissa and correct exp.
-            end
+	if(imul[mant_width*2+1])
+	  begin
+	     iadd2 <= (iadd+1-exp_offs);
+	     imul2 <= imul >> 9;
+	  end
+	else
+	  begin
+	     iadd2 <= (iadd - exp_offs);
+	     imul2 <= imul >> 8;
+	  end
 
-          OVRFLWHNDL:
-            begin
-               // currently not used, no rounding yet ...
-               res_o[(sign_bit_pos-1):mant_width] <= iadd[(exp_width-1):0];
-               res_o[(mant_width-1):0] <= imul[(mant_width-1):0];
-               mstate <= RESRDY;
-            end
+	res_o[sign_bit_pos:sign_bit_pos] <= isign2[0:0];
+	res_o[(sign_bit_pos-1):mant_width] <= iadd2[(exp_width-1):0];
+	res_o[(mant_width-1):0] <= imul2[(mant_width-1):0];
 
-          RESRDY:
-            begin
-               // do nothing, result is ready and at output (or maybe cp to output??)
-            end
-
-        endcase // case (mstate)
-
-          end
 
      end // process
 
-endmodule // fp_mul
+endmodule // fp_mul_pipe
 
-
-`ifdef NODEFINED_SIM
-
-module test_fp_mul;
-
-   reg [15:0] op1;
-   reg [15:0] op2;
-   reg        mrst_n,mclk_n;
-   wire [15:0] res;
-   wire [15:0] mmo,amo;
-
-
-   fp_mul mymulblk(.clk(mclk_n),.rst(mrst_n),.op_a_i(op1),.op_b_i(op2),.res_o(res),.mo1(mmo),.mo2(amo));
-
-   initial
-     begin
-        mrst_n = 1;
-        mclk_n = 1;
-        op1  = 16'b0011110000110011; // should be 1.0
-        op2  = 16'b0011110100110011;
-        #5 mclk_n = 0;
-        #10 mclk_n = 1;
-        mrst_n = 0;
-        #15 mclk_n = 0;
-        #20 mclk_n = 1;
-        #25 mclk_n = 0;
-        #30 mclk_n = 1;
-        #35 mclk_n = 0;
-        #40 mclk_n = 1;
-        #45 mclk_n = 0;
-        #50 mclk_n = 1;
-        #55 mclk_n = 0;
-        #60 mclk_n = 1;
-     end
-
-   initial
-     begin
-        $monitor("Signals at time %t:",$time,"clk = %b,rst = %b,mul %b mmo %b amo %b",mclk_n,mrst_n,res,mmo,amo);
-     end
-
-endmodule // test_fp_mul
-
-`endif
