@@ -94,8 +94,8 @@ module ajardsp_top(clk, rst_core, rst_mem,
    output [31:0] m_if_data_o;
    output        m_if_read_req_o;
    output        m_if_write_req_o;
-   output        m_if_read_ack_i;
-   output        m_if_write_ack_i;
+   input         m_if_read_ack_i;
+   input         m_if_write_ack_i;
 
    wire          jump_en_w;
    wire [15:0]   jump_pc_w;

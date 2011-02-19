@@ -1,3 +1,35 @@
+// This file is part of AjarDSP
+//
+// Copyright (c) 2011 Markus Lavin
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the <ORGANIZATION> nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 module soc_top(
                CLK_50_MHZ,
                RST,
@@ -22,7 +54,17 @@ module soc_top(
                BTN_NORTH,
                BTN_EAST,
                BTN_SOUTH,
-               LED
+               LED,
+
+               RS232_DTE_RXD, RS232_DTE_TXD,
+               LCD_E, LCD_RS, LCD_RW, LCD_D,
+               IRQ,
+               ROT_A, ROT_B, ROT_CENTER,
+               VGA_RED,
+               VGA_GREEN,
+               VGA_BLUE,
+               VGA_HSYNC,
+               VGA_VSYNC
                );
 
    input CLK_50_MHZ;
@@ -33,7 +75,24 @@ module soc_top(
    input       BTN_EAST;
    input       BTN_SOUTH;
 /*   input       BTN_WEST; */
-   output reg [7:0] LED;
+   output [7:0] LED;
+
+   input            RS232_DTE_RXD;
+   output           RS232_DTE_TXD;
+
+   output           LCD_E, LCD_RS, LCD_RW;
+   output [3:0]     LCD_D;
+
+   output           VGA_RED,
+                    VGA_GREEN,
+                    VGA_BLUE,
+                    VGA_HSYNC,
+                    VGA_VSYNC;
+
+   input            IRQ;
+
+   input        ROT_A, ROT_B, ROT_CENTER;
+
 
    output [12:0] SD_A;
    inout [15:0]  SD_DQ;
@@ -52,36 +111,78 @@ module soc_top(
    output        SD_WE;
    input         SD_CK_FB;
 
-   reg           rd, wr;
+   reg [3:0]     rst_cnt_0, rst_cnt_1, rst_cnt_2;
 
-   wire          clk_fb;
-   wire          clk_fb_;
+   wire          clk_fb, clk_fb_, clk_fb_2, clk_fb_2_;
 
-   wire          locked_0, locked_1;
-   wire          PRE_CLK_100_MHZ;
-   wire          CLK_100_MHZ;
+   wire          locked_0, locked_1, locked_2;
+
+   wire          CLK_40_MHZ;
    wire [31:0]   read_data;
    wire          ack;
 
    wire          ddr_clk, ddr_clk_n, ddr_clk_fb;
 
    wire          rst;
-   wire          clk;
+
+   wire          clk_p, clk_n;
 
    assign SD_CS = 0;
 
    assign SD_CK_P = ddr_clk;
    assign SD_CK_N = ddr_clk_n;
 
-   assign  ddr_clk_fb = SD_CK_FB;
+//   assign  ddr_clk_fb = SD_CK_FB;
 
-   assign rst = RST || !locked_0 || !locked_1;
+   assign rst = RST || !locked_0 || !locked_1 || !locked_2;
 
-      DCM_SP dcm_0(.CLK0(clk_fb_),
+   assign LED = rst ? 8'haa : {5'h0, locked_1, locked_0, locked_2};
+
+   assign LCD_E  = 0;
+   assign LCD_RS = 0;
+   assign LCD_RW = 0;
+   assign LCD_D  = 0;
+
+
+   DCM_SP #(.CLKFX_DIVIDE(5),
+            .CLKFX_MULTIPLY(4))
+   dcm_2(.CLK0(clk_fb_2_),
+         .CLK90(),
+         .CLK180(),
+         .CLK270(),
+         .CLK2X(),
+
+         .CLK2X180(),
+	 .CLKDV(),
+         .CLKFX(CLK_40_MHZ),
+         .CLKFX180(),
+         .LOCKED(locked_2),
+         .PSDONE(),
+         .STATUS(),
+	 .CLKFB(clk_fb_2),
+         .CLKIN(CLK_50_MHZ),
+         .DSSEN(),
+         .PSCLK(),
+         .PSEN(),
+         .PSINCDEC(),
+         .RST(RST));
+
+
+   BUFG bufg2(.I(clk_fb_2_), .O(clk_fb_2));
+
+   always @(posedge CLK_40_MHZ)
+     begin
+        if (RST | !locked_2)
+          rst_cnt_0 <= 0;
+        else if (rst_cnt_0[3] == 0)
+          rst_cnt_0 <= rst_cnt_0 + 1;
+     end
+
+   DCM_SP dcm_0(.CLK0(clk_fb_),
                 .CLK90(),
                 .CLK180(),
                 .CLK270(),
-                .CLK2X(PRE_CLK_100_MHZ),
+                .CLK2X(clk),
 
                 .CLK2X180(),
 	        .CLKDV(),
@@ -91,19 +192,19 @@ module soc_top(
                 .PSDONE(),
                 .STATUS(),
 	        .CLKFB(clk_fb),
-                .CLKIN(CLK_50_MHZ),
+                .CLKIN(CLK_40_MHZ),
                 .DSSEN(),
                 .PSCLK(),
                 .PSEN(),
                 .PSINCDEC(),
-                .RST(RST));
+                .RST(RST | !locked_2 | !rst_cnt_0[3]));
 
    BUFG bufg0(.I(clk_fb_), .O(clk_fb));
 
    DCM_SP dcm_1(.CLK0(ddr_clk),
                 .CLK90(clk_n),
                 .CLK180(ddr_clk_n),
-                .CLK270(clk),
+                .CLK270(clk_p),
                 .CLK2X(),
                 .CLK2X180(),
 	        .CLKDV(),
@@ -113,12 +214,14 @@ module soc_top(
                 .PSDONE(),
                 .STATUS(),
 	        .CLKFB(ddr_clk_fb),
-                .CLKIN(PRE_CLK_100_MHZ),
+                .CLKIN(clk),
                 .DSSEN(),
                 .PSCLK(),
                 .PSEN(),
                 .PSINCDEC(),
                 .RST(RST | !locked_0));
+
+   BUFG bufg1(.I(ddr_clk), .O(ddr_clk_fb));
 
 
    wire        wb_ack_i_w;
@@ -130,11 +233,11 @@ module soc_top(
    wire        wb_stb_o_w;
    wire        wb_we_o_w;
 
-   wb_ajardsp wb_ajardsp_0(.clk(clk),
+   wb_ajardsp wb_ajardsp_0(.clk(CLK_40_MHZ),
                            .rst(rst),
 
                            /* Wishbone interface */
-                           .wb_clk_i(clk),
+                           .wb_clk_i(CLK_40_MHZ),
                            .wb_rst_i(rst),
 
                            .wb_ack_i(wb_ack_i_w),
@@ -145,11 +248,16 @@ module soc_top(
                            .wb_cyc_o(wb_cyc_o_w),
                            .wb_sel_o(wb_sel_o_w),
                            .wb_stb_o(wb_stb_o_w),
-                           .wb_we_o(wb_we_o_w)
+                           .wb_we_o(wb_we_o_w),
+
+                           .RS232_DTE_RXD(RS232_DTE_RXD),
+                           .RS232_DTE_TXD(RS232_DTE_TXD)
+
                            );
 
+`ifdef NOT_DEFINED
 
-   wb_sdram_ctrl wb_sdram_ctrl_0(.wb_clk_i(clk),
+   wb_sdram_ctrl wb_sdram_ctrl_0(.wb_clk_i(CLK_40_MHZ),
                                  .wb_rst_i(rst),
 
                                  .wb_adr_i(wb_adr_o_w),
@@ -162,7 +270,7 @@ module soc_top(
                                  .wb_sel_i(wb_sel_o_w),
                                  .wb_ack_o(wb_ack_i_w),
 
-                                 .clk(clk),
+                                 .clk(clk_p),
                                  .clk_n(clk_n),
 
                                  .ddr_clk(ddr_clk),
@@ -176,5 +284,44 @@ module soc_top(
                                  .ddr_addr(SD_A),
                                  .ddr_ba(SD_BA)
                                  );
+`else
+
+   assign SD_A    = 0;
+   assign SD_DQ   = 16'hzzzz;
+   assign SD_BA   = 0;
+   assign SD_CAS  = 0;
+   assign SD_CKE  = 0;
+   assign SD_CS   = 0;
+   assign SD_LDM  = 0;
+
+   assign SD_LDQS = 0;
+   assign SD_RAS  = 0;
+   assign SD_UDM  = 0;
+   assign SD_UDQS = 0;
+   assign SD_WE   = 0;
+
+   wb_vga_ctrl wb_vga_ctrl_0(.wb_clk_i(CLK_40_MHZ),
+                             .wb_rst_i(rst),
+
+                             .wb_adr_i(wb_adr_o_w),
+                             .wb_dat_i(wb_dat_o_w),
+                             .wb_dat_o(wb_dat_i_w),
+
+                             .wb_cyc_i(wb_cyc_o_w),
+                             .wb_stb_i(wb_stb_o_w),
+                             .wb_we_i(wb_we_o_w),
+                             .wb_sel_i(wb_sel_o_w),
+                             .wb_ack_o(wb_ack_i_w),
+
+
+                             .VGA_RED(VGA_RED),
+                             .VGA_GREEN(VGA_GREEN),
+                             .VGA_BLUE(VGA_BLUE),
+                             .VGA_HSYNC(VGA_HSYNC),
+                             .VGA_VSYNC(VGA_VSYNC)
+
+                             );
+
+`endif
 
 endmodule
