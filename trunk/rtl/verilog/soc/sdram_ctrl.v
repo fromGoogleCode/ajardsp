@@ -447,7 +447,9 @@ module sdram_ctrl(clk,
                   user_write_ack = 1;
                   if (user_write_req)
                     begin
+`ifdef ENABLE_WRITE_BURSTS
                        ddr_cmd = cmd_write;
+`endif
                        ddr_addr = {burst_addr[10], 1'b0, burst_addr[9:0]};
                        ddr_write_data = user_write_data;
                     end

@@ -521,7 +521,11 @@ module wb_ajardsp(
    /* End - Old UART loader */
 
    ajardsp_top ajardsp_0(.clk(clk),
+`ifdef SIMULATION
+                         .rst_core(rst),
+`else
                          .rst_core(rst | core_rst_r | core_halt_r),
+`endif
                          .rst_mem(rst),
 
                          .ext_imem_wr_addr_i({imem_addr_1_r, imem_addr_0_r}),

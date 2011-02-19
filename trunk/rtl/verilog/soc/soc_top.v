@@ -127,6 +127,27 @@ module soc_top(
 
    wire          clk_p, clk_n;
 
+   reg           sd_wb_cyc_o_w,
+                 sd_wb_stb_o_w,
+                 vga_wb_cyc_o_w,
+                 vga_wb_stb_o_w;
+
+   wire [31:0]   sd_wb_dat_i_w,
+                 vga_wb_dat_i_w;
+
+   wire          sd_wb_ack_i_w,
+                 vga_wb_ack_i_w;
+
+   reg         wb_ack_i_w;
+   wire [31:0] wb_dat_o_w;
+   reg  [31:0] wb_dat_i_w;
+   wire [31:0] wb_adr_o_w;
+   wire        wb_cyc_o_w;
+   wire [3:0]  wb_sel_o_w;
+   wire        wb_stb_o_w;
+   wire        wb_we_o_w;
+
+
    assign SD_CS = 0;
 
    assign SD_CK_P = ddr_clk;
@@ -224,14 +245,25 @@ module soc_top(
    BUFG bufg1(.I(ddr_clk), .O(ddr_clk_fb));
 
 
-   wire        wb_ack_i_w;
-   wire [31:0] wb_dat_o_w;
-   wire [31:0] wb_dat_i_w;
-   wire [31:0] wb_adr_o_w;
-   wire        wb_cyc_o_w;
-   wire [3:0]  wb_sel_o_w;
-   wire        wb_stb_o_w;
-   wire        wb_we_o_w;
+
+   always @(wb_adr_o_w or wb_cyc_o_w or wb_stb_o_w or
+            vga_wb_dat_i_w or vga_wb_ack_i_w or sd_wb_dat_i_w or sd_wb_ack_i_w)
+     begin
+        case (wb_adr_o_w[31:28])
+          4'hf: begin
+             vga_wb_cyc_o_w = wb_cyc_o_w;
+             vga_wb_stb_o_w = wb_stb_o_w;
+             wb_dat_i_w     = vga_wb_dat_i_w;
+             wb_ack_i_w     = vga_wb_ack_i_w;
+          end
+          default: begin
+             sd_wb_cyc_o_w = wb_cyc_o_w;
+             sd_wb_stb_o_w = wb_stb_o_w;
+             wb_dat_i_w    = sd_wb_dat_i_w;
+             wb_ack_i_w    = sd_wb_ack_i_w;
+          end
+        endcase
+     end
 
    wb_ajardsp wb_ajardsp_0(.clk(CLK_40_MHZ),
                            .rst(rst),
@@ -246,8 +278,8 @@ module soc_top(
                            .wb_adr_o(wb_adr_o_w),
 
                            .wb_cyc_o(wb_cyc_o_w),
-                           .wb_sel_o(wb_sel_o_w),
                            .wb_stb_o(wb_stb_o_w),
+                           .wb_sel_o(wb_sel_o_w),
                            .wb_we_o(wb_we_o_w),
 
                            .RS232_DTE_RXD(RS232_DTE_RXD),
@@ -255,20 +287,18 @@ module soc_top(
 
                            );
 
-`ifdef NOT_DEFINED
-
    wb_sdram_ctrl wb_sdram_ctrl_0(.wb_clk_i(CLK_40_MHZ),
                                  .wb_rst_i(rst),
 
                                  .wb_adr_i(wb_adr_o_w),
                                  .wb_dat_i(wb_dat_o_w),
-                                 .wb_dat_o(wb_dat_i_w),
+                                 .wb_dat_o(sd_wb_dat_i_w),
 
-                                 .wb_cyc_i(wb_cyc_o_w),
-                                 .wb_stb_i(wb_stb_o_w),
+                                 .wb_cyc_i(sd_wb_cyc_o_w),
+                                 .wb_stb_i(sd_wb_stb_o_w),
                                  .wb_we_i(wb_we_o_w),
                                  .wb_sel_i(wb_sel_o_w),
-                                 .wb_ack_o(wb_ack_i_w),
+                                 .wb_ack_o(sd_wb_ack_i_w),
 
                                  .clk(clk_p),
                                  .clk_n(clk_n),
@@ -284,34 +314,20 @@ module soc_top(
                                  .ddr_addr(SD_A),
                                  .ddr_ba(SD_BA)
                                  );
-`else
 
-   assign SD_A    = 0;
-   assign SD_DQ   = 16'hzzzz;
-   assign SD_BA   = 0;
-   assign SD_CAS  = 0;
-   assign SD_CKE  = 0;
-   assign SD_CS   = 0;
-   assign SD_LDM  = 0;
-
-   assign SD_LDQS = 0;
-   assign SD_RAS  = 0;
-   assign SD_UDM  = 0;
-   assign SD_UDQS = 0;
-   assign SD_WE   = 0;
 
    wb_vga_ctrl wb_vga_ctrl_0(.wb_clk_i(CLK_40_MHZ),
                              .wb_rst_i(rst),
 
                              .wb_adr_i(wb_adr_o_w),
                              .wb_dat_i(wb_dat_o_w),
-                             .wb_dat_o(wb_dat_i_w),
+                             .wb_dat_o(vga_wb_dat_i_w),
 
-                             .wb_cyc_i(wb_cyc_o_w),
-                             .wb_stb_i(wb_stb_o_w),
+                             .wb_cyc_i(vga_wb_cyc_o_w),
+                             .wb_stb_i(vga_wb_stb_o_w),
                              .wb_we_i(wb_we_o_w),
                              .wb_sel_i(wb_sel_o_w),
-                             .wb_ack_o(wb_ack_i_w),
+                             .wb_ack_o(vga_wb_ack_i_w),
 
 
                              .VGA_RED(VGA_RED),
@@ -322,6 +338,6 @@ module soc_top(
 
                              );
 
-`endif
+
 
 endmodule
