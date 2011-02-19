@@ -99,7 +99,7 @@ module tb;
       #200;
       rst = 0;
 
-      #300000;
+      #500000;
 
       $finish;
    end

@@ -11,8 +11,8 @@
         nop
         nop
         stext32 $ptr3, $ptr4, $acc3 
-nop
+	nop
         ldext32 $ptr3, $ptr4, $acc6
         nop
         nop
-
+	halt

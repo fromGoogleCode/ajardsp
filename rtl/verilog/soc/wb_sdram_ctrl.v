@@ -85,18 +85,22 @@ module wb_sdram_ctrl(
    output [12:0]    ddr_addr;
    output [1:0]     ddr_ba;
 
+   wire [31:0]      read_data_w;
+   reg  [31:0]      read_data_r;
+
    reg [7:0]     next_state, state_r;
    reg           rd_req, wr_req;
    wire          rd_ack, wr_ack;
 
-   parameter wb_s_idle = 0, wb_s_read = 1, wb_s_write = 2;
+
+   parameter wb_s_idle = 0, wb_s_read = 1, wb_s_write = 2, wb_s_ack = 3;
 
    sdram_ctrl sdram_ctrl_0(.clk(clk), .rst(wb_rst_i),
                            .clk_n(clk_n),
                            .user_addr(wb_adr_i),
                            .user_write_data(wb_dat_i),
                            .user_write_mask(4'b0000),
-                           .user_read_data(wb_dat_o),
+                           .user_read_data(read_data_w),
                            .user_read_req(rd_req),
                            .user_write_req(wr_req),
                            .user_read_ack(rd_ack),
@@ -112,6 +116,20 @@ module wb_sdram_ctrl(
                            .ddr_addr(ddr_addr),
                            .ddr_ba(ddr_ba)
                            );
+
+   assign wb_dat_o = read_data_r;
+
+   always @(posedge wb_clk_i)
+     begin
+        if (wb_rst_i)
+          begin
+             read_data_r <= 0;
+          end
+        else if (rd_ack)
+          begin
+             read_data_r <= read_data_w;
+          end
+     end
 
    always @(posedge wb_clk_i)
      begin
@@ -153,8 +171,9 @@ module wb_sdram_ctrl(
           wb_s_read: begin
              if (wb_cyc_i)
                begin
-                  wb_ack_o = rd_ack;
-                  rd_req = wb_stb_i;
+                  rd_req = 1;
+                  if (rd_ack)
+                    next_state = wb_s_ack;
                end
              else
                begin
@@ -165,13 +184,19 @@ module wb_sdram_ctrl(
           wb_s_write: begin
              if (wb_cyc_i)
                begin
-                  wb_ack_o = wr_ack;
-                  wr_req = wb_stb_i;
+                  wr_req = 1;
+                  if (wr_ack)
+                    next_state = wb_s_ack;
                end
              else
                begin
                   next_state = wb_s_idle;
                end
+          end
+
+          wb_s_ack: begin
+             wb_ack_o = 1;
+             next_state = wb_s_idle;
           end
         endcase
      end
