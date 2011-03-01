@@ -131,11 +131,14 @@ module soc_top(
    wire [31:0]   read_data;
    wire          ack;
 
-   wire          ddr_clk, ddr_clk_n, ddr_clk_fb;
+   wire          ddr_clk,
+                 ddr_clk_n,
+                 ddr_clk_p90,
+                 ddr_clk_fb;
 
    wire          rst;
 
-   wire          clk_p, clk_n;
+   wire          clk_p, clk_n, clk_p_fb;
 
    reg           sd_wb_cyc_o_w,
                  sd_wb_stb_o_w,
@@ -237,33 +240,10 @@ module soc_top(
    BUFG bufg0(.I(clk_fb_), .O(clk_fb));
 
 
-`ifdef STUPID_CLOCKS
-   DCM_SP dcm_1(.CLK0(ddr_clk),
-                .CLK90(clk_n),
-                .CLK180(ddr_clk_n),
-                .CLK270(clk_p),
-                .CLK2X(),
-                .CLK2X180(),
-	        .CLKDV(),
-                .CLKFX(),
-                .CLKFX180(),
-                .LOCKED(locked_1),
-                .PSDONE(),
-                .STATUS(),
-	        .CLKFB(ddr_clk_fb),
-                .CLKIN(clk),
-                .DSSEN(),
-                .PSCLK(),
-                .PSEN(),
-                .PSINCDEC(),
-                .RST(RST | !locked_0));
-
-   BUFG bufg1(.I(ddr_clk), .O(ddr_clk_fb));
-`else
    DCM_SP dcm_1(.CLK0(clk_p),
-                .CLK90(ddr_clk),
+                .CLK90(ddr_clk_p90),
                 .CLK180(clk_n),
-                .CLK270(ddr_clk_n),
+  //              .CLK270(ddr_clk_n),
                 .CLK2X(),
                 .CLK2X180(),
 	        .CLKDV(),
@@ -272,7 +252,7 @@ module soc_top(
                 .LOCKED(locked_1),
                 .PSDONE(),
                 .STATUS(),
-	        .CLKFB(ddr_clk_fb),
+	        .CLKFB(clk_p_fb),
                 .CLKIN(clk),
                 .DSSEN(),
                 .PSCLK(),
@@ -280,8 +260,40 @@ module soc_top(
                 .PSINCDEC(),
                 .RST(RST | !locked_0));
 
-   BUFG bufg1(.I(clk_p), .O(ddr_clk_fb));
-`endif
+   BUFG bufg1(.I(clk_p), .O(clk_p_fb));
+
+   /* 32 - bad,
+     -32 - two lines and artifacts,
+     -16 - better than above (almost single line)
+     -8  - almost perfect (occasional minor artifact)
+    */
+
+   DCM_SP #(
+            .CLKOUT_PHASE_SHIFT("FIXED"),
+            .PHASE_SHIFT(-8)
+            )
+          dcm_ddr_clk(.CLK0(ddr_clk),
+                      .CLK90(),
+                      .CLK180(ddr_clk_n),
+                      .CLK270(),
+                      .CLK2X(),
+                      .CLK2X180(),
+	              .CLKDV(),
+                      .CLKFX(),
+                      .CLKFX180(),
+                      .LOCKED(),
+                      .PSDONE(),
+                      .STATUS(),
+	              .CLKFB(ddr_clk_fb),
+                      .CLKIN(ddr_clk_p90),
+                      .DSSEN(),
+                      .PSCLK(),
+                      .PSEN(),
+                      .PSINCDEC(),
+                      .RST(rst));
+
+   BUFG bufg_ddr_clk(.I(ddr_clk), .O(ddr_clk_fb));
+
 
 
    always @(wb_adr_o_w or vga_wb_dat_i_w or vga_wb_ack_i_w or
