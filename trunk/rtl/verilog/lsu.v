@@ -183,8 +183,8 @@ module lsu(clk,
    input [15:0]  mod_1_i;
 
    input      [31:0] m_if_data_i;
-   output reg [31:0] m_if_addr_o;
-   output reg [31:0] m_if_data_o;
+   output     [31:0] m_if_addr_o;
+   output     [31:0] m_if_data_o;
    output reg        m_if_read_req_o;
    output reg        m_if_write_req_o;
 
@@ -298,6 +298,9 @@ module lsu(clk,
    assign dmem_addr_o = {dmem_log_addr[15:1], 1'b0};
    assign dmem_rd_en_o = dmem_log_read_en;
    assign dmem_wr_en_o = dmem_log_write_en;
+
+   assign m_if_addr_o = {ptr_2nd_rd_data_i, ptr_rd_data_i};
+   assign m_if_data_o = acc_rd_data_i;
 
    /* DMEM read logic */
    always @(posedge clk)
@@ -414,8 +417,6 @@ module lsu(clk,
         ptr_2nd_rd_en_o = 0;
         ptr_2nd_rd_idx_o = 0;
 
-        m_if_addr_o = 0;
-        m_if_data_o = 0;
         m_if_read_req_o  = 0;
         m_if_write_req_o = 0;
 
@@ -534,7 +535,6 @@ module lsu(clk,
                   ptr_2nd_rd_en_o  = 1;
                   ptr_2nd_rd_idx_o = inst_pipe_0_r[13:11];
 
-                  m_if_addr_o = {ptr_2nd_rd_data_i, ptr_rd_data_i};
                   m_if_read_req_o = commit_pipe_0_w;
                end
 
@@ -548,8 +548,6 @@ module lsu(clk,
                   acc_rd_en_o  = 1;
 		  acc_rd_idx_o = inst_pipe_0_r[16:14];
 
-                  m_if_addr_o = {ptr_2nd_rd_data_i, ptr_rd_data_i};
-                  m_if_data_o = acc_rd_data_i;
                   m_if_write_req_o = commit_pipe_0_w;
                end
           end  /* 32 bit instruction encoding */

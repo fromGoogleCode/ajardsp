@@ -37,7 +37,8 @@ SRC =	../../rtl/verilog/ajardsp_top.v \
 	../../rtl/verilog/soc/wb_sdram_ctrl.v \
 	../../rtl/verilog/soc/sdram_ctrl.v \
 	../../rtl/verilog/soc/wb_ajardsp.v \
-	../../rtl/verilog/soc/wb_vga_ctrl.v
+	../../rtl/verilog/soc/wb_vga_ctrl.v \
+	../../rtl/verilog/soc/wb_adc_ctrl.v
 
 
 all:		bits

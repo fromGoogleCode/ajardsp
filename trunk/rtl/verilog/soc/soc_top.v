@@ -64,7 +64,12 @@ module soc_top(
                VGA_GREEN,
                VGA_BLUE,
                VGA_HSYNC,
-               VGA_VSYNC
+               VGA_VSYNC,
+
+               ADC_SS,
+               ADC_SCK,
+               ADC_MISO
+
                );
 
    input CLK_50_MHZ;
@@ -88,6 +93,11 @@ module soc_top(
                     VGA_BLUE,
                     VGA_HSYNC,
                     VGA_VSYNC;
+
+   output           ADC_SS,
+                    ADC_SCK;
+   input            ADC_MISO;
+
 
    input            IRQ;
 
@@ -130,13 +140,17 @@ module soc_top(
    reg           sd_wb_cyc_o_w,
                  sd_wb_stb_o_w,
                  vga_wb_cyc_o_w,
-                 vga_wb_stb_o_w;
+                 vga_wb_stb_o_w,
+                 adc_wb_cyc_o_w,
+                 adc_wb_stb_o_w;
 
    wire [31:0]   sd_wb_dat_i_w,
-                 vga_wb_dat_i_w;
+                 vga_wb_dat_i_w,
+                 adc_wb_dat_i_w;
 
    wire          sd_wb_ack_i_w,
-                 vga_wb_ack_i_w;
+                 vga_wb_ack_i_w,
+                 adc_wb_ack_i_w;
 
    reg         wb_ack_i_w;
    wire [31:0] wb_dat_o_w;
@@ -222,6 +236,8 @@ module soc_top(
 
    BUFG bufg0(.I(clk_fb_), .O(clk_fb));
 
+
+`ifdef STUPID_CLOCKS
    DCM_SP dcm_1(.CLK0(ddr_clk),
                 .CLK90(clk_n),
                 .CLK180(ddr_clk_n),
@@ -243,27 +259,78 @@ module soc_top(
                 .RST(RST | !locked_0));
 
    BUFG bufg1(.I(ddr_clk), .O(ddr_clk_fb));
+`else
+   DCM_SP dcm_1(.CLK0(clk_p),
+                .CLK90(ddr_clk),
+                .CLK180(clk_n),
+                .CLK270(ddr_clk_n),
+                .CLK2X(),
+                .CLK2X180(),
+	        .CLKDV(),
+                .CLKFX(),
+                .CLKFX180(),
+                .LOCKED(locked_1),
+                .PSDONE(),
+                .STATUS(),
+	        .CLKFB(ddr_clk_fb),
+                .CLKIN(clk),
+                .DSSEN(),
+                .PSCLK(),
+                .PSEN(),
+                .PSINCDEC(),
+                .RST(RST | !locked_0));
+
+   BUFG bufg1(.I(clk_p), .O(ddr_clk_fb));
+`endif
 
 
-
-   always @(wb_adr_o_w or wb_cyc_o_w or wb_stb_o_w or
-            vga_wb_dat_i_w or vga_wb_ack_i_w or sd_wb_dat_i_w or sd_wb_ack_i_w)
+   always @(wb_adr_o_w or vga_wb_dat_i_w or vga_wb_ack_i_w or
+            sd_wb_dat_i_w or sd_wb_ack_i_w or adc_wb_dat_i_w or adc_wb_ack_i_w)
      begin
+        wb_dat_i_w     = 0;
+        wb_ack_i_w     = 0;
+
         case (wb_adr_o_w[31:28])
           4'hf: begin
-             vga_wb_cyc_o_w = wb_cyc_o_w;
-             vga_wb_stb_o_w = wb_stb_o_w;
              wb_dat_i_w     = vga_wb_dat_i_w;
              wb_ack_i_w     = vga_wb_ack_i_w;
           end
+          4'he: begin
+             wb_dat_i_w     = adc_wb_dat_i_w;
+             wb_ack_i_w     = adc_wb_ack_i_w;
+          end
           default: begin
-             sd_wb_cyc_o_w = wb_cyc_o_w;
-             sd_wb_stb_o_w = wb_stb_o_w;
              wb_dat_i_w    = sd_wb_dat_i_w;
              wb_ack_i_w    = sd_wb_ack_i_w;
           end
         endcase
      end
+
+   always @(wb_adr_o_w or wb_cyc_o_w or wb_stb_o_w)
+     begin
+        vga_wb_cyc_o_w = 0;
+        vga_wb_stb_o_w = 0;
+        adc_wb_cyc_o_w = 0;
+        adc_wb_stb_o_w = 0;
+        sd_wb_cyc_o_w = 0;
+        sd_wb_stb_o_w = 0;
+
+        case (wb_adr_o_w[31:28])
+          4'hf: begin
+             vga_wb_cyc_o_w = wb_cyc_o_w;
+             vga_wb_stb_o_w = wb_stb_o_w;
+          end
+          4'he: begin
+             adc_wb_cyc_o_w = wb_cyc_o_w;
+             adc_wb_stb_o_w = wb_stb_o_w;
+          end
+          default: begin
+             sd_wb_cyc_o_w = wb_cyc_o_w;
+             sd_wb_stb_o_w = wb_stb_o_w;
+          end
+        endcase
+     end
+
 
    wb_ajardsp wb_ajardsp_0(.clk(CLK_40_MHZ),
                            .rst(rst),
@@ -335,6 +402,26 @@ module soc_top(
                              .VGA_BLUE(VGA_BLUE),
                              .VGA_HSYNC(VGA_HSYNC),
                              .VGA_VSYNC(VGA_VSYNC)
+
+                             );
+
+   wb_adc_ctrl wb_adc_ctrl_0(.wb_clk_i(CLK_40_MHZ),
+                             .wb_rst_i(rst),
+
+                             .wb_adr_i(wb_adr_o_w),
+                             .wb_dat_i(wb_dat_o_w),
+                             .wb_dat_o(adc_wb_dat_i_w),
+
+                             .wb_cyc_i(adc_wb_cyc_o_w),
+                             .wb_stb_i(adc_wb_stb_o_w),
+                             .wb_we_i(wb_we_o_w),
+                             .wb_sel_i(wb_sel_o_w),
+                             .wb_ack_o(adc_wb_ack_i_w),
+
+                             /* ADC interface */
+                             .ADC_SS_o(ADC_SS),
+                             .ADC_MISO_i(ADC_MISO),
+                             .ADC_SCK_o(ADC_SCK)
 
                              );
 

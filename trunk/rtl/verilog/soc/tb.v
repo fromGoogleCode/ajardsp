@@ -50,6 +50,9 @@ module tb;
    wire        ldm, udm;
    wire        ldqs, udqs;
 
+   reg [15:0]  cnt_r;
+
+
    soc_top soc_top_0(
                      .CLK_50_MHZ(clk),
                      .RST(rst),
@@ -74,7 +77,9 @@ module tb;
                      .BTN_NORTH(0),
                      .BTN_EAST(0),
                      .BTN_SOUTH(0),
-                     .LED()
+                     .LED(),
+
+                     .ADC_MISO(cnt_r[5])
                      );
 
 
@@ -99,10 +104,18 @@ module tb;
       #200;
       rst = 0;
 
-      #500000;
+      #1500000;
 
       $finish;
    end
+
+   always @(posedge clk)
+     begin
+        if (rst)
+          cnt_r <= 0;
+        else
+          cnt_r <= cnt_r + 1;
+     end
 
    always clk = #10 ~clk;
 
