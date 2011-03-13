@@ -262,15 +262,9 @@ module soc_top(
 
    BUFG bufg1(.I(clk_p), .O(clk_p_fb));
 
-   /* 32 - bad,
-     -32 - two lines and artifacts,
-     -16 - better than above (almost single line)
-     -8  - almost perfect (occasional minor artifact)
-    */
-
    DCM_SP #(
             .CLKOUT_PHASE_SHIFT("FIXED"),
-            .PHASE_SHIFT(-8)
+            .PHASE_SHIFT(0)
             )
           dcm_ddr_clk(.CLK0(ddr_clk),
                       .CLK90(),
@@ -408,6 +402,7 @@ module soc_top(
                              .wb_sel_i(wb_sel_o_w),
                              .wb_ack_o(vga_wb_ack_i_w),
 
+                             .pixel_clk(CLK_50_MHZ),
 
                              .VGA_RED(VGA_RED),
                              .VGA_GREEN(VGA_GREEN),

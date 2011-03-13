@@ -71,6 +71,9 @@ module sdram_ctrl(clk,
    output reg [12:0] ddr_addr;
    output reg [1:0]  ddr_ba;
 
+   reg [2:0]         ddr_cmd_;
+   reg [12:0]        ddr_addr_;
+   reg [1:0]         ddr_ba_;
 
    wire  clk, clk_n;
 
@@ -79,9 +82,12 @@ module sdram_ctrl(clk,
    wire [31:0] read_data;
    reg  [31:0] read_data_r;
    reg [31:0] ddr_write_data;
+   reg [31:0] ddr_write_data_;
 
    reg        ddr_data_oe;
+   reg        ddr_data_oe_;
    reg [3:0]  write_mask;
+   reg [3:0]  write_mask_;
 
    reg [31:0]  counter;
    reg [31:0]  burst_addr;
@@ -114,12 +120,26 @@ module sdram_ctrl(clk,
         if (rst)
           begin
              read_data_r <= 0;
+             ddr_cmd <= 0;
+             ddr_addr <= 0;
+             ddr_ba <= 0;
+             ddr_data_oe <= 0;
+             ddr_write_data <= 0;
+             write_mask <= 0;
           end
         else
           begin
              read_data_r <= read_data;
+             ddr_cmd <= ddr_cmd_;
+             ddr_addr <= ddr_addr_;
+             ddr_ba <= ddr_ba_;
+             ddr_data_oe <= ddr_data_oe_;
+             ddr_write_data <= ddr_write_data_;
+             write_mask <= write_mask_;
           end
      end
+
+
 
    IDDR2  iddr2_0(.D(ddr_data[0]), .C0(clk), .C1(clk_n), .CE(1'b1),
                   .Q0(read_data[0]), .Q1(read_data[16]), .R(rst), .S(1'b0));
@@ -258,271 +278,318 @@ module sdram_ctrl(clk,
 
 
 
-   reg [7:0] ddr_state;
-   reg [15:0] cycle_counter;
+   reg [7:0] ddr_state_r, ddr_state_next;
+   reg [15:0] cycle_counter_r, cycle_counter;
+   reg        cycle_counter_reload_en;
+   reg        load_burst_addr;
 
    reg [9:0]  active_row_addr_r;
 
    always @(posedge clk)
      begin
-        ddr_cmd = cmd_nop;
-        ddr_write_data = 0;
-        ddr_data_oe = 0;
-        ddr_addr = 0;
-        ddr_ba = 0;
-
-        user_read_ack = 0;
-
-        user_write_ack = 0;
-
-        write_mask = 4'b1111;
-
         if (rst)
           begin
-             ddr_state <= s_init_0;
+             ddr_state_r <= s_init_0;
              ddr_cke <= 0;
-
              active_row_addr_r <= 0;
-             cycle_counter <= CC_200US;
+             cycle_counter_r <= CC_200US;
 
              burst_addr <= 0;
           end
         else
           begin
+             ddr_state_r <= ddr_state_next;
 
-             if (cycle_counter)
+             if (cycle_counter_reload_en)
                begin
-                  cycle_counter <= cycle_counter - 1;
+                  cycle_counter_r <= cycle_counter;
+               end
+             else if (cycle_counter_r)
+               begin
+                  cycle_counter_r <= cycle_counter_r - 1;
                end
 
-             ddr_addr = {burst_addr[10], 1'b0, burst_addr[9:0]};
+             if (ddr_state_next == s_init_1)
+               ddr_cke <= 1;
 
-             case (ddr_state)
+             if (ddr_state_r == s_act_cmd)
+               active_row_addr_r <= user_addr[20:11];
 
-               s_init_0: begin  /* After 200us with stable clocks assert clk enable  */
-                  if (cycle_counter == 0)
-                    begin
-                       ddr_state <= s_init_1;
-                       ddr_cke <= 1;
-                    end
+             if (load_burst_addr)
+               burst_addr <= user_addr;
+          end
+     end
+
+   always @(ddr_state_r)
+     begin
+        user_read_ack = 0;
+        user_write_ack = 0;
+
+        case (ddr_state_r)
+          s_read_data: begin
+             user_read_ack = 1;
+          end
+          s_read_wait_0: begin
+             user_read_ack = 1;
+          end
+          s_write_data: begin
+             user_write_ack = 1;
+          end
+          s_write_wait_0: begin
+             user_write_ack = 1;
+          end
+        endcase
+     end
+
+   always @(ddr_state_r or burst_addr or cycle_counter_r or
+            clk_edge_odd or user_read_req or user_write_req or
+            user_addr or active_row_addr_r or user_write_data or
+            user_write_mask)
+     begin
+        ddr_state_next = ddr_state_r;
+        cycle_counter_reload_en = 0;
+        cycle_counter = 0;
+
+        ddr_cmd_ = cmd_nop;
+        ddr_write_data_ = 0;
+        ddr_data_oe_ = 0;
+        ddr_addr_ = 0;
+        ddr_ba_ = 0;
+
+        write_mask_ = 4'b1111;
+
+        load_burst_addr = 0;
+
+        ddr_addr_ = {burst_addr[10], 1'b0, burst_addr[9:0]};
+
+        case (ddr_state_r)
+
+          s_init_0: begin  /* After 200us with stable clocks assert clk enable  */
+             if (cycle_counter_r == 0)
+               begin
+                  ddr_state_next = s_init_1;
                end
+          end
 
-               s_init_1: begin  /* Nop for one cycle */
-                  ddr_state <= s_init_2;
-               end
+          s_init_1: begin  /* Nop for one cycle */
+             ddr_state_next = s_init_2;
+          end
 
-               s_init_2: begin  /* Precharge all */
-                  ddr_cmd  = cmd_precharge;
-                  ddr_addr = {1'b1, 10'h0};
-                  ddr_state <= s_init_3;
-                  cycle_counter <= CC_tRP;
-               end
-
-               s_init_3: begin  /* Wait for tRP */
-                  if (cycle_counter == 0)
-                    begin
-                       ddr_state <= s_init_4;
-                    end
-               end
-
-               s_init_4: begin  /* Load mode register (extended) */
-                  ddr_cmd  = cmd_load_mode_reg;
-                  ddr_addr = 0;
-                  ddr_ba = 2'b01;
-                  ddr_state <= s_init_5;
-               end
-
-               s_init_5: begin  /* Nop for one cycle */
-                  ddr_state <= s_init_6;
-               end
-
-               s_init_6: begin  /* Load mode register */
-                  ddr_cmd  = cmd_load_mode_reg;
-                  ddr_addr = {5'b00010, 3'b110, 1'b0, 3'b001};
-                  ddr_ba = 2'b00;
-                  ddr_state <= s_init_7;
-               end
-
-               s_init_7: begin  /* Nop for one cycle */
-                  ddr_state <= s_init_8;
-               end
-
-               s_init_8: begin  /* Precharge all */
-                  ddr_cmd  = cmd_precharge;
-                  ddr_addr = {1'b1, 10'h0};
-                  ddr_state <= s_init_9;
-                  cycle_counter <= CC_tRP;
-               end
-
-               s_init_9: begin  /* Wait for tRP */
-                  if (cycle_counter == 0)
-                    begin
-                       ddr_state <= s_init_10;
-                    end
-               end
-
-               s_init_10: begin  /* Auto refresh */
-                  ddr_cmd  = cmd_auto_refresh;
-                  ddr_state <= s_init_11;
-                  cycle_counter <= CC_tRFC;
-               end
-
-               s_init_11: begin  /* Wait for tRFC */
-                  if (cycle_counter == 0)
-                    begin
-                       ddr_state <= s_init_12;
-                    end
-               end
-
-               s_init_12: begin  /* Auto refresh */
-                  ddr_cmd  = cmd_auto_refresh;
-                  ddr_state <= s_init_13;
-                  cycle_counter <= CC_tRFC + 200;
-               end
-
-               s_init_13: begin  /* Wait for tRFC + 200cc */
-                  if (cycle_counter == 0)
-                    begin
-                       ddr_state <= s_idle;
-                       cycle_counter <= CC_tREFI;
-                    end
-               end
-
-               s_idle: begin
-
-                  if (cycle_counter == 0)
-                    begin
-                       ddr_state <= s_refresh_0;
-                    end
-                  else if (clk_edge_odd && (user_read_req || user_write_req))
-                    begin
-                       ddr_state <= s_act_cmd;
-                    end
-               end
-
-               s_refresh_0: begin
-                  ddr_cmd  = cmd_auto_refresh;
-                  ddr_state <= s_refresh_1;
-                  cycle_counter <= CC_tRFC;
-               end
-
-               s_refresh_1: begin
-                  if (cycle_counter == 0)
-                    begin
-                       ddr_state <= s_idle;
-                       cycle_counter <= CC_tREFI;
-                    end
-               end
-
-               s_precharge_cmd: begin
-                  ddr_cmd = cmd_precharge;
-                  ddr_addr = {1'b1, 10'h000};
-                  ddr_state <= s_precharge_wait_0;
-               end
-
-               s_precharge_wait_0: begin
-                  ddr_state <= s_precharge_wait_1;
-               end
-
-               s_precharge_wait_1: begin
-                  ddr_state <= s_idle;
-               end
-
-               s_act_cmd: begin
-                  ddr_cmd = cmd_active;
-                  ddr_addr = {user_addr[20:11]};
-                  ddr_state <= s_act_wait;
-                  active_row_addr_r <= user_addr[20:11];
-               end
-
-               s_act_wait: begin
-                  ddr_state <= s_row_active;
-               end
-
-               s_row_active: begin
-                  if (cycle_counter == 0 ||
-                      ((user_read_req || user_write_req) && active_row_addr_r != user_addr[20:11]))
-                    begin
-                       ddr_state <= s_precharge_cmd;
-                    end
-                  else
-                    begin
-                       if (user_write_req)
-                         ddr_state <= s_write_cmd;
-                       else if(user_read_req)
-                         ddr_state <= s_read_cmd;
-
-                       if (user_write_req || user_read_req)
-                         burst_addr <= user_addr;
-                    end
-               end
-
-               s_write_cmd: begin
-                  ddr_cmd = cmd_write;
-                  ddr_addr = {burst_addr[10], 1'b0, burst_addr[9:0]};
-                  ddr_write_data = user_write_data;
-                  write_mask     = user_write_mask;
-                  ddr_state <= s_write_data;
-               end
-
-               s_write_data: begin
-                  ddr_write_data = user_write_data;
-                  write_mask     = user_write_mask;
-                  ddr_data_oe = 1;
-                  user_write_ack = 1;
-                  ddr_state <= s_write_wait_0;
-               end
-
-               s_write_wait_0: begin
-                  user_write_ack = 1;
-                  ddr_state <= s_row_active;
-               end
-
-
-               s_wait_0: begin
-                  ddr_state <= s_wait_1;
-               end
-
-               s_wait_1: begin
-                  ddr_state <= s_wait_2;
-               end
-
-               s_wait_2: begin
-                  ddr_state <= s_idle;
-               end
-
-               s_read_cmd: begin
-                  ddr_cmd = cmd_read;
-                  ddr_addr = {burst_addr[10], 1'b0, burst_addr[9:0]};
-                  ddr_state <= s_read_cl_0;
-               end
-
-               s_read_cl_0: begin
-                  ddr_state <= s_read_cl_1;
-               end
-
-               s_read_cl_1: begin
-                  ddr_state <= s_read_cl_2;
-               end
-
-               s_read_cl_2: begin
-
-                  ddr_state <= s_read_data;
-               end
-
-               s_read_data: begin
-                  user_read_ack = 1;
-                  ddr_state <= s_read_wait_0;
-               end
-
-               s_read_wait_0: begin
-                  user_read_ack = 1;
-                  ddr_state <= s_row_active;
-               end
-
-             endcase
+          s_init_2: begin  /* Precharge all */
+             ddr_cmd_ = cmd_precharge;
+             ddr_addr_ = {1'b1, 10'h0};
+             ddr_state_next = s_init_3;
+             cycle_counter = CC_tRP;
+             cycle_counter_reload_en = 1;
 
           end
+
+          s_init_3: begin  /* Wait for tRP */
+             if (cycle_counter_r == 0)
+               begin
+                  ddr_state_next = s_init_4;
+               end
+          end
+
+          s_init_4: begin  /* Load mode register (extended) */
+             ddr_cmd_ = cmd_load_mode_reg;
+             ddr_addr_ = 0;
+             ddr_ba_ = 2'b01;
+             ddr_state_next = s_init_5;
+          end
+
+          s_init_5: begin  /* Nop for one cycle */
+             ddr_state_next = s_init_6;
+          end
+
+          s_init_6: begin  /* Load mode register */
+             ddr_cmd_ = cmd_load_mode_reg;
+             ddr_addr_ = {5'b00010, 3'b110, 1'b0, 3'b001};
+             ddr_ba_ = 2'b00;
+             ddr_state_next = s_init_7;
+          end
+
+          s_init_7: begin  /* Nop for one cycle */
+             ddr_state_next = s_init_8;
+          end
+
+          s_init_8: begin  /* Precharge all */
+             ddr_cmd_ = cmd_precharge;
+             ddr_addr_ = {1'b1, 10'h0};
+             ddr_state_next = s_init_9;
+             cycle_counter = CC_tRP;
+             cycle_counter_reload_en = 1;
+          end
+
+          s_init_9: begin  /* Wait for tRP */
+             if (cycle_counter_r == 0)
+               begin
+                  ddr_state_next = s_init_10;
+               end
+          end
+
+          s_init_10: begin  /* Auto refresh */
+             ddr_cmd_ = cmd_auto_refresh;
+             ddr_state_next = s_init_11;
+             cycle_counter = CC_tRFC;
+             cycle_counter_reload_en = 1;
+          end
+
+          s_init_11: begin  /* Wait for tRFC */
+             if (cycle_counter_r == 0)
+               begin
+                  ddr_state_next = s_init_12;
+               end
+          end
+
+          s_init_12: begin  /* Auto refresh */
+             ddr_cmd_ = cmd_auto_refresh;
+             ddr_state_next = s_init_13;
+             cycle_counter = CC_tRFC + 200;
+             cycle_counter_reload_en = 1;
+          end
+
+          s_init_13: begin  /* Wait for tRFC + 200cc */
+             if (cycle_counter_r == 0)
+               begin
+                  ddr_state_next = s_idle;
+                  cycle_counter = CC_tREFI;
+                  cycle_counter_reload_en = 1;
+               end
+          end
+
+          s_idle: begin
+
+             if (cycle_counter_r == 0)
+               begin
+                  ddr_state_next = s_refresh_0;
+               end
+             else if (clk_edge_odd && (user_read_req || user_write_req))
+               begin
+                  ddr_state_next = s_act_cmd;
+               end
+          end
+
+          s_refresh_0: begin
+             ddr_cmd_ = cmd_auto_refresh;
+             ddr_state_next = s_refresh_1;
+             cycle_counter = CC_tRFC;
+             cycle_counter_reload_en = 1;
+          end
+
+          s_refresh_1: begin
+             if (cycle_counter_r == 0)
+               begin
+                  ddr_state_next = s_idle;
+                  cycle_counter = CC_tREFI;
+                  cycle_counter_reload_en = 1;
+               end
+          end
+
+          s_precharge_cmd: begin
+             ddr_cmd_ = cmd_precharge;
+             ddr_addr_ = {1'b1, 10'h000};
+             ddr_state_next = s_precharge_wait_0;
+          end
+
+          s_precharge_wait_0: begin
+             ddr_state_next = s_precharge_wait_1;
+          end
+
+          s_precharge_wait_1: begin
+             ddr_state_next = s_idle;
+          end
+
+          s_act_cmd: begin
+             ddr_cmd_ = cmd_active;
+             ddr_addr_ = {user_addr[20:11]};
+             ddr_state_next = s_act_wait;
+          end
+
+          s_act_wait: begin
+             ddr_state_next = s_row_active;
+          end
+
+          s_row_active: begin
+             if (cycle_counter_r == 0 ||
+                 ((user_read_req || user_write_req) && active_row_addr_r != user_addr[20:11]))
+               begin
+                  ddr_state_next = s_precharge_cmd;
+               end
+             else
+               begin
+                  if (user_write_req)
+                    ddr_state_next = s_write_cmd;
+                  else if(user_read_req)
+                    ddr_state_next = s_read_cmd;
+
+                  if (user_write_req || user_read_req)
+                    load_burst_addr = 1;
+               end
+          end
+
+          s_write_cmd: begin
+             ddr_cmd_ = cmd_write;
+             ddr_addr_ = {burst_addr[10], 1'b0, burst_addr[9:0]};
+             ddr_write_data_ = user_write_data;
+             write_mask_     = user_write_mask;
+             ddr_state_next = s_write_data;
+          end
+
+          s_write_data: begin
+             ddr_write_data_ = user_write_data;
+             write_mask_     = user_write_mask;
+             ddr_data_oe_ = 1;
+
+             ddr_state_next = s_write_wait_0;
+          end
+
+          s_write_wait_0: begin
+             ddr_state_next = s_row_active;
+          end
+
+
+          s_wait_0: begin
+             ddr_state_next = s_wait_1;
+          end
+
+          s_wait_1: begin
+             ddr_state_next = s_wait_2;
+          end
+
+          s_wait_2: begin
+             ddr_state_next = s_idle;
+          end
+
+          s_read_cmd: begin
+             ddr_cmd_ = cmd_read;
+             ddr_addr_ = {burst_addr[10], 1'b0, burst_addr[9:0]};
+             ddr_state_next = s_read_cl_0;
+          end
+
+          s_read_cl_0: begin
+             ddr_state_next = s_read_cl_1;
+          end
+
+          s_read_cl_1: begin
+             ddr_state_next = s_read_cl_2;
+          end
+
+          s_read_cl_2: begin
+
+             ddr_state_next = s_read_data;
+          end
+
+          s_read_data: begin
+             ddr_state_next = s_read_wait_0;
+          end
+
+          s_read_wait_0: begin
+             ddr_state_next = s_row_active;
+          end
+
+        endcase
+
      end
 
 endmodule

@@ -347,7 +347,7 @@ void vpi_bootstrap(void)
 
  /* notice cb records must be in global storage */
  ecbp = &cbrec;
- ecbp->reason = cbPLIError;
+ ecbp->reason = cbError;
  ecbp->cb_rtn = my_error_handler;
  ecbp->obj = NULL;
  ecbp->time = NULL;
@@ -372,3 +372,8 @@ void vpi_bootstrap(void)
    "**ERR: PLI 2.0 can not register start of sim setup callback.\n");
  /* if not registered will be no call backs */
 }
+
+void (*vlog_startup_routines[])() = {
+    vpi_bootstrap,
+    0
+};
