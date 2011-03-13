@@ -45,6 +45,8 @@ module wb_vga_ctrl(
                    wb_stb_i,
                    wb_we_i,
 
+                   pixel_clk,
+
                    /* VGA interface */
                    VGA_RED,
                    VGA_GREEN,
@@ -65,13 +67,15 @@ module wb_vga_ctrl(
    input         wb_stb_i;
    input         wb_we_i;
 
+   input         pixel_clk;
+
    output        VGA_RED,
                  VGA_GREEN,
                  VGA_BLUE,
                  VGA_HSYNC,
                  VGA_VSYNC;
 
-   wire          clk, rst;
+   wire          rst;
 
    reg [11:0]    hsync_cntr;
    reg [11:0]    vsync_cntr;
@@ -96,7 +100,6 @@ module wb_vga_ctrl(
              VSYNC_Tfp   = 10,
              VSYNC_Tbp   = 29;
 
-   assign clk = wb_clk_i;
    assign rst = wb_rst_i;
 
    assign x_pos = {1'b0, x_pos_r[11:1]};
@@ -122,8 +125,8 @@ module wb_vga_ctrl(
                             .DOPB(),
                             .ADDRA(x_pos),
                             .ADDRB(wb_adr_i),
-                            .CLKA(clk),
-                            .CLKB(clk),
+                            .CLKA(pixel_clk),
+                            .CLKB(wb_clk_i),
                             .DIA(0),
                             .DIB(wb_dat_i[15:0]),
                             .DIPA(0),
@@ -135,7 +138,7 @@ module wb_vga_ctrl(
                             .WEA(0),
                             .WEB(/*wb_cyc_i &*/ wb_stb_i & wb_we_i));
 
-   always @(posedge clk)
+   always @(posedge pixel_clk)
      begin
         if (rst)
           begin
@@ -154,7 +157,7 @@ module wb_vga_ctrl(
           end
      end
 
-   always @(posedge clk)
+   always @(posedge pixel_clk)
      begin
         if (rst)
           begin
@@ -173,7 +176,7 @@ module wb_vga_ctrl(
           end
      end
 
-   always @(posedge clk)
+   always @(posedge pixel_clk)
      begin
         if (rst)
           begin
@@ -192,7 +195,7 @@ module wb_vga_ctrl(
           end
      end
 
-   always @(posedge clk)
+   always @(posedge pixel_clk)
      begin
         if (rst)
           begin
