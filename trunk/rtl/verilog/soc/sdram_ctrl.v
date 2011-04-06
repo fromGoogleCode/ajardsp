@@ -30,6 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+/* MT46V32M16 */
+
 module sdram_ctrl(clk,
                   rst,
                   clk_n,
@@ -283,7 +285,7 @@ module sdram_ctrl(clk,
    reg        cycle_counter_reload_en;
    reg        load_burst_addr;
 
-   reg [9:0]  active_row_addr_r;
+   reg [12:0]  active_row_addr_r;
 
    always @(posedge clk)
      begin
@@ -313,7 +315,7 @@ module sdram_ctrl(clk,
                ddr_cke <= 1;
 
              if (ddr_state_r == s_act_cmd)
-               active_row_addr_r <= user_addr[20:11];
+               active_row_addr_r <= user_addr[22:10];
 
              if (load_burst_addr)
                burst_addr <= user_addr;
@@ -360,7 +362,7 @@ module sdram_ctrl(clk,
 
         load_burst_addr = 0;
 
-        ddr_addr_ = {burst_addr[10], 1'b0, burst_addr[9:0]};
+        ddr_addr_ = {3'b000, burst_addr[9:0]};
 
         case (ddr_state_r)
 
@@ -502,7 +504,7 @@ module sdram_ctrl(clk,
 
           s_act_cmd: begin
              ddr_cmd_ = cmd_active;
-             ddr_addr_ = {user_addr[20:11]};
+             ddr_addr_ = {user_addr[22:10]};
              ddr_state_next = s_act_wait;
           end
 
@@ -512,11 +514,11 @@ module sdram_ctrl(clk,
 
           s_row_active: begin
              if (cycle_counter_r == 0 ||
-                 ((user_read_req || user_write_req) && active_row_addr_r != user_addr[20:11]))
+                 ((user_read_req || user_write_req) && active_row_addr_r != user_addr[22:10]))
                begin
                   ddr_state_next = s_precharge_cmd;
                end
-             else
+             else if (!clk_edge_odd)
                begin
                   if (user_write_req)
                     ddr_state_next = s_write_cmd;
@@ -530,7 +532,7 @@ module sdram_ctrl(clk,
 
           s_write_cmd: begin
              ddr_cmd_ = cmd_write;
-             ddr_addr_ = {burst_addr[10], 1'b0, burst_addr[9:0]};
+             ddr_addr_ = {3'b000, burst_addr[9:0]};
              ddr_write_data_ = user_write_data;
              write_mask_     = user_write_mask;
              ddr_state_next = s_write_data;
@@ -563,7 +565,7 @@ module sdram_ctrl(clk,
 
           s_read_cmd: begin
              ddr_cmd_ = cmd_read;
-             ddr_addr_ = {burst_addr[10], 1'b0, burst_addr[9:0]};
+             ddr_addr_ = {3'b000, burst_addr[9:0]};
              ddr_state_next = s_read_cl_0;
           end
 

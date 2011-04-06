@@ -41,6 +41,7 @@ module wb_sdram_ctrl(
                      wb_adr_i,
 
                      wb_cyc_i,
+                     wb_cti_i,
                      wb_sel_i,
                      wb_stb_i,
                      wb_we_i,
@@ -69,6 +70,7 @@ module wb_sdram_ctrl(
    input         wb_rst_i;
    input [3:0]   wb_sel_i;
    input         wb_cyc_i;
+   input [2:0]   wb_cti_i;
    input         wb_stb_i;
    input         wb_we_i;
 
