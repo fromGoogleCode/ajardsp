@@ -32,6 +32,62 @@
 
 /* MT46V32M16 */
 
+module iob_dqs(clk, rst, oen, ddr_dqs_io, ddr_clk_p, ddr_clk_n);
+   input clk, rst, oen;
+   input ddr_clk_p, ddr_clk_n;
+   inout ddr_dqs_io;
+   reg   oen_r;
+   wire  d;
+
+   // synthesis attribute IOB of oen_r "TRUE"
+   // synthesis attribute IOB of oddr2_0 "TRUE"
+
+   always @(posedge clk)
+     begin
+        if (rst)
+          oen_r <= 1;
+        else
+          oen_r <= oen;
+     end
+
+   assign ddr_dqs_io  = oen_r ? 1'bz : d;
+
+   ODDR2 oddr2_0(.Q(d), .C0(ddr_clk_p), .C1(ddr_clk_n), .CE(1'b1),
+                 .D0(1'b1), .D1(1'b0), .R(rst), .S(1'b0));
+
+
+endmodule
+
+module iob_dq(clk_p, clk_n, rst, oen, din0, din1, dout0, dout1, ddr_dq_io,
+              iclk_p, iclk_n);
+   input clk_p, clk_n, rst, oen, din0, din1, iclk_p, iclk_n;
+   output dout0, dout1;
+   inout  ddr_dq_io;
+   reg   oen_r;
+   wire  d;
+
+   // synthesis attribute IOB of oen_r "TRUE"
+   // synthesis attribute IOB of iddr2_0 "TRUE"
+   // synthesis attribute IOB of oddr2_0 "TRUE"
+
+   always @(posedge clk_p)
+     begin
+        if (rst)
+          oen_r <= 1;
+        else
+          oen_r <= oen;
+     end
+
+   assign ddr_dq_io  = oen_r ? 1'bz : d;
+
+   IDDR2 iddr2_0(.D(ddr_dq_io), .C0(iclk_p), .C1(iclk_n), .CE(1'b1),
+                  .Q0(dout0), .Q1(dout1), .R(rst), .S(1'b0));
+
+   ODDR2 oddr2_0(.Q(d), .C0(clk_p), .C1(clk_n), .CE(1'b1),
+                 .D0(din0), .D1(din1), .R(rst), .S(1'b0));
+
+endmodule
+
 module sdram_ctrl(clk,
                   rst,
                   clk_n,
@@ -77,12 +133,12 @@ module sdram_ctrl(clk,
    reg [12:0]        ddr_addr_;
    reg [1:0]         ddr_ba_;
 
-   wire  clk, clk_n;
+   wire              clk_p, ddr_clk_p;
 
    wire [15:0] ddr_data_;
 
    wire [31:0] read_data;
-   reg  [31:0] read_data_r;
+   reg  [31:0] read_data_r, read_data_n_r;
    reg [31:0] ddr_write_data;
    reg [31:0] ddr_write_data_;
 
@@ -95,6 +151,9 @@ module sdram_ctrl(clk,
    reg [31:0]  burst_addr;
 
    reg         clk_edge_odd;
+
+   assign clk_p = clk;
+   assign ddr_clk_p = ddr_clk;
 
    always @(posedge clk)
      begin
@@ -112,8 +171,12 @@ module sdram_ctrl(clk,
           counter <= counter + 1;
      end
 
-   assign ddr_dqs  = ddr_data_oe ? {ddr_clk, ddr_clk} : 2'bz;
-   assign ddr_data = ddr_data_oe ? ddr_data_ : 16'hzzzz;
+   iob_dqs iob_dqs_0(.clk(clk), .rst(rst), .oen(~ddr_data_oe_),
+                     .ddr_dqs_io(ddr_dqs[0]),
+                     .ddr_clk_p(ddr_clk_p), .ddr_clk_n(ddr_clk_n));
+   iob_dqs iob_dqs_1(.clk(clk), .rst(rst), .oen(~ddr_data_oe_),
+                     .ddr_dqs_io(ddr_dqs[1]),
+                     .ddr_clk_p(ddr_clk_p), .ddr_clk_n(ddr_clk_n));
 
    assign user_read_data = read_data_r;
 
@@ -141,86 +204,120 @@ module sdram_ctrl(clk,
           end
      end
 
+   always @(posedge clk_n)
+     begin
+        if (rst)
+          begin
+             read_data_n_r <= 0;
+          end
+        else
+          begin
+             read_data_n_r <= read_data;
+          end
+     end
 
 
-   IDDR2  iddr2_0(.D(ddr_data[0]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[0]), .Q1(read_data[16]), .R(rst), .S(1'b0));
-   IDDR2  iddr2_1(.D(ddr_data[1]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[1]), .Q1(read_data[17]), .R(rst), .S(1'b0));
-   IDDR2  iddr2_2(.D(ddr_data[2]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[2]), .Q1(read_data[18]), .R(rst), .S(1'b0));
-   IDDR2  iddr2_3(.D(ddr_data[3]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[3]), .Q1(read_data[19]), .R(rst), .S(1'b0));
 
-   IDDR2  iddr2_4(.D(ddr_data[4]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[4]), .Q1(read_data[20]), .R(rst), .S(1'b0));
-   IDDR2  iddr2_5(.D(ddr_data[5]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[5]), .Q1(read_data[21]), .R(rst), .S(1'b0));
-   IDDR2  iddr2_6(.D(ddr_data[6]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[6]), .Q1(read_data[22]), .R(rst), .S(1'b0));
-   IDDR2  iddr2_7(.D(ddr_data[7]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[7]), .Q1(read_data[23]), .R(rst), .S(1'b0));
+   iob_dq iob_dq_0(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[0]), .din1(ddr_write_data[16]),
+                   .dout0(read_data[0]), .dout1(read_data[16]),
+                   .ddr_dq_io(ddr_data[0]),
+                   .iclk_p(ddr_dqs[0]), .iclk_n(~ddr_dqs[0]));
 
-   IDDR2  iddr2_8(.D(ddr_data[8]),  .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[8]),  .Q1(read_data[24]), .R(rst), .S(1'b0));
-   IDDR2  iddr2_9(.D(ddr_data[9]),  .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[9]),  .Q1(read_data[25]), .R(rst), .S(1'b0));
-   IDDR2 iddr2_10(.D(ddr_data[10]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[10]), .Q1(read_data[26]), .R(rst), .S(1'b0));
-   IDDR2 iddr2_11(.D(ddr_data[11]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[11]), .Q1(read_data[27]), .R(rst), .S(1'b0));
+   iob_dq iob_dq_1(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[1]), .din1(ddr_write_data[17]),
+                   .dout0(read_data[1]), .dout1(read_data[17]),
+                   .ddr_dq_io(ddr_data[1]),
+                   .iclk_p(ddr_dqs[0]), .iclk_n(~ddr_dqs[0]));
 
-   IDDR2 iddr2_12(.D(ddr_data[12]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[12]), .Q1(read_data[28]), .R(rst), .S(1'b0));
-   IDDR2 iddr2_13(.D(ddr_data[13]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[13]), .Q1(read_data[29]), .R(rst), .S(1'b0));
-   IDDR2 iddr2_14(.D(ddr_data[14]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[14]), .Q1(read_data[30]), .R(rst), .S(1'b0));
-   IDDR2 iddr2_15(.D(ddr_data[15]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .Q0(read_data[15]), .Q1(read_data[31]), .R(rst), .S(1'b0));
+   iob_dq iob_dq_2(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[2]), .din1(ddr_write_data[18]),
+                   .dout0(read_data[2]), .dout1(read_data[18]),
+                   .ddr_dq_io(ddr_data[2]),
+                   .iclk_p(ddr_dqs[0]), .iclk_n(~ddr_dqs[0]));
+
+   iob_dq iob_dq_3(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[3]), .din1(ddr_write_data[19]),
+                   .dout0(read_data[3]), .dout1(read_data[19]),
+                   .ddr_dq_io(ddr_data[3]),
+                   .iclk_p(ddr_dqs[0]), .iclk_n(~ddr_dqs[0]));
 
 
-   ODDR2  oddr2_0(.Q(ddr_data_[0]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[0]), .D1(ddr_write_data[16]), .R(rst), .S(1'b0));
-   ODDR2  oddr2_1(.Q(ddr_data_[1]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[1]), .D1(ddr_write_data[17]), .R(rst), .S(1'b0));
-   ODDR2  oddr2_2(.Q(ddr_data_[2]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[2]), .D1(ddr_write_data[18]), .R(rst), .S(1'b0));
-   ODDR2  oddr2_3(.Q(ddr_data_[3]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[3]), .D1(ddr_write_data[19]), .R(rst), .S(1'b0));
+   iob_dq iob_dq_4(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[4]), .din1(ddr_write_data[20]),
+                   .dout0(read_data[4]), .dout1(read_data[20]),
+                   .ddr_dq_io(ddr_data[4]),
+                   .iclk_p(ddr_dqs[0]), .iclk_n(~ddr_dqs[0]));
 
-   ODDR2  oddr2_4(.Q(ddr_data_[4]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[4]), .D1(ddr_write_data[20]), .R(rst), .S(1'b0));
-   ODDR2  oddr2_5(.Q(ddr_data_[5]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[5]), .D1(ddr_write_data[21]), .R(rst), .S(1'b0));
-   ODDR2  oddr2_6(.Q(ddr_data_[6]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[6]), .D1(ddr_write_data[22]), .R(rst), .S(1'b0));
-   ODDR2  oddr2_7(.Q(ddr_data_[7]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[7]), .D1(ddr_write_data[23]), .R(rst), .S(1'b0));
+   iob_dq iob_dq_5(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[5]), .din1(ddr_write_data[21]),
+                   .dout0(read_data[5]), .dout1(read_data[21]),
+                   .ddr_dq_io(ddr_data[5]),
+                   .iclk_p(ddr_dqs[0]), .iclk_n(~ddr_dqs[0]));
 
-   ODDR2  oddr2_8(.Q(ddr_data_[8]),  .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[8]),  .D1(ddr_write_data[24]), .R(rst), .S(1'b0));
-   ODDR2  oddr2_9(.Q(ddr_data_[9]),  .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[9]),  .D1(ddr_write_data[25]), .R(rst), .S(1'b0));
-   ODDR2 oddr2_10(.Q(ddr_data_[10]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[10]), .D1(ddr_write_data[26]), .R(rst), .S(1'b0));
-   ODDR2 oddr2_11(.Q(ddr_data_[11]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[11]), .D1(ddr_write_data[27]), .R(rst), .S(1'b0));
+   iob_dq iob_dq_6(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[6]), .din1(ddr_write_data[22]),
+                   .dout0(read_data[6]), .dout1(read_data[22]),
+                   .ddr_dq_io(ddr_data[6]),
+                   .iclk_p(ddr_dqs[0]), .iclk_n(~ddr_dqs[0]));
 
-   ODDR2 oddr2_12(.Q(ddr_data_[12]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[12]), .D1(ddr_write_data[28]), .R(rst), .S(1'b0));
-   ODDR2 oddr2_13(.Q(ddr_data_[13]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[13]), .D1(ddr_write_data[29]), .R(rst), .S(1'b0));
-   ODDR2 oddr2_14(.Q(ddr_data_[14]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[14]), .D1(ddr_write_data[30]), .R(rst), .S(1'b0));
-   ODDR2 oddr2_15(.Q(ddr_data_[15]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(ddr_write_data[15]), .D1(ddr_write_data[31]), .R(rst), .S(1'b0));
+   iob_dq iob_dq_7(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[7]), .din1(ddr_write_data[23]),
+                   .dout0(read_data[7]), .dout1(read_data[23]),
+                   .ddr_dq_io(ddr_data[7]),
+                   .iclk_p(ddr_dqs[0]), .iclk_n(~ddr_dqs[0]));
 
-   ODDR2 oddr2_16(.Q(ddr_dm[0]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(write_mask[0]), .D1(write_mask[2]), .R(rst), .S(1'b0));
-   ODDR2 oddr2_17(.Q(ddr_dm[1]), .C0(clk), .C1(clk_n), .CE(1'b1),
-                  .D0(write_mask[1]), .D1(write_mask[3]), .R(rst), .S(1'b0));
 
+   iob_dq iob_dq_8(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[8]), .din1(ddr_write_data[24]),
+                   .dout0(read_data[8]), .dout1(read_data[24]),
+                   .ddr_dq_io(ddr_data[8]),
+                   .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
+
+   iob_dq iob_dq_9(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                   .din0(ddr_write_data[9]), .din1(ddr_write_data[25]),
+                   .dout0(read_data[9]), .dout1(read_data[25]),
+                   .ddr_dq_io(ddr_data[9]),
+                   .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
+
+   iob_dq iob_dq_10(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                    .din0(ddr_write_data[10]), .din1(ddr_write_data[26]),
+                    .dout0(read_data[10]), .dout1(read_data[26]),
+                    .ddr_dq_io(ddr_data[10]),
+                    .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
+
+   iob_dq iob_dq_11(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                    .din0(ddr_write_data[11]), .din1(ddr_write_data[27]),
+                    .dout0(read_data[11]), .dout1(read_data[27]),
+                    .ddr_dq_io(ddr_data[11]),
+                    .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
+
+
+   iob_dq iob_dq_12(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                    .din0(ddr_write_data[12]), .din1(ddr_write_data[28]),
+                    .dout0(read_data[12]), .dout1(read_data[28]),
+                    .ddr_dq_io(ddr_data[12]),
+                    .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
+
+   iob_dq iob_dq_13(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                    .din0(ddr_write_data[13]), .din1(ddr_write_data[29]),
+                    .dout0(read_data[13]), .dout1(read_data[29]),
+                    .ddr_dq_io(ddr_data[13]),
+                    .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
+
+   iob_dq iob_dq_14(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                    .din0(ddr_write_data[14]), .din1(ddr_write_data[30]),
+                    .dout0(read_data[14]), .dout1(read_data[30]),
+                    .ddr_dq_io(ddr_data[14]),
+                    .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
+
+   iob_dq iob_dq_15(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                    .din0(ddr_write_data[15]), .din1(ddr_write_data[31]),
+                    .dout0(read_data[15]), .dout1(read_data[31]),
+                    .ddr_dq_io(ddr_data[15]),
+                    .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
+
+   assign ddr_dm = 0;
 
    parameter CC_200US = 100 * 200,
              CC_tRP   = 3,
@@ -334,10 +431,10 @@ module sdram_ctrl(clk,
           s_read_wait_0: begin
              user_read_ack = 1;
           end
-          s_write_data: begin
+          s_write_cmd: begin
              user_write_ack = 1;
           end
-          s_write_wait_0: begin
+          s_write_data: begin
              user_write_ack = 1;
           end
         endcase
@@ -541,7 +638,7 @@ module sdram_ctrl(clk,
           s_write_data: begin
              ddr_write_data_ = user_write_data;
              write_mask_     = user_write_mask;
-             ddr_data_oe_ = 1;
+             ddr_data_oe_    = 1;
 
              ddr_state_next = s_write_wait_0;
           end
