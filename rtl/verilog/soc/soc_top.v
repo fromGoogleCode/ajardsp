@@ -114,10 +114,10 @@ module soc_top(
    output        SD_CS;
    output        SD_LDM;
 
-   output        SD_LDQS;
+   inout         SD_LDQS;
    output        SD_RAS;
    output        SD_UDM;
-   output        SD_UDQS;
+   inout         SD_UDQS;
    output        SD_WE;
    input         SD_CK_FB;
 
@@ -163,7 +163,7 @@ module soc_top(
    reg [31:0]    wb_dat_i_w;
    reg [31:0]    wb_adr_o_w;
    reg           wb_cyc_o_w;
-   reg           wb_cti_o_w;
+   reg [2:0]     wb_cti_o_w;
    reg [3:0]     wb_sel_o_w;
    reg           wb_stb_o_w;
    reg           wb_we_o_w;
@@ -194,10 +194,10 @@ module soc_top(
              M_VGA   = 3'b100;
 
    assign SD_CS = 0;
-
+/*
    assign SD_CK_P = ddr_clk;
    assign SD_CK_N = ddr_clk_n;
-
+*/
 //   assign  ddr_clk_fb = SD_CK_FB;
 
    assign rst = RST || !locked_0 || !locked_1 || !locked_2;
@@ -271,7 +271,7 @@ module soc_top(
    DCM_SP dcm_1(.CLK0(clk_p),
                 .CLK90(ddr_clk_p90),
                 .CLK180(clk_n),
-  //              .CLK270(ddr_clk_n),
+/*                .CLK270(ddr_clk_n), */
                 .CLK2X(),
                 .CLK2X180(),
 	        .CLKDV(),
@@ -292,7 +292,7 @@ module soc_top(
 
    DCM_SP #(
             .CLKOUT_PHASE_SHIFT("FIXED"),
-            .PHASE_SHIFT(0)
+            .PHASE_SHIFT(32)
             )
           dcm_ddr_clk(.CLK0(ddr_clk),
                       .CLK90(),
@@ -315,6 +315,17 @@ module soc_top(
                       .RST(rst));
 
    BUFG bufg_ddr_clk(.I(ddr_clk), .O(ddr_clk_fb));
+
+
+   // synthesis attribute IOB of oddr2_clk_p "TRUE"
+   // synthesis attribute IOB of oddr2_clk_n "TRUE"
+
+
+   ODDR2 oddr2_clk_p(.Q(SD_CK_P), .C0(ddr_clk), .C1(ddr_clk_n), .CE(1'b1),
+                     .D0(1'b1), .D1(1'b0), .R(rst), .S(1'b0));
+
+   ODDR2 oddr2_clk_n(.Q(SD_CK_N), .C0(ddr_clk), .C1(ddr_clk_n), .CE(1'b1),
+                     .D0(1'b0), .D1(1'b1), .R(rst), .S(1'b0));
 
    always @(posedge CLK_40_MHZ)
      begin
@@ -398,7 +409,7 @@ module soc_top(
         endcase
      end
 
-   always @(wb_adr_o_w or wb_cyc_o_w or wb_stb_o_w)
+   always @(wb_adr_o_w or wb_cyc_o_w or wb_stb_o_w or wb_cti_o_w)
      begin
         vga_wb_cyc_o_w = 0;
         vga_wb_stb_o_w = 0;
@@ -489,6 +500,7 @@ module soc_top(
 
                              .m_wb_cyc_o(m_vga_wb_cyc_o_w),
                              .m_wb_stb_o(m_vga_wb_stb_o_w),
+                             .m_wb_cti_o(m_vga_wb_cti_o_w),
                              .m_wb_sel_o(m_vga_wb_sel_o_w),
                              .m_wb_we_o(m_vga_wb_we_o_w),
 

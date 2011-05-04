@@ -30,6 +30,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+/* `define CONFIG_VGA_RES_640_480_60_HZ 1 */
+`define CONFIG_VGA_TEXT_MODE 1
+
 module wb_vga_ctrl(
                    /* Wishbone interface */
                    wb_clk_i,
@@ -109,9 +112,9 @@ module wb_vga_ctrl(
    reg [11:0]    y_pos;
 
    wire [11:0]   x_pos;
-   wire          /*oe_w,*/ red_w, green_w, blue_w;
-   reg           oe_w;
+   wire          oe_w, red_w, green_w, blue_w;
 
+   reg           x_oe_r, y_oe_r;
 
    reg [10:0]    graph_wr_addr_r;
    wire [15:0]   graph_data_w;
@@ -133,91 +136,93 @@ module wb_vga_ctrl(
    reg [7:0]     char_ascii_code;
    reg [2:0]     font_x_pos_r;
 
-
    reg [7:0]     m_state_r;
 
-   reg           vga_ctrl_start;
+   reg [1:0]     r_vga_ctrl;
+   reg [31:0]    r_vga_fb_addr;
 
    parameter m_s_idle        = (1 << 0),
              m_s_begin_burst = (1 << 1);
 
-   parameter HSYNC_Ts    = 1600,
-             HSYNC_Tdisp = 1280,
-             HSYNC_Tpw   = 192,
-             HSYNC_Tfp   = 32,
-             HSYNC_Tbp   = 96 - 10;
+`ifdef CONFIG_VGA_RES_640_480_60_HZ
+   parameter HSYNC_Ts    = 1600,    /* Whole line   */
+             HSYNC_Tdisp = 1280,    /* Visible area */
+             HSYNC_Tpw   = 192,     /* Sync pulse   */
+             HSYNC_Tfp   = 32,      /* Front porch  */
+             HSYNC_Tbp   = 96 - 10; /* Back porch   */
 
-   parameter VSYNC_Ts    = 521,
-             VSYNC_Tdisp = 480,
-             VSYNC_Tpw   = 2,
-             VSYNC_Tfp   = 10,
-             VSYNC_Tbp   = 29;
+   parameter VSYNC_Ts    = 521,     /* Whole line   */
+             VSYNC_Tdisp = 480,     /* Visible area */
+             VSYNC_Tpw   = 2,       /* Sync pulse   */
+             VSYNC_Tfp   = 10,      /* Front porch  */
+             VSYNC_Tbp   = 29;      /* Back porch   */
+`else
+   /* 800 * 600 @ 60 Hz */
+   parameter HSYNC_Ts    = 1056,    /* Whole line   */
+             HSYNC_Tdisp = 800,     /* Visible area */
+             HSYNC_Tpw   = 128,     /* Sync pulse   */
+             HSYNC_Tfp   = 40,      /* Front porch  */
+             HSYNC_Tbp   = 88;      /* Back porch   */
+
+   parameter VSYNC_Ts    = 628,     /* Whole line   */
+             VSYNC_Tdisp = 600,     /* Visible area */
+             VSYNC_Tpw   = 4,       /* Sync pulse   */
+             VSYNC_Tfp   = 1,       /* Front porch  */
+             VSYNC_Tbp   = 23;      /* Back porch   */
+`endif
 
    assign m_wb_adr_o = fb_r_addr;
    assign m_wb_cti_o = 3'b010;
    assign m_wb_we_o  = 0;
    assign m_wb_dat_o = 0;
-/*   assign fifo_w_addr = fb_r_addr[9:1]; */
 
    assign rst = wb_rst_i;
 
-   assign x_pos = {1'b0, x_pos_r[11:1]};
-
-/*   assign oe_w = (x_pos >= 0 && x_pos < 640 && y_pos >= 0 && y_pos < 480 && VGA_VSYNC == 0 && VGA_HSYNC == 0) ? 1'b1 : 1'b0; */
+   assign oe_w = x_oe_r & y_oe_r;
 
    always @(posedge pixel_clk)
      begin
-        pixel_value_p_r <= pixel_value;
-        pixel_value_r <= pixel_value_p_r;
+        pixel_value_r <= pixel_value;
 
         font_x_pos_r <= x_pos[2:0];
 
         VGA_GREEN <= oe_w & green_w;
         VGA_RED   <= oe_w & red_w;
         VGA_BLUE  <= oe_w & blue_w;
-
-        if (hsync_cntr < HSYNC_Tpw)
-          VGA_HSYNC <= 1;
-        else
-          VGA_HSYNC <= 0;
-
-        if (vsync_cntr < VSYNC_Tpw)
-          VGA_VSYNC <= 1;
-        else
-          VGA_VSYNC <= 0;
-
-        if (x_pos >= 0 && x_pos < 640 && y_pos >= 0 && y_pos < 480)
-          oe_w <= 1;
-        else
-          oe_w <= 0;
      end
-/*
-   assign VGA_HSYNC = (hsync_cntr < HSYNC_Tpw) ? 1'b1 : 1'b0;
-   assign VGA_VSYNC = (vsync_cntr < VSYNC_Tpw) ? 1'b1 : 1'b0;
-*/
-   /*
-   assign VGA_GREEN = oe_w & green_w;
-   assign VGA_RED   = oe_w & red_w;
-   assign VGA_BLUE  = oe_w & blue_w;
-*/
-   assign red_w   = font_row_w[font_x_pos_r] ? 1'b1 : pixel_value_r[0];
-   assign green_w = font_row_w[font_x_pos_r] ? 1'b1 : pixel_value_r[1];
-   assign blue_w  = font_row_w[font_x_pos_r] ? 1'b1 : pixel_value_r[2];
+
+   assign red_w   = font_row_w[font_x_pos_r] & r_vga_ctrl[1] ? 1'b1 : pixel_value_r[0];
+   assign green_w = font_row_w[font_x_pos_r] & r_vga_ctrl[1] ? 1'b1 : pixel_value_r[1];
+   assign blue_w  = font_row_w[font_x_pos_r] & r_vga_ctrl[1] ? 1'b1 : pixel_value_r[2];
 
    assign s_wb_ack_o = s_wb_stb_i;
 
+`ifdef CONFIG_VGA_RES_640_480_60_HZ
    assign pixel_cntr = pixel_cntr_r[15:1];
+   assign x_pos = {1'b0, x_pos_r[11:1]};
+`else
+   assign pixel_cntr = pixel_cntr_r;
+   assign x_pos = x_pos_r;
+`endif
 
    always @(posedge wb_clk_i)
      begin
 
         if (wb_rst_i)
           begin
-             vga_ctrl_start <= 0;
+             r_vga_ctrl <= 0;
+             r_vga_fb_addr <= 0;
           end
-        else if (s_wb_stb_i & s_wb_we_i)
+        else if (s_wb_stb_i & s_wb_we_i & s_wb_adr_i[16])
           begin
-             vga_ctrl_start <= 1;
+             case (s_wb_adr_i[3:0])
+               4'h0: begin
+                  r_vga_ctrl <= s_wb_dat_i;
+               end
+               4'h4: begin
+                  r_vga_fb_addr <= s_wb_dat_i;
+               end
+             endcase
           end
      end
 
@@ -227,10 +232,10 @@ module wb_vga_ctrl(
         m_wb_cyc_o = 0;
         m_wb_stb_o = 0;
 
-        if (wb_rst_i || !vga_ctrl_start || vysnc_cntr_zero_r)
+        if (wb_rst_i | vysnc_cntr_zero_r | ~r_vga_ctrl[0])
           begin
              m_state_r <= m_s_idle;
-             fb_r_addr <= 0;
+             fb_r_addr <= r_vga_fb_addr;
              fifo_w_addr <= 0;
           end
         else
@@ -288,7 +293,9 @@ module wb_vga_ctrl(
         endcase
      end
 
-   assign fifo_fill_level = fifo_w_addr > fifo_r_addr ? fifo_w_addr - fifo_r_addr : 512 - (fifo_r_addr - fifo_w_addr);
+   assign fifo_fill_level = fifo_w_addr > fifo_r_addr ?
+                            fifo_w_addr - fifo_r_addr :
+                            512 - (fifo_r_addr - fifo_w_addr);
 
 
    RAMB16_S36_S36 vga_fb_fifo(.DOA(fifo_r_data),
@@ -315,15 +322,21 @@ module wb_vga_ctrl(
         if (rst)
           begin
              hsync_cntr <= 0;
+             VGA_HSYNC <= 0;
           end
         else
           begin
              if (hsync_cntr == HSYNC_Ts)
                begin
                   hsync_cntr <= 0;
+                  VGA_HSYNC <= 1;
                end
              else
                begin
+                  if (hsync_cntr == HSYNC_Tpw)
+                    begin
+                       VGA_HSYNC <= 0;
+                    end
                   hsync_cntr <= hsync_cntr + 1;
                end
           end
@@ -335,6 +348,7 @@ module wb_vga_ctrl(
           begin
              vsync_cntr <= 0;
              vysnc_cntr_zero_r <= 1;
+             VGA_VSYNC <= 0;
           end
         else
           begin
@@ -342,9 +356,14 @@ module wb_vga_ctrl(
                begin
                   vsync_cntr <= 0;
                   vysnc_cntr_zero_r <= 1;
+                  VGA_VSYNC <= 1;
                end
              else if (hsync_cntr == HSYNC_Ts)
                begin
+                  if (vsync_cntr == VSYNC_Tpw)
+                    begin
+                       VGA_VSYNC <= 0;
+                    end
                   vsync_cntr <= vsync_cntr + 1;
                   vysnc_cntr_zero_r <= 0;
                end
@@ -356,12 +375,18 @@ module wb_vga_ctrl(
         if (rst)
           begin
              x_pos_r <= 0;
+             x_oe_r <= 0;
           end
         else
           begin
              if (hsync_cntr == HSYNC_Tpw + HSYNC_Tbp)
                begin
                   x_pos_r <= 0;
+                  x_oe_r <= 1;
+               end
+             else if (hsync_cntr == HSYNC_Ts - HSYNC_Tfp)
+               begin
+                  x_oe_r <= 0;
                end
              else
                begin
@@ -375,6 +400,7 @@ module wb_vga_ctrl(
         if (rst)
           begin
              y_pos <= 0;
+             y_oe_r <= 0;
           end
         else
           begin
@@ -383,7 +409,13 @@ module wb_vga_ctrl(
                   if (vsync_cntr == VSYNC_Tpw + VSYNC_Tbp)
                     begin
                        y_pos <= 0;
+                       y_oe_r <= 1;
                     end
+                  else if (vsync_cntr == VSYNC_Ts - VSYNC_Tfp)
+                    begin
+                       y_oe_r <= 0;
+                    end
+
                   else
                     begin
                        y_pos <= y_pos + 1;
@@ -393,6 +425,7 @@ module wb_vga_ctrl(
      end
 
    /* Font support - begin */
+
 `ifdef CONFIG_VGA_TEXT_MODE
    vga_font font16x8(.clk(pixel_clk), .rst(rst),
                      .char_ascii_i(char_ascii_code),
@@ -416,8 +449,7 @@ module wb_vga_ctrl(
                            .SSRA(rst),
                            .SSRB(rst),
                            .WEA(0),
-                           .WEB(s_wb_cyc_i & s_wb_stb_i));
-
+                           .WEB(s_wb_cyc_i & s_wb_stb_i & ~s_wb_adr_i[16]));
 
    always @(text_word_w or x_pos)
      begin

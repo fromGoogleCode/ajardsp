@@ -95,11 +95,11 @@ module wb_sdram_ctrl(
    wire          rd_ack, wr_ack;
 
 
-   parameter wb_s_idle = 0, wb_s_read = 1, wb_s_write = 2, wb_s_ack = 3;
+   parameter wb_s_idle = 0, wb_s_read = 1, wb_s_write = 2, wb_s_ack = 3, wb_s_ack_wait = 4;
 
    sdram_ctrl sdram_ctrl_0(.clk(clk), .rst(wb_rst_i),
                            .clk_n(clk_n),
-                           .user_addr(wb_adr_i),
+                           .user_addr({wb_adr_i[31:2], 1'b0}),
                            .user_write_data(wb_dat_i),
                            .user_write_mask(4'b0000),
                            .user_read_data(read_data_w),
@@ -145,7 +145,8 @@ module wb_sdram_ctrl(
           end
      end
 
-   always @(state_r or wb_cyc_i or wb_stb_i or wb_we_i or rd_ack or wr_ack)
+   always @(state_r or wb_cyc_i or wb_stb_i or wb_we_i or rd_ack or wr_ack or wb_adr_i or
+            wb_cti_i)
      begin
         next_state = state_r;
         wb_ack_o = 0;
@@ -155,17 +156,15 @@ module wb_sdram_ctrl(
         case (state_r)
 
           wb_s_idle: begin
-             if (wb_cyc_i && wb_stb_i)
+             if (wb_cyc_i && wb_stb_i && wb_adr_i[31:28] == 4'h0)
                begin
                   if (wb_we_i)
                     begin
                        next_state = wb_s_write;
-                       wr_req = 1;
                     end
                   else
                     begin
                        next_state = wb_s_read;
-                       rd_req = 1;
                     end
                end
           end
@@ -198,8 +197,17 @@ module wb_sdram_ctrl(
 
           wb_s_ack: begin
              wb_ack_o = 1;
+             if (wb_cti_i == 3'b010)
+               next_state = wb_s_idle;
+             else
+               next_state = wb_s_ack_wait;
+
+          end
+
+          wb_s_ack_wait: begin
              next_state = wb_s_idle;
           end
+
         endcase
      end
 
