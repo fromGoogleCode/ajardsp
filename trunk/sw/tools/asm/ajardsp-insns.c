@@ -102,6 +102,7 @@
 #define LSU_ITYPE_LD_IMM_ACC_16  (0xa << 4)
 #define LSU_ITYPE_LD_EXT_32 (0xb << 4)
 #define LSU_ITYPE_ST_EXT_32 (0xc << 4)
+#define LSU_ITYPE_EXT_BURST (0xd << 4)
 
 #define INSN_ENC_32 (1 << 29)
 
@@ -1575,6 +1576,42 @@ inst_def_t ajardsp_insns[] = {
       },
     },
   },
+
+  {
+    .mnemonic = "extburst",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_EXT_BURST | FU_LSU,
+    .nr_operands = 4,
+
+    .operands = {
+      {
+	.type = INTEGER,
+	.offset = 17,
+	.width  = 8,
+	.encode = encode_int,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = REG,
+	.offset = 11,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+    },
+  },
+
+
 
 
   /* LSU instructions for the new encoding ends here */

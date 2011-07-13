@@ -101,7 +101,7 @@ module wb_sdram_ctrl(
                            .clk_n(clk_n),
                            .user_addr({wb_adr_i[31:2], 1'b0}),
                            .user_write_data(wb_dat_i),
-                           .user_write_mask(4'b0000),
+                           .user_write_mask(~wb_sel_i),
                            .user_read_data(read_data_w),
                            .user_read_req(rd_req),
                            .user_write_req(wr_req),

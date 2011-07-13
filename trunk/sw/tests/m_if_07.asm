@@ -7,6 +7,18 @@
         xor32 $acc0, $acc0, $acc0
         xor32 $acc1, $acc1, $acc1
       | ldimm16 $ptr6, 0xffff
+
+
+        /* Start the VGA ctrl. */
+        ldimm16 $ptr1,  0xf001
+        ldimm16 $ptr0,  0x0000
+        ldimm16 $acc1l, 0x0001
+        nop
+        stext32 $ptr0, $ptr1, $acc1
+
+
+
+
         /* Fill pattern in SDRAM */
         ldimm16 $ptr0, 0x0000
       | ldimm16 $ptr1, 0xf000

@@ -52,6 +52,15 @@ module tb;
 
    reg [15:0]  cnt_r;
 
+   wire        tx_bit;
+   wire        tx_ready;
+   reg [15:0]  tx_addr;
+   wire        tx_en;
+   wire [7:0]  tx_byte;
+   reg [7:0]   tx_mem[0:1000];
+   reg         uart_on;
+   wire [7:0]  leds;
+
 
    soc_top soc_top_0(
                      .CLK_50_MHZ(clk),
@@ -73,13 +82,18 @@ module tb;
                      .SD_WE(we),
                      .SD_CK_FB(ddr_clk),
 
-                     .SW(0),
+                     .SW(4'b1111),
                      .BTN_NORTH(0),
                      .BTN_EAST(0),
                      .BTN_SOUTH(0),
-                     .LED(),
+                     .LED(leds),
 
-                     .ADC_MISO(cnt_r[5])
+                     .ADC_MISO(cnt_r[5]),
+                     .PS2_CLK(cnt_r[4]),
+                     .PS2_DATA(cnt_r[5]),
+
+                     .RS232_DTE_RXD(tx_bit),
+                     .RS232_DTE_TXD()
                      );
 
 
@@ -97,12 +111,50 @@ module tb;
              .Dqs({udqs, ldqs}));
 
 
+   defparam
+     /* B921600 */
+     tx_0.UART_FULL_BIT_TIME = 54,
+     tx_0.UART_HALF_BIT_TIME = 27;
+
+   uart_tx tx_0(.clk(clk),
+                .rst(rst),
+                .tx_data(tx_byte),
+                .tx_req(tx_en),
+                .tx_ready(tx_ready),
+                .tx_bit(tx_bit)
+                );
+
+   always @(leds)
+     $display("LEDs: %b", leds);
+
+   assign tx_byte = tx_mem[tx_addr];
+   assign tx_en   = 1 & uart_on;
+
+   always @(posedge clk)
+     begin
+        if (rst)
+          begin
+             tx_addr <= 0;
+          end
+        else if (tx_ready & uart_on)
+          begin
+             tx_addr <= tx_addr + 1;
+             $display("tx_addr: %h", tx_addr);
+          end
+     end
+
    initial begin
+      $readmemh("tx.hex", tx_mem);
       $dumpvars;
       rst = 1;
       clk = 0;
+      uart_on = 0;
       #200;
       rst = 0;
+
+      #10000;
+      uart_on = 1;
+
 
       #30000000;
 

@@ -68,8 +68,10 @@ module soc_top(
 
                ADC_SS,
                ADC_SCK,
-               ADC_MISO
+               ADC_MISO,
 
+               PS2_CLK,
+               PS2_DATA
                );
 
    input CLK_50_MHZ;
@@ -98,6 +100,8 @@ module soc_top(
                     ADC_SCK;
    input            ADC_MISO;
 
+   input            PS2_CLK,
+                    PS2_DATA;
 
    input            IRQ;
 
@@ -145,18 +149,25 @@ module soc_top(
                  vga_wb_cyc_o_w,
                  vga_wb_stb_o_w,
                  adc_wb_cyc_o_w,
-                 adc_wb_stb_o_w;
+                 adc_wb_stb_o_w,
+                 ram_wb_cyc_o_w,
+                 ram_wb_stb_o_w,
+                 misc_wb_cyc_o_w,
+                 misc_wb_stb_o_w;
 
    reg [2:0]     sd_wb_cti_o_w;
 
-
    wire [31:0]   sd_wb_dat_i_w,
                  vga_wb_dat_i_w,
-                 adc_wb_dat_i_w;
+                 adc_wb_dat_i_w,
+                 ram_wb_dat_i_w,
+                 misc_wb_dat_i_w;
 
    wire          sd_wb_ack_i_w,
                  vga_wb_ack_i_w,
-                 adc_wb_ack_i_w;
+                 adc_wb_ack_i_w,
+                 ram_wb_ack_i_w,
+                 misc_wb_ack_i_w;
 
    reg           wb_ack_i_w;
    reg [31:0]    wb_dat_o_w;
@@ -177,6 +188,24 @@ module soc_top(
    wire        m_dsp_0_wb_stb_o_w;
    wire        m_dsp_0_wb_we_o_w;
 
+   reg         m_dsp_1_wb_ack_i_w;
+   reg [31:0]  m_dsp_1_wb_dat_i_w;
+   wire [31:0] m_dsp_1_wb_dat_o_w;
+   wire [31:0] m_dsp_1_wb_adr_o_w;
+   wire        m_dsp_1_wb_cyc_o_w;
+   wire [3:0]  m_dsp_1_wb_sel_o_w;
+   wire        m_dsp_1_wb_stb_o_w;
+   wire        m_dsp_1_wb_we_o_w;
+
+   reg         m_debug_wb_ack_i_w;
+   reg [31:0]  m_debug_wb_dat_i_w;
+   wire [31:0] m_debug_wb_dat_o_w;
+   wire [31:0] m_debug_wb_adr_o_w;
+   wire        m_debug_wb_cyc_o_w;
+   wire [3:0]  m_debug_wb_sel_o_w;
+   wire        m_debug_wb_stb_o_w;
+   wire        m_debug_wb_we_o_w;
+
    reg         m_vga_wb_ack_i_w;
    reg [31:0]  m_vga_wb_dat_i_w;
    wire [31:0] m_vga_wb_dat_o_w;
@@ -187,28 +216,35 @@ module soc_top(
    wire        m_vga_wb_stb_o_w;
    wire        m_vga_wb_we_o_w;
 
-   reg [2:0]   active_wb_master;
+   reg [3:0]   active_wb_master;
 
-   parameter M_DSP_0 = 3'b001,
-             M_DSP_1 = 3'b010,
-             M_VGA   = 3'b100;
+   parameter M_DSP_0 = 4'b0001,
+             M_DSP_1 = 4'b0010,
+             M_VGA   = 4'b0100,
+             M_DEBUG = 4'b1000;
+
+   wire [7:0]  led_misc_io_w,
+               reset_ctrl_misc_io_w;
+
+   wire        uart_rx_dsp_w,
+               uart_tx_dsp_w,
+               uart_rx_debug_w,
+               uart_tx_debug_w;
 
    assign SD_CS = 0;
-/*
-   assign SD_CK_P = ddr_clk;
-   assign SD_CK_N = ddr_clk_n;
-*/
-//   assign  ddr_clk_fb = SD_CK_FB;
 
    assign rst = RST || !locked_0 || !locked_1 || !locked_2;
 
-   assign LED = rst ? 8'haa : {5'h0, locked_1, locked_0, locked_2};
+   assign LED = rst ? 8'haa : led_misc_io_w;
+
+   assign uart_rx_dsp_w   = 1'b1;
+   assign uart_rx_debug_w = RS232_DTE_RXD;
+   assign RS232_DTE_TXD   = uart_tx_debug_w;
 
    assign LCD_E  = 0;
    assign LCD_RS = 0;
    assign LCD_RW = 0;
    assign LCD_D  = 0;
-
 
    DCM_SP #(.CLKFX_DIVIDE(5),
             .CLKFX_MULTIPLY(4))
@@ -338,24 +374,48 @@ module soc_top(
              case (active_wb_master)
                M_DSP_0: begin
                   if (m_dsp_0_wb_cyc_o_w == 0)
+                    active_wb_master <= M_DSP_1;
+               end
+
+               M_DSP_1: begin
+                  if (m_dsp_1_wb_cyc_o_w == 0)
                     active_wb_master <= M_VGA;
                end
+
                M_VGA: begin
                   if (m_vga_wb_cyc_o_w == 0)
+                    active_wb_master <= M_DEBUG;
+               end
+
+               M_DEBUG: begin
+                  if (m_debug_wb_cyc_o_w == 0)
                     active_wb_master <= M_DSP_0;
                end
+
              endcase
           end
      end
 
    always @(active_wb_master or wb_dat_i_w or wb_ack_i_w or
+
             m_dsp_0_wb_dat_o_w or m_dsp_0_wb_adr_o_w or m_dsp_0_wb_cyc_o_w or
             m_dsp_0_wb_sel_o_w or m_dsp_0_wb_stb_o_w or m_dsp_0_wb_we_o_w or
+
+            m_dsp_1_wb_dat_o_w or m_dsp_1_wb_adr_o_w or m_dsp_1_wb_cyc_o_w or
+            m_dsp_1_wb_sel_o_w or m_dsp_1_wb_stb_o_w or m_dsp_1_wb_we_o_w or
+
+            m_debug_wb_dat_o_w or m_debug_wb_adr_o_w or m_debug_wb_cyc_o_w or
+            m_debug_wb_sel_o_w or m_debug_wb_stb_o_w or m_debug_wb_we_o_w or
+
             m_vga_wb_dat_o_w or m_vga_wb_adr_o_w or m_vga_wb_cyc_o_w or m_vga_wb_cti_o_w or
             m_vga_wb_sel_o_w or m_vga_wb_stb_o_w or m_vga_wb_we_o_w)
      begin
         m_dsp_0_wb_ack_i_w = 0;
         m_dsp_0_wb_dat_i_w = wb_dat_i_w;
+        m_dsp_1_wb_ack_i_w = 0;
+        m_dsp_1_wb_dat_i_w = wb_dat_i_w;
+        m_debug_wb_ack_i_w = 0;
+        m_debug_wb_dat_i_w = wb_dat_i_w;
         m_vga_wb_ack_i_w = 0;
         m_vga_wb_dat_i_w = wb_dat_i_w;
 
@@ -370,11 +430,30 @@ module soc_top(
              wb_stb_o_w = m_dsp_0_wb_stb_o_w;
              wb_we_o_w  = m_dsp_0_wb_we_o_w;
           end
-/*
+
           M_DSP_1: begin
+             m_dsp_1_wb_ack_i_w = wb_ack_i_w;
+             wb_dat_o_w = m_dsp_1_wb_dat_o_w;
+             wb_adr_o_w = m_dsp_1_wb_adr_o_w;
+             wb_cyc_o_w = m_dsp_1_wb_cyc_o_w;
+             wb_cti_o_w = 0;
+             wb_sel_o_w = m_dsp_1_wb_sel_o_w;
+             wb_stb_o_w = m_dsp_1_wb_stb_o_w;
+             wb_we_o_w  = m_dsp_1_wb_we_o_w;
           end
-          M_VGA: begin */
-          default: begin
+
+          M_DEBUG: begin
+             m_debug_wb_ack_i_w = wb_ack_i_w;
+             wb_dat_o_w = m_debug_wb_dat_o_w;
+             wb_adr_o_w = m_debug_wb_adr_o_w;
+             wb_cyc_o_w = m_debug_wb_cyc_o_w;
+             wb_cti_o_w = 0;
+             wb_sel_o_w = m_debug_wb_sel_o_w;
+             wb_stb_o_w = m_debug_wb_stb_o_w;
+             wb_we_o_w  = m_debug_wb_we_o_w;
+          end
+
+          M_VGA: begin
              m_vga_wb_ack_i_w = wb_ack_i_w;
              wb_dat_o_w = m_vga_wb_dat_o_w;
              wb_adr_o_w = m_vga_wb_adr_o_w;
@@ -388,7 +467,8 @@ module soc_top(
      end
 
    always @(wb_adr_o_w or vga_wb_dat_i_w or vga_wb_ack_i_w or
-            sd_wb_dat_i_w or sd_wb_ack_i_w or adc_wb_dat_i_w or adc_wb_ack_i_w)
+            sd_wb_dat_i_w or sd_wb_ack_i_w or adc_wb_dat_i_w or adc_wb_ack_i_w or
+            ram_wb_dat_i_w or ram_wb_ack_i_w or misc_wb_dat_i_w or misc_wb_ack_i_w)
      begin
         wb_dat_i_w     = 0;
         wb_ack_i_w     = 0;
@@ -402,6 +482,15 @@ module soc_top(
              wb_dat_i_w     = adc_wb_dat_i_w;
              wb_ack_i_w     = adc_wb_ack_i_w;
           end
+          4'hd: begin
+             wb_dat_i_w     = ram_wb_dat_i_w;
+             wb_ack_i_w     = ram_wb_ack_i_w;
+          end
+          4'hc: begin
+             wb_dat_i_w     = misc_wb_dat_i_w;
+             wb_ack_i_w     = misc_wb_ack_i_w;
+          end
+
           default: begin
              wb_dat_i_w    = sd_wb_dat_i_w;
              wb_ack_i_w    = sd_wb_ack_i_w;
@@ -418,6 +507,10 @@ module soc_top(
         sd_wb_cyc_o_w = 0;
         sd_wb_cti_o_w = 0;
         sd_wb_stb_o_w = 0;
+        ram_wb_cyc_o_w = 0;
+        ram_wb_stb_o_w = 0;
+        misc_wb_cyc_o_w = 0;
+        misc_wb_stb_o_w = 0;
 
         case (wb_adr_o_w[31:28])
           4'hf: begin
@@ -428,6 +521,16 @@ module soc_top(
              adc_wb_cyc_o_w = wb_cyc_o_w;
              adc_wb_stb_o_w = wb_stb_o_w;
           end
+          4'hd: begin
+             ram_wb_cyc_o_w = wb_cyc_o_w;
+             ram_wb_stb_o_w = wb_stb_o_w;
+          end
+          4'hc: begin
+             misc_wb_cyc_o_w = wb_cyc_o_w;
+             misc_wb_stb_o_w = wb_stb_o_w;
+          end
+
+
           default: begin
              sd_wb_cyc_o_w = wb_cyc_o_w;
              sd_wb_stb_o_w = wb_stb_o_w;
@@ -436,13 +539,16 @@ module soc_top(
         endcase
      end
 
+   defparam
+     wb_ajardsp_0.EXT_BOOT_ADDR = 32'hD0000000,
+     wb_ajardsp_0.EXT_BOOT_LEN  = 16'h0100;
 
    wb_ajardsp wb_ajardsp_0(.clk(CLK_40_MHZ),
-                           .rst(rst),
+                           .rst(~reset_ctrl_misc_io_w[0]),
 
                            /* Wishbone interface */
                            .wb_clk_i(CLK_40_MHZ),
-                           .wb_rst_i(rst),
+                           .wb_rst_i(~reset_ctrl_misc_io_w[0]),
 
                            .wb_ack_i(m_dsp_0_wb_ack_i_w),
                            .wb_dat_o(m_dsp_0_wb_dat_o_w),
@@ -452,12 +558,31 @@ module soc_top(
                            .wb_cyc_o(m_dsp_0_wb_cyc_o_w),
                            .wb_stb_o(m_dsp_0_wb_stb_o_w),
                            .wb_sel_o(m_dsp_0_wb_sel_o_w),
-                           .wb_we_o(m_dsp_0_wb_we_o_w),
-
-                           .RS232_DTE_RXD(RS232_DTE_RXD),
-                           .RS232_DTE_TXD(RS232_DTE_TXD)
-
+                           .wb_we_o(m_dsp_0_wb_we_o_w)
                            );
+
+   defparam
+     wb_ajardsp_1.EXT_BOOT_ADDR = 32'hD0000000,
+     wb_ajardsp_1.EXT_BOOT_LEN  = 16'h0100;
+
+   wb_ajardsp wb_ajardsp_1(.clk(CLK_40_MHZ),
+                           .rst(~reset_ctrl_misc_io_w[1]),
+
+                           /* Wishbone interface */
+                           .wb_clk_i(CLK_40_MHZ),
+                           .wb_rst_i(~reset_ctrl_misc_io_w[1]),
+
+                           .wb_ack_i(m_dsp_1_wb_ack_i_w),
+                           .wb_dat_o(m_dsp_1_wb_dat_o_w),
+                           .wb_dat_i(m_dsp_1_wb_dat_i_w),
+                           .wb_adr_o(m_dsp_1_wb_adr_o_w),
+
+                           .wb_cyc_o(m_dsp_1_wb_cyc_o_w),
+                           .wb_stb_o(m_dsp_1_wb_stb_o_w),
+                           .wb_sel_o(m_dsp_1_wb_sel_o_w),
+                           .wb_we_o(m_dsp_1_wb_we_o_w)
+                           );
+
 
    wb_sdram_ctrl wb_sdram_ctrl_0(.wb_clk_i(CLK_40_MHZ),
                                  .wb_rst_i(rst),
@@ -545,5 +670,61 @@ module soc_top(
                              );
 
 
+   wb_ram wb_ram_0(.wb_clk_i(CLK_40_MHZ),
+                   .wb_rst_i(rst),
+
+                   .wb_adr_i(wb_adr_o_w),
+                   .wb_dat_i(wb_dat_o_w),
+                   .wb_dat_o(ram_wb_dat_i_w),
+
+                   .wb_cti_i(3'b000),
+                   .wb_cyc_i(ram_wb_cyc_o_w),
+                   .wb_stb_i(ram_wb_stb_o_w),
+                   .wb_we_i(wb_we_o_w),
+                   .wb_sel_i(wb_sel_o_w),
+                   .wb_ack_o(ram_wb_ack_i_w)
+                   );
+
+   wb_misc_io wb_misc_io_0(.wb_clk_i(CLK_40_MHZ),
+                           .wb_rst_i(rst),
+
+                           .wb_adr_i(wb_adr_o_w),
+                           .wb_dat_i(wb_dat_o_w),
+                           .wb_dat_o(misc_wb_dat_i_w),
+
+                           .wb_cti_i(3'b000),
+                           .wb_cyc_i(misc_wb_cyc_o_w),
+                           .wb_stb_i(misc_wb_stb_o_w),
+                           .wb_we_i(wb_we_o_w),
+                           .wb_sel_i(wb_sel_o_w),
+                           .wb_ack_o(misc_wb_ack_i_w),
+
+                           .led(led_misc_io_w),
+                           .reset_ctrl(reset_ctrl_misc_io_w),
+                           .ps2_clk_i(PS2_CLK),
+                           .ps2_data_i(PS2_DATA)
+                           );
+
+   wb_debug wb_debug_0(.clk(CLK_40_MHZ),
+                       .rst(rst),
+
+                       /* Wishbone interface */
+                       .wb_clk_i(CLK_40_MHZ),
+                       .wb_rst_i(rst),
+
+                       .wb_ack_i(m_debug_wb_ack_i_w),
+                       .wb_dat_o(m_debug_wb_dat_o_w),
+                       .wb_dat_i(m_debug_wb_dat_i_w),
+                       .wb_adr_o(m_debug_wb_adr_o_w),
+
+                       .wb_cyc_o(m_debug_wb_cyc_o_w),
+                       .wb_stb_o(m_debug_wb_stb_o_w),
+                       .wb_sel_o(m_debug_wb_sel_o_w),
+                       .wb_we_o(m_debug_wb_we_o_w),
+
+                       .uart_rx(uart_rx_debug_w),
+                       .uart_tx(uart_tx_debug_w)
+
+                       );
 
 endmodule

@@ -51,7 +51,7 @@ module wb_adc_ctrl(
                    ADC_SCK_o
                    );
 
-   output reg    wb_ack_o;
+   output        wb_ack_o;
    input         wb_clk_i;
    input [31:0]  wb_adr_i;
    input [31:0]  wb_dat_i;
@@ -75,9 +75,16 @@ module wb_adc_ctrl(
    reg [1:0]     state_r;
    reg [4:0]     bitcnt_r;
 
+   wire [31:0]   fifo_r_data;
+   reg [8:0]     fifo_r_addr;
+   reg [8:0]     fifo_w_addr;
+   reg           fifo_w_en;
+   reg [15:0]    sample_cntr_r;
+
    parameter s_idle = 0, s_reading = 1, s_ack = 2;
 
-   assign wb_dat_o = {16'h0, adc_sample_r};
+   assign wb_dat_o = fifo_r_data;
+   assign wb_ack_o = wb_cyc_i & wb_stb_i;
 
    assign clk = wb_clk_i;
    assign rst = wb_rst_i;
@@ -113,19 +120,21 @@ module wb_adc_ctrl(
    always @(posedge clk)
      begin
         ADC_SS_o = 1;
-        wb_ack_o = 0;
+//        wb_ack_o = 0;
+        fifo_w_en = 0;
 
         if (rst)
           begin
              state_r <= s_idle;
              bitcnt_r <= 0;
+             fifo_w_addr <= 0;
           end
         else
           begin
 
              case (state_r)
                s_idle: begin
-                  if (wb_cyc_i & wb_stb_i)
+                  if (sample_cntr_r == 0)
                     begin
                        state_r <= s_reading;
                        bitcnt_r <= 0;
@@ -146,11 +155,54 @@ module wb_adc_ctrl(
                     end
                end
                s_ack: begin
-                  wb_ack_o = 1;
+//                  wb_ack_o = 1;
+                  fifo_w_en  = 1;
+                  fifo_w_addr <= fifo_w_addr + 1;
                   state_r <= s_idle;
                end
              endcase
           end
      end
+
+   always @(posedge clk)
+     begin
+        if (rst || sample_cntr_r == 0)
+          sample_cntr_r <= 1024;
+        else
+          sample_cntr_r <= sample_cntr_r - 1;
+     end
+
+   always @(posedge clk)
+     begin
+
+        if (rst)
+          begin
+             fifo_r_addr <= 0;
+          end
+        else if (wb_stb_i & wb_cyc_i & ~wb_we_i)
+          begin
+             fifo_r_addr <= fifo_r_addr + 1;
+          end
+     end
+
+   RAMB16_S36_S36 adc_fifo(.DOA(fifo_r_data),
+                           .DOB(),
+                           .DOPA(),
+                           .DOPB(),
+                           .ADDRA(fifo_r_addr),
+                           .ADDRB(fifo_w_addr),
+                           .CLKA(clk),
+                           .CLKB(clk),
+                           .DIA(0),
+                           .DIB({16'h0, adc_sample_r}),
+                           .DIPA(0),
+                           .DIPB(0),
+                           .ENA(1),
+                           .ENB(1),
+                           .SSRA(rst),
+                           .SSRB(rst),
+                           .WEA(0),
+                           .WEB(fifo_w_en));
+
 
 endmodule
