@@ -233,10 +233,17 @@ int main(int argc, char **argv)
   int fd;
   int i;
   struct termios termios;
+  char *uart_tty = "/dev/ttyS0";
 
   progname = argv[0];
 
-  fd = open("/dev/ttyS0", O_RDWR);
+  uart_tty = getenv("AJARDSP_UART_TTY");
+  if (!uart_tty)
+    {
+      uart_tty = "/dev/ttyS0";
+    }
+
+  fd = open(uart_tty, O_RDWR);
 
   tcgetattr(fd, &termios);
   cfsetispeed(&termios, B115200);
