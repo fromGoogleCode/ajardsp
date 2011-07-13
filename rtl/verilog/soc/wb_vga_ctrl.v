@@ -119,7 +119,7 @@ module wb_vga_ctrl(
    reg [10:0]    graph_wr_addr_r;
    wire [15:0]   graph_data_w;
 
-   reg [23:0]    fb_r_addr;
+   reg [31:0]    fb_r_addr;
 
    wire [8:0]    fifo_fill_level;
    wire [31:0]   fifo_r_data;
@@ -175,6 +175,7 @@ module wb_vga_ctrl(
    assign m_wb_cti_o = 3'b010;
    assign m_wb_we_o  = 0;
    assign m_wb_dat_o = 0;
+   assign m_wb_sel_o = 4'b1111;
 
    assign rst = wb_rst_i;
 
@@ -437,7 +438,7 @@ module wb_vga_ctrl(
                            .DOPA(),
                            .DOPB(),
                            .ADDRA({y_pos[9:4],x_pos[9:5]}),
-                           .ADDRB(s_wb_adr_i),
+                           .ADDRB(s_wb_adr_i[15:2]),
                            .CLKA(pixel_clk),
                            .CLKB(wb_clk_i),
                            .DIA(0),

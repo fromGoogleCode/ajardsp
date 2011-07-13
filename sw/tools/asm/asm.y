@@ -301,6 +301,7 @@ extern char *yytext;
 extern FILE *yyin;
 char *outfile;
 char *inputfile;
+int option_fill_mems = 0;
 
 enum {code_sections, data_sections} lookfor_state = code_sections;
 
@@ -311,7 +312,7 @@ yyerror(const char *msg)
 
 void print_usage(void)
 {
-  fprintf(stderr, "Usage: ajardsp-asm [-o=outfile] file\n");
+  fprintf(stderr, "Usage: ajardsp-asm [-o=outfile] [-fill-mem] file\n");
   exit(1);
 }
 
@@ -330,6 +331,10 @@ int main(int argc, char **argv)
       if (argv[i][1] == 'o' && argv[i][2] == '=') {
         outfile = strdup(&argv[i][3]);
       }
+      else if (!strcmp(&argv[i][1], "fill-mem")) {
+        option_fill_mems = 1;
+      }
+
       else {
         print_usage();
       }

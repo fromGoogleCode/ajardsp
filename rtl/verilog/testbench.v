@@ -68,7 +68,10 @@ module testbench;
 
                          .core_halt_o(),
                          .gpio_o(gpio_w),
-                         .interrupt_req_i(interrupt)
+                         .interrupt_req_i(interrupt),
+
+                         .m_if_ack_i(1)
+
                          );
 
 

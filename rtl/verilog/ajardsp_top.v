@@ -60,8 +60,12 @@ module ajardsp_top(clk, rst_core, rst_mem,
                    m_if_data_i,
                    m_if_read_req_o,
                    m_if_write_req_o,
-                   m_if_read_ack_i,
-                   m_if_write_ack_i
+                   m_if_write_burst_req_o,
+                   m_if_ack_i,
+                   m_if_burst_len_o,
+                   m_if_burst_ext_addr_o,
+                   m_if_burst_int_addr_o,
+                   m_if_burst_flags_o
 
                    );
 
@@ -94,8 +98,12 @@ module ajardsp_top(clk, rst_core, rst_mem,
    output [31:0] m_if_data_o;
    output        m_if_read_req_o;
    output        m_if_write_req_o;
-   input         m_if_read_ack_i;
-   input         m_if_write_ack_i;
+   output        m_if_write_burst_req_o;
+   input         m_if_ack_i;
+   output [15:0] m_if_burst_len_o;
+   output [31:0] m_if_burst_ext_addr_o;
+   output [15:0] m_if_burst_int_addr_o;
+   output [7:0]  m_if_burst_flags_o;
 
    wire          jump_en_w;
    wire [15:0]   jump_pc_w;
@@ -316,10 +324,8 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire          clk_en_w;
 
    reg           m_if_stall_r;
-   wire          m_if_stall_w;
 
-   assign clk_en_w = ~m_if_stall_w;
-   assign m_if_stall_w = m_if_stall_r; // | m_if_read_req_o | m_if_write_req_o;
+   assign clk_en_w = ~m_if_stall_r;
 
    assign gpio_2_o     = spec_regs_wr_data_w;
    assign gpio_2_ren_o = (spec_regs_ren_w && spec_regs_raddr_w == SPEC_REGS_ADDR_GPIO_2) ? 1'b1 : 1'b0;
@@ -355,11 +361,19 @@ module ajardsp_top(clk, rst_core, rst_mem,
 
    always @(posedge clk)
      begin
-        if (rst_core || m_if_read_ack_i || m_if_write_ack_i)
+        if (rst_core)
+          begin
+`ifdef AJARDSP_CONFIG_EXT_BOOT
+             m_if_stall_r <= 1;
+`else
+             m_if_stall_r <= 0;
+`endif
+          end
+        else if (m_if_ack_i)
           begin
              m_if_stall_r <= 0;
           end
-        else if (m_if_read_req_o || m_if_write_req_o)
+        else if (m_if_read_req_o || m_if_write_req_o || m_if_write_burst_req_o)
           begin
              m_if_stall_r <= 1;
           end
@@ -685,7 +699,12 @@ module ajardsp_top(clk, rst_core, rst_mem,
              .m_if_data_o(m_if_data_o),
              .m_if_data_i(m_if_data_i),
              .m_if_read_req_o(m_if_read_req_o),
-             .m_if_write_req_o(m_if_write_req_o)
+             .m_if_write_req_o(m_if_write_req_o),
+             .m_if_burst_len_o(m_if_burst_len_o),
+             .m_if_write_burst_req_o(m_if_write_burst_req_o),
+             .m_if_burst_ext_addr_o(m_if_burst_ext_addr_o),
+             .m_if_burst_int_addr_o(m_if_burst_int_addr_o),
+             .m_if_burst_flags_o(m_if_burst_flags_o)
 
              );
 

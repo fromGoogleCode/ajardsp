@@ -2,7 +2,7 @@
 
 # This file is part of AjarDSP
 #
-# Copyright (c) 2010, Markus Lavin
+# Copyright (c) 2010, 2011 Markus Lavin
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,11 +46,10 @@ $ver_pass_cnt = 0;
 $ver_fail_cnt = 0;
 
 
-$sim_command_base = "cver +incdir+$rtldir $rtldir/testbench.v $rtldir/ajardsp_top.v $rtldir/vliwfetch.v $rtldir/vliwdec.v $rtldir/pcu.v $rtldir/lsu.v $rtldir/sp.v $rtldir/ptrrf.v $rtldir/dmem.v $rtldir/imem.v $rtldir/accrf.v $rtldir/cu.v $rtldir/bmu.v $rtldir/curegs.v $rtldir/int_addsub.v $rtldir/int_mul.v $rtldir/pred.v";
-
 $debug = 0;
 $target = 0;
 $verbose = 0;
+$iverilog = 0;
 
 foreach $arg (@ARGV) {
     if ($arg =~ /-debug/) {
@@ -58,6 +57,10 @@ foreach $arg (@ARGV) {
     }
     elsif ($arg =~ /-target/) {
         $target = 1;
+        die "\n!!! -target is no longer supported for AjarDSP-SoC. Use wb_debug instead !!!\n";
+    }
+    elsif ($arg =~ /-iverilog/) {
+        $iverilog = 1;
     }
     elsif ($arg =~ /-verbose/) {
         $verbose = 1;
@@ -66,6 +69,18 @@ foreach $arg (@ARGV) {
         push(@input_files, $arg);
     }
 }
+
+if ($iverilog) {
+    $incdir_opt = "-I";
+    $define_opt = "-D";
+    $sim_command_base = "iverilog $incdir_opt$rtldir $rtldir/testbench.v $rtldir/ajardsp_top.v $rtldir/vliwfetch.v $rtldir/vliwdec.v $rtldir/pcu.v $rtldir/lsu.v $rtldir/sp.v $rtldir/ptrrf.v $rtldir/dmem.v $rtldir/imem.v $rtldir/accrf.v $rtldir/cu.v $rtldir/bmu.v $rtldir/curegs.v $rtldir/int_addsub.v $rtldir/int_mul.v $rtldir/pred.v -o $workdir/ajardsp.vvp";
+}
+else {
+    $incdir_opt = "+incdir+";
+    $define_opt = "+define+";
+    $sim_command_base = "cver $incdir_opt$rtldir $rtldir/testbench.v $rtldir/ajardsp_top.v $rtldir/vliwfetch.v $rtldir/vliwdec.v $rtldir/pcu.v $rtldir/lsu.v $rtldir/sp.v $rtldir/ptrrf.v $rtldir/dmem.v $rtldir/imem.v $rtldir/accrf.v $rtldir/cu.v $rtldir/bmu.v $rtldir/curegs.v $rtldir/int_addsub.v $rtldir/int_mul.v $rtldir/pred.v";
+}
+
 
 if ($debug) {
     $sim_command_base = $sim_command_base . " +loadvpi=../tools/simdebug/debug.so:vpi_bootstrap ";
@@ -120,9 +135,12 @@ foreach $input_file (@input_files) {
 
     $asm_command = "../tools/asm/ajardsp-asm -o=$workdir/$base_name $asm_file";
 
-    $sim_command_def = " +define+SIMULATION +define+IMEM_FILE=\\\"$workdir/$base_name.imem\\\" "
-        . "+define+DMEM_IN_FILE=\\\"$workdir/$base_name.dmem\\\" "
-        . "+define+DMEM_OUT_FILE=\\\"$workdir/$base_name.res\\\" ";
+    $sim_command_def = " $define_opt"."SIMULATION "
+        . " $define_opt"."SIMULATION_IMEM "
+        . " $define_opt"."SIMULATION_DMEM "
+        . "$define_opt"."IMEM_FILE=\\\"$workdir/$base_name.imem\\\" "
+        . "$define_opt"."DMEM_IN_FILE=\\\"$workdir/$base_name.dmem\\\" "
+        . "$define_opt"."DMEM_OUT_FILE=\\\"$workdir/$base_name.res\\\" ";
 
     $sim_command = $sim_command_base . $sim_command_def;
 
@@ -160,27 +178,43 @@ foreach $input_file (@input_files) {
         @ENV{"AJARDSP_SIMDEBUG_ASM_PATH"}    = $asm_file;
         @ENV{"AJARDSP_SIMDEBUG_LINENO_PATH"} = "$workdir/$base_name.lineno";
 
-        open(SIM_CMD, "$sim_command |") or die "Can't run simulation command: $sim_command\n";
-        @sim_stdout = <SIM_CMD>;
-
-        $sim_errors = 1;
-
-        if ($sim_stdout[$#sim_stdout] =~
-            m/^  There were ([0-9]+) error\(s\), ([0-9]+) warning\(s\), and ([0-9]+) inform\(s\)\./) {
-
-            $sim_errors = $1;
-            $sim_warnings = $2;
-            $sim_infos = $3;
+        if ($iverilog) {
+            $sim_errors = 0;
+            $sim_warnings = 0;
+            $sim_infos = 0;
+            $sim_cycles = 0;
+            system("$sim_command 2> /dev/null > /dev/null") == 0 or $sim_errors = 1;
+            if ($debug) {
+                open(SIM_CMD, "vvp -m../tools/simdebug/debug.vpi $workdir/ajardsp.vvp |") or $sim_errors = 1;
+            }
+            else {
+                open(SIM_CMD, "vvp $workdir/ajardsp.vvp |") or $sim_errors = 1;
+            }
         }
-        $sim_cycles = -1;
+        else {
 
-        if ($sim_stdout[$#sim_stdout - 1] =~ m/time ([0-9]+) from call to \$finish.$/) {
+            open(SIM_CMD, "$sim_command |") or die "Can't run simulation command: $sim_command\n";
+            @sim_stdout = <SIM_CMD>;
 
-            $sim_cycles = $1/2;
+            $sim_errors = 1;
+
+            if ($sim_stdout[$#sim_stdout] =~
+                m/^  There were ([0-9]+) error\(s\), ([0-9]+) warning\(s\), and ([0-9]+) inform\(s\)\./) {
+
+                $sim_errors = $1;
+                $sim_warnings = $2;
+                $sim_infos = $3;
+            }
+            $sim_cycles = -1;
+
+            if ($sim_stdout[$#sim_stdout - 1] =~ m/time ([0-9]+) from call to \$finish.$/) {
+
+                $sim_cycles = $1/2;
+            }
+
+            system("mv verilog.dump $workdir/$base_name.verilog.dump");
+            system("mv verilog.log $workdir/$base_name.verilog.log");
         }
-
-        system("mv verilog.dump $workdir/$base_name.verilog.dump");
-        system("mv verilog.log $workdir/$base_name.verilog.log");
 
         if ($sim_errors == 0) {
             printf("%-51s cycles=%-5d [PASSED]\n", "Simulation (RTL) with input '$asm_file'", $sim_cycles);

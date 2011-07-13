@@ -12,5 +12,6 @@
 
 `define AJARDSP_CONFIG_ACC_GUARD_BITS 8
 
+`define AJARDSP_CONFIG_EXT_BOOT
 
 `endif

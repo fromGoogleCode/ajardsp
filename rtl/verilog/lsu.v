@@ -93,7 +93,14 @@ module lsu(clk,
            m_if_data_o,
            m_if_data_i,
            m_if_read_req_o,
-           m_if_write_req_o
+           m_if_write_req_o,
+           m_if_write_burst_req_o,
+
+           m_if_burst_len_o,
+           m_if_burst_ext_addr_o,
+           m_if_burst_int_addr_o,
+           m_if_burst_flags_o
+
            );
 
 `include "insns.v"
@@ -187,6 +194,12 @@ module lsu(clk,
    output     [31:0] m_if_data_o;
    output reg        m_if_read_req_o;
    output reg        m_if_write_req_o;
+   output reg        m_if_write_burst_req_o;
+
+   output [15:0]     m_if_burst_len_o;
+   output [31:0]     m_if_burst_ext_addr_o;
+   output [15:0]     m_if_burst_int_addr_o;
+   output [7:0]      m_if_burst_flags_o;
 
    reg [15:0]    spec_regs_data_i_r;
 
@@ -301,6 +314,11 @@ module lsu(clk,
 
    assign m_if_addr_o = {ptr_2nd_rd_data_i, ptr_rd_data_i};
    assign m_if_data_o = acc_rd_data_i;
+
+   assign m_if_burst_len_o      = ptr_rd_data_i;
+   assign m_if_burst_ext_addr_o = acc_rd_data_i;
+   assign m_if_burst_int_addr_o = ptr_2nd_rd_data_i;
+   assign m_if_burst_flags_o    = inst_pipe_0_r[24:17];
 
    /* DMEM read logic */
    always @(posedge clk)
@@ -419,6 +437,7 @@ module lsu(clk,
 
         m_if_read_req_o  = 0;
         m_if_write_req_o = 0;
+        m_if_write_burst_req_o = 0;
 
         if (inst_pipe_0_r[INSN_SIZE_BIT] & inst_pipe_0_r[INSN_ENC_BIT])
           begin  /* 32 bit instruction encoding */
@@ -550,6 +569,20 @@ module lsu(clk,
 
                   m_if_write_req_o = commit_pipe_0_w;
                end
+
+             if (inst_pipe_0_r[7:4] == LSU_ITYPE_EXT_BURST)
+               begin
+                  ptr_rd_en_o      = 1;
+                  ptr_rd_idx_o     = inst_pipe_0_r[10:8];
+                  ptr_2nd_rd_en_o  = 1;
+                  ptr_2nd_rd_idx_o = inst_pipe_0_r[13:11];
+
+                  acc_rd_en_o  = 1;
+		  acc_rd_idx_o = inst_pipe_0_r[16:14];
+
+                  m_if_write_burst_req_o = commit_pipe_0_w;
+               end
+
           end  /* 32 bit instruction encoding */
         else
           begin  /* 16 bit instruction encoding */

@@ -144,8 +144,8 @@ module sdram_ctrl(clk,
 
    reg        ddr_data_oe;
    reg        ddr_data_oe_;
-   reg [3:0]  write_mask;
-   reg [3:0]  write_mask_;
+   reg [3:0]  ddr_write_mask;
+   reg [3:0]  ddr_write_mask_;
 
    reg [31:0]  counter;
    reg [31:0]  burst_addr;
@@ -190,17 +190,17 @@ module sdram_ctrl(clk,
              ddr_ba <= 0;
              ddr_data_oe <= 0;
              ddr_write_data <= 0;
-             write_mask <= 0;
+             ddr_write_mask <= 0;
           end
         else
           begin
-             read_data_r <= read_data;
+             read_data_r <= read_data_n_r;
              ddr_cmd <= ddr_cmd_;
              ddr_addr <= ddr_addr_;
              ddr_ba <= ddr_ba_;
              ddr_data_oe <= ddr_data_oe_;
              ddr_write_data <= ddr_write_data_;
-             write_mask <= write_mask_;
+             ddr_write_mask <= ddr_write_mask_;
           end
      end
 
@@ -317,7 +317,18 @@ module sdram_ctrl(clk,
                     .ddr_dq_io(ddr_data[15]),
                     .iclk_p(ddr_dqs[1]), .iclk_n(~ddr_dqs[1]));
 
-   assign ddr_dm = 0;
+
+   iob_dq iob_dm_0(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                    .din0(ddr_write_mask[0]), .din1(ddr_write_mask[2]),
+                    .dout0(), .dout1(),
+                    .ddr_dq_io(ddr_dm[0]),
+                    .iclk_p(0), .iclk_n(0));
+
+   iob_dq iob_dm_1(.clk_p(clk_p), .clk_n(clk_n), .rst(rst), .oen(~ddr_data_oe_),
+                    .din0(ddr_write_mask[1]), .din1(ddr_write_mask[3]),
+                    .dout0(), .dout1(),
+                    .ddr_dq_io(ddr_dm[1]),
+                    .iclk_p(0), .iclk_n(0));
 
    parameter CC_200US = 100 * 200,
              CC_tRP   = 3,
@@ -455,7 +466,7 @@ module sdram_ctrl(clk,
         ddr_addr_ = 0;
         ddr_ba_ = 0;
 
-        write_mask_ = 4'b1111;
+        ddr_write_mask_ = 4'b1111;
 
         load_burst_addr = 0;
 
@@ -631,13 +642,13 @@ module sdram_ctrl(clk,
              ddr_cmd_ = cmd_write;
              ddr_addr_ = {3'b000, burst_addr[9:0]};
              ddr_write_data_ = user_write_data;
-             write_mask_     = user_write_mask;
+             ddr_write_mask_ = user_write_mask;
              ddr_state_next = s_write_data;
           end
 
           s_write_data: begin
              ddr_write_data_ = user_write_data;
-             write_mask_     = user_write_mask;
+             ddr_write_mask_ = user_write_mask;
              ddr_data_oe_    = 1;
 
              ddr_state_next = s_write_wait_0;

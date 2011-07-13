@@ -44,6 +44,7 @@
 
 extern inst_def_t ajardsp_insns[];
 extern char *outfile;
+extern int option_fill_mems;
 
 static int ignore_sym_refs = 0;
 
@@ -436,7 +437,7 @@ void init(void)
 
   {
     char str[64];
-    sprintf(str, "%s.lineno", outfile);
+    sprintf(str, "%s.lineno", outfile ? outfile : "out");
     lineno_fp = fopen(str, "w");
   }
 }
@@ -452,7 +453,7 @@ void output_hex(void)
 
   fp = fopen(filename, "w");
 
-  for (i = 0; i < sizeof(dmem)/sizeof(dmem[0]); i++) {
+  for (i = 0; i < (option_fill_mems ? sizeof(dmem)/sizeof(dmem[0]) : dmem_addr); i++) {
     fprintf(fp, "%04x\n", dmem[i]);
   }
 
@@ -463,7 +464,7 @@ void output_hex(void)
 
   fp = fopen(filename, "w");
 
-  for (i = 0; i < sizeof(imem)/sizeof(imem[0]); i += 4) {
+  for (i = 0; i < (option_fill_mems ? sizeof(imem)/sizeof(imem[0]) : imem_addr); i += 4) {
     fprintf(fp, "%04x%04x%04x%04x\n", imem[i+3], imem[i+2], imem[i+1], imem[i+0]);
   }
 

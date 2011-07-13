@@ -1,0 +1,37 @@
+AjarDSP-SoC Memory Map
+----------------------
+
+Wishbone slave select (wb_adr_o_w[31:28])
+-----------------------------------------
+
+VGA ctrl     : 0xF000 0000 - 0xFFFF FFFF
+
+ADC ctrl     : 0xE000 0000 - 0xEFFF FFFF
+
+RAM (onchip) : 0xD000 0000 - 0xDFFF FFFF
+
+Misc block   : 0xC000 0000 - 0xCFFF FFFF
+
+SDRAM (ext)  : 0x0000 0000 - 0xBFFF FFFF
+
+
+
+
+VGA ctrl - detailed address map
+-------------------------------
+
+0xF000 0000
+VGA ctrl register. Enable bit for frame buffer, enable
+bit for console mode.
+
+0xF000 0004
+VGA frame buffer base address
+
+0xF001 0000 - 0xF001 0FFF
+VGA console mode memory
+
+Misc block - detailed address map
+---------------------------------
+
+0xC000 0000 - LEDs
+0xC000 0004 - DSP reset ctrl register

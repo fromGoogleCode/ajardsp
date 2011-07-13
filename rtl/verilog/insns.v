@@ -98,7 +98,8 @@ parameter LSU_ITYPE_MVTS_16   = 4'h1,
           LSU_ITYPE_LD_IMM_PTR_16 = 4'h9,
           LSU_ITYPE_LD_IMM_ACC_16 = 4'ha,
           LSU_ITYPE_LD_EXT_32 = 4'hb,
-          LSU_ITYPE_ST_EXT_32 = 4'hc;
+          LSU_ITYPE_ST_EXT_32 = 4'hc,
+          LSU_ITYPE_EXT_BURST = 4'hd;
 
 /**********************************************
  * LSU - end
