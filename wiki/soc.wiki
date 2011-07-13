@@ -74,3 +74,5 @@ $ wb_debug --dump:0xD0000000:0x30
 0xD0000028: 0x201608D6
 0xD000002C: 0x00000000
 }}}
+
+The memory map can be found here http://code.google.com/p/ajardsp/source/browse/trunk/doc/soc-memmap.txt
