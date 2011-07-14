@@ -41,7 +41,7 @@ RTL_MODEL= \
     ../../rtl/verilog/pred.v
 
 all: ajardsp_soc.vvp
-	vvp ajardsp_soc.vvp
+	vvp ajardsp_soc.vvp -lxt2
 
 ajardsp_soc.vvp: $(RTL_SIM) $(RTL_MODEL) tx.hex wb_ram.hex
 	iverilog $(INCLUDE) $(RTL_SIM) $(RTL_MODEL) -DSIMULATION_UART -DIMEM_FILE='"workdir/m_if_07_.imem"' -DDMEM_IN_FILE='"workdir/m_if_07_.dmem"' -DDMEM_OUT_FILE='"workdir/m_if_07_.res"' -o ajardsp_soc.vvp -s tb

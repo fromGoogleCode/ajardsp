@@ -324,8 +324,9 @@ module ajardsp_top(clk, rst_core, rst_mem,
    wire          clk_en_w;
 
    reg           m_if_stall_r;
+   wire          dmem_stall_req_w;
 
-   assign clk_en_w = ~m_if_stall_r;
+   assign clk_en_w = ~m_if_stall_r & ~dmem_stall_req_w;
 
    assign gpio_2_o     = spec_regs_wr_data_w;
    assign gpio_2_ren_o = (spec_regs_ren_w && spec_regs_raddr_w == SPEC_REGS_ADDR_GPIO_2) ? 1'b1 : 1'b0;
@@ -359,6 +360,16 @@ module ajardsp_top(clk, rst_core, rst_mem,
 /*   assign pcu_0_ptrrf_0_rd_data_w = lsu_1_ptr_rd_data_w; */
    assign lsu_0_lsu_1_ptr_rd_idx_w = /* pcu_0_ptrrf_0_rd_en_w ? pcu_0_ptrrf_0_rd_idx_w : */ (lsu_0_ptr_2nd_rd_en_w ? lsu_0_ptr_2nd_rd_idx_w : lsu_1_ptr_rd_idx_w);
 
+   /* FIXME: this is exact copy from wb_ajardsp.v */
+   parameter bflag_inc_ext   = 0,
+             bflag_inc_int   = 1,
+             bflag_write_ext = 2,
+             bflag_imem      = 3,
+             bflag_transp0   = 4,
+             bflag_square    = 5,
+             blfag_nowait    = 6;
+
+
    always @(posedge clk)
      begin
         if (rst_core)
@@ -373,7 +384,8 @@ module ajardsp_top(clk, rst_core, rst_mem,
           begin
              m_if_stall_r <= 0;
           end
-        else if (m_if_read_req_o || m_if_write_req_o || m_if_write_burst_req_o)
+        else if (m_if_read_req_o | m_if_write_req_o |
+                 (m_if_write_burst_req_o & ~m_if_burst_flags_o[blfag_nowait]))
           begin
              m_if_stall_r <= 1;
           end
@@ -595,7 +607,9 @@ module ajardsp_top(clk, rst_core, rst_mem,
                .ext_dmem_wr_data_i(ext_dmem_wr_data_i),
                .ext_dmem_wr_en_i(ext_dmem_wr_en_i),
                .ext_dmem_rd_data_o(ext_dmem_rd_data_o),
-               .ext_dmem_rd_en_i(ext_dmem_rd_en_i)
+               .ext_dmem_rd_en_i(ext_dmem_rd_en_i),
+
+               .stall_req_o(dmem_stall_req_w)
                );
 
    sp sp_0(.clk(clk),

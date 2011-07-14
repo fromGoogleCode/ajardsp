@@ -277,6 +277,18 @@ int main(int argc, char **argv)
         args[args_found] = strtok(NULL, ":");
       }
 
+      if (!strcmp(args[0], "uart-hex") && args_found == 2)
+        {
+          uart_hex_file_fp = fopen(args[1], "w");
+          if (!uart_hex_file_fp)
+            {
+              fprintf(stderr, "%s: failed to create uart-hex output file %s\n", progname, args[1]);
+              exit(1);
+            }
+          continue;
+        }
+
+
       if (!strcmp(args[0], "load-imem") && args_found == 4)
         {
           target_load_imem(fd, args[1], strtoul(args[2], NULL, 0), strtoul(args[3], NULL, 0));

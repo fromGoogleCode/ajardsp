@@ -46,6 +46,7 @@ module wb_misc_io(
                   wb_stb_i,
                   wb_we_i,
 
+                  lcd,
                   led,
                   reset_ctrl,
                   ps2_clk_i,
@@ -64,6 +65,7 @@ module wb_misc_io(
    input         wb_stb_i;
    input         wb_we_i;
 
+   output reg [7:0] lcd;
    output reg [7:0] led;
    output reg [7:0] reset_ctrl;
 
@@ -80,6 +82,7 @@ module wb_misc_io(
      begin
         if (wb_rst_i)
           begin
+             lcd <= 0;
              led <= 0;
              reset_ctrl <= 0;
           end
@@ -91,6 +94,11 @@ module wb_misc_io(
           begin
              reset_ctrl <= wb_dat_i;
           end
+        else if (wb_stb_i && wb_we_i && wb_adr_i[7:0] == 8'h08)
+          begin
+             lcd <= wb_dat_i;
+          end
+
      end
 
    /* PS2 - begin */

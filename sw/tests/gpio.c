@@ -37,13 +37,18 @@ int rd_gpio(void)
   return value;
 }
 
-void wr_gpio(int value)
+void wr_ext(long value, void *addr_low, void *addr_high)
 {
-  asm("mvts16  %0, $gpio"
+  asm("stext32 %0, %1, %2"
       : /* No outputs */
-      : "r" (value)
+      : "r" (addr_low), "r" (addr_high), "r" (value)
       : /* No clobbers */
       );
+}
+
+void wr_gpio(int value)
+{
+  wr_ext(value, (void*)0x0008, (void*)0xC000);
 }
 
 void wr_lcd_nibble(int nibble)
