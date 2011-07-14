@@ -231,6 +231,8 @@ module soc_top(
                uart_rx_debug_w,
                uart_tx_debug_w;
 
+   wire [7:0]  lcd_w;
+
    assign SD_CS = 0;
 
    assign rst = RST || !locked_0 || !locked_1 || !locked_2;
@@ -241,10 +243,10 @@ module soc_top(
    assign uart_rx_debug_w = RS232_DTE_RXD;
    assign RS232_DTE_TXD   = uart_tx_debug_w;
 
-   assign LCD_E  = 0;
-   assign LCD_RS = 0;
-   assign LCD_RW = 0;
-   assign LCD_D  = 0;
+   assign LCD_E       = lcd_w[4];
+   assign LCD_RS      = lcd_w[5];
+   assign LCD_RW      = 0;
+   assign LCD_D[3:0]  = lcd_w[3:0];
 
    DCM_SP #(.CLKFX_DIVIDE(5),
             .CLKFX_MULTIPLY(4))
@@ -699,6 +701,7 @@ module soc_top(
                            .wb_sel_i(wb_sel_o_w),
                            .wb_ack_o(misc_wb_ack_i_w),
 
+                           .lcd(lcd_w),
                            .led(led_misc_io_w),
                            .reset_ctrl(reset_ctrl_misc_io_w),
                            .ps2_clk_i(PS2_CLK),

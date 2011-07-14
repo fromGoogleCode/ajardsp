@@ -51,6 +51,7 @@ loop_clear_end:
         nop
 
 forever:
+
         /* Read from ADC */
         ldimm16 $acc0l, 0x0000
       | ldimm16 $acc0h, 0xe000
@@ -59,26 +60,21 @@ forever:
 
         extburst 0x02, $ptr0, $ptr1, $acc0
 
-        /* Write to VGA memory */
-        ldimm16 $acc0l, 0x0000
-      | ldimm16 $acc0h, 0x0001
-        ldimm16 $ptr0,  0x0100
-      | ldimm16 $ptr1,  0x0000
-        ldimm16 $ptr3,  0x0000
-/*
-        extburst 0x07, $ptr0, $ptr1, $acc0
-*/
         /* Write the graph */
         ldimm16 $acc7l, 0xffff
-        ldimm16 $acc7h, 0xffff
+      | ldimm16 $acc7h, 0xffff
         ldimm16 $ptr0,  200
-        ldimm16 $acc1l, 200
-        ldimm16 $acc2h, 0
+      | ldimm16 $acc1l, 200  /* should be 800 (screen width) but we want to divide the samples by 4 */
+        ldimm16 $acc2l, 0
+      | ldimm16 $acc2h, 0
+        ldimm16 $ptr4,  0
+
         mvts16 $ptr0, $bkrepcnt
         nop
         bkrep #loop_graph
         ldinc32 $ptr3, $acc0
-        mv16  $ptr3, $acc2l
+        mv16  $ptr4, $acc2l
+      | addptr16 $ptr4, 4
         mpy16 $acc1l, $acc0l, $acc0
         nop
         add32 $acc0, $acc2, $acc0

@@ -102,15 +102,16 @@ module wb_ajardsp(
              wb_m_write = 2,
              wb_m_read_ack = 3,
              wb_m_burst = 4,
-             wb_m_burst_1 = 5;
+             wb_m_burst_1 = 5,
+             wb_m_back_off = 6;
 
-   parameter bflag_inc_ext = 0,
-             bflag_inc_int = 1,
-             bflag_write   = 2,
-             bflag_imem    = 3,
-             bflag_transp0 = 4,
-             bflag_square  = 5;
-
+   parameter bflag_inc_ext   = 0,
+             bflag_inc_int   = 1,
+             bflag_write_ext = 2,
+             bflag_imem      = 3,
+             bflag_transp0   = 4,
+             bflag_square    = 5,
+             blfag_nowait    = 6;
 
    always @(posedge clk)
      begin
@@ -167,15 +168,15 @@ module wb_ajardsp(
                        m_if_burst_len_r   <= m_if_burst_len_w;
                        m_if_burst_flags_r <= m_if_burst_flags_w;
 
-                       wb_we_o       <=  m_if_burst_flags_w[bflag_write];
+                       wb_we_o       <=  m_if_burst_flags_w[bflag_write_ext];
 
-                       m_if_dmem_ren <=  m_if_burst_flags_w[bflag_write] &
+                       m_if_dmem_ren <=  m_if_burst_flags_w[bflag_write_ext] &
                                         ~m_if_burst_flags_w[bflag_imem];
 
-                       m_if_dmem_wen <= ~m_if_burst_flags_w[bflag_write] &
+                       m_if_dmem_wen <= ~m_if_burst_flags_w[bflag_write_ext] &
                                         ~m_if_burst_flags_w[bflag_imem];
 
-                       m_if_imem_wen <= ~m_if_burst_flags_w[bflag_write] &
+                       m_if_imem_wen <= ~m_if_burst_flags_w[bflag_write_ext] &
                                          m_if_burst_flags_w[bflag_imem];
 
                        wb_state_r <= wb_m_burst;
@@ -215,6 +216,10 @@ module wb_ajardsp(
                     end
                end
 
+               wb_m_back_off: begin
+                  wb_state_r <= wb_m_burst_1;
+               end
+
                wb_m_burst: begin
                   wb_state_r <= wb_m_burst_1;
                end
@@ -244,6 +249,14 @@ module wb_ajardsp(
 
                             if (m_if_burst_flags_r[bflag_inc_int])
                               m_if_int_addr_r <= m_if_int_addr_r + 2;
+
+                            if (0 && m_if_burst_len_r[5:0] == 0)
+                              begin
+                                 wb_cyc_o <= 0;
+                                 wb_stb_o <= 0;
+
+                                 wb_state_r <= wb_m_back_off;
+                              end
                          end
                        else
                          begin

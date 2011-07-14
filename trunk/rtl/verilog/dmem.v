@@ -56,7 +56,9 @@ module dmem(clk,
             ext_dmem_wr_data_i,
             ext_dmem_wr_en_i,
             ext_dmem_rd_data_o,
-            ext_dmem_rd_en_i
+            ext_dmem_rd_en_i,
+
+            stall_req_o
             );
 
    input clk;
@@ -85,6 +87,9 @@ module dmem(clk,
    output [31:0] ext_dmem_rd_data_o;
    input         ext_dmem_rd_en_i;
 
+   output        stall_req_o;
+   reg           resolve_cycle_r;
+
    wire          clk_en_;
 
    assign clk_en_ = clk_en | ext_dmem_wr_en_i | ext_dmem_rd_en_i;
@@ -96,6 +101,8 @@ module dmem(clk,
    reg [15:0]    dmem [0:16'hffff];
    integer       i;
    integer       fp;
+
+   assign stall_req_o = 0;
 
    initial begin
  `ifdef DMEM_IN_FILE
@@ -186,49 +193,78 @@ module dmem(clk,
    wire ren_a_w;
    wire ren_b_w;
 
+   reg  [31:0] doa_r;
+   wire [31:0] dia_w, doa_w, dob_w;
+   wire [15:0] addra_w;
+   wire        ena_w, wea_high_w, wea_low_w;
+
+   assign addra_w     = resolve_cycle_r ? addr_1_i    : addr_0_i;
+   assign dia_w       = resolve_cycle_r ? wr_data_1_i : wr_data_0_i;
+
+   assign ena_w       = resolve_cycle_r ? (rd_en_1_i | wr_en_1_i)   : (rd_en_0_i | wr_en_0_i);
+   assign wea_high_w  = resolve_cycle_r ? (wr_en_1_i & mask_1_i[1]) : (wr_en_0_i & mask_0_i[1]);
+   assign wea_low_w   = resolve_cycle_r ? (wr_en_1_i & mask_1_i[0]) : (wr_en_0_i & mask_0_i[0]);
+
+   assign rd_data_0_o = resolve_cycle_r ? doa_r : doa_w;
+   assign rd_data_1_o = resolve_cycle_r ? doa_w : dob_w;
+
    assign en_a_w = rd_en_0_i | wr_en_0_i;
    assign en_b_w = rd_en_1_i | wr_en_1_i | ext_dmem_wr_en_i | ext_dmem_rd_en_i;
 
    assign ext_dmem_rd_data_o = rd_data_1_o;
 
+   assign stall_req_o = (wr_en_1_i | rd_en_1_i) & (ext_dmem_wr_en_i | ext_dmem_rd_en_i);
+
+   always @(posedge clk)
+     begin
+        if (rst)
+          resolve_cycle_r <= 0;
+        else if (~resolve_cycle_r & stall_req_o)
+          resolve_cycle_r <= 1;
+        else
+          resolve_cycle_r <= 0;
+
+        doa_r <= doa_w;
+     end
+
    RAMB16_S18_S18 dmem_ram_high(
-     .DOA(rd_data_0_o[31:16]),
-     .DOB(rd_data_1_o[31:16]),
+     .DOA(doa_w[31:16]),
+     .DOB(dob_w[31:16]),
      //.DOPA(),
      //.DOPB(),
-     .ADDRA(addr_0_i[15:1]),
+     .ADDRA(addra_w[15:1]),
      .ADDRB((ext_dmem_wr_en_i | ext_dmem_rd_en_i) ? ext_dmem_addr_i[15:1] : addr_1_i[15:1]),
      .CLKA(clk),
      .CLKB(clk),
-     .DIA(wr_data_0_i[31:16]),
+     .DIA(dia_w[31:16]),
      .DIB(ext_dmem_wr_en_i ? ext_dmem_wr_data_i[31:16] : wr_data_1_i[31:16]),
      .DIPA(4'h0),
      .DIPB(4'h0),
-     .ENA(clk_en_ & en_a_w),
+     .ENA(clk_en_ & ena_w),
      .ENB(clk_en_ & en_b_w),
      .SSRA(res),
      .SSRB(res),
-     .WEA(wr_en_0_i & mask_0_i[1]),
+     .WEA(wea_high_w),
      .WEB((wr_en_1_i & mask_1_i[1]) | ext_dmem_wr_en_i));
 
    RAMB16_S18_S18 dmem_ram_low(
-     .DOA(rd_data_0_o[15:0]),
-     .DOB(rd_data_1_o[15:0]),
+     .DOA(doa_w[15:0]),
+     .DOB(dob_w[15:0]),
      //.DOPA(),
      //.DOPB(),
-     .ADDRA(addr_0_i[15:1]),
+     .ADDRA(addra_w[15:1]),
      .ADDRB((ext_dmem_wr_en_i | ext_dmem_rd_en_i) ? ext_dmem_addr_i[15:1] : addr_1_i[15:1]),
      .CLKA(clk),
      .CLKB(clk),
-     .DIA(wr_data_0_i[15:0]),
+     .DIA(dia_w[15:0]),
      .DIB(ext_dmem_wr_en_i ? ext_dmem_wr_data_i[15:0] : wr_data_1_i[15:0]),
      .DIPA(4'h0),
      .DIPB(4'h0),
-     .ENA(clk_en_ & en_a_w),
+     .ENA(clk_en_ & ena_w),
      .ENB(clk_en_ & en_b_w),
      .SSRA(res),
      .SSRB(res),
-     .WEA(wr_en_0_i & mask_0_i[0]),
+     .WEA(wea_low_w),
      .WEB((wr_en_1_i & mask_1_i[0]) | ext_dmem_wr_en_i));
 
 `endif //`ifdef SIMULATION_DMEM

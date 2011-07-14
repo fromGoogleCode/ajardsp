@@ -68,8 +68,6 @@ module wb_adc_ctrl(
 
    wire          clk, rst;
 
-   reg [1:0]     clk_div_cnt_r;
-
    wire          adc_clk_en_w;
    reg [15:0]    adc_sample_r;
    reg [1:0]     state_r;
@@ -90,20 +88,8 @@ module wb_adc_ctrl(
    assign rst = wb_rst_i;
 
    /* ADC clk (ADC_SCK) is clk/4 */
-   assign adc_clk_en_w = clk_div_cnt_r == 2'b10 ? 1'b1 : 1'b0;
-   assign ADC_SCK_o    = clk_div_cnt_r[1];
-
-   always @(posedge clk)
-     begin
-        if (rst)
-          begin
-             clk_div_cnt_r <= 0;
-          end
-        else
-          begin
-             clk_div_cnt_r <= clk_div_cnt_r + 1;
-          end
-     end
+   assign adc_clk_en_w = sample_cntr_r[1:0] == 2'b10 ? 1'b1 : 1'b0;
+   assign ADC_SCK_o    = sample_cntr_r[1];
 
    always @(posedge clk)
      begin
