@@ -585,13 +585,13 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 7,
+	.offset = 11,
 	.width  = 4,
 	.encode = encode_acc_half,
       },
       {
 	.type = REG,
-	.offset = 11,
+	.offset = 7,
 	.width  = 4,
 	.encode = encode_acc_half,
       },
@@ -607,13 +607,13 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 7,
+	.offset = 11,
 	.width  = 4,
 	.encode = encode_acc_half,
       },
       {
 	.type = REG,
-	.offset = 11,
+	.offset = 7,
 	.width  = 4,
 	.encode = encode_acc_half,
       },
@@ -909,15 +909,15 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 3,
-	.encode = encode_ptr,
-      },
-      {
-	.type = REG,
 	.offset = 11,
 	.width  = 5,
 	.encode = encode_reg,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
@@ -931,15 +931,15 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 3,
-	.encode = encode_ptr,
-      },
-      {
-	.type = REG,
 	.offset = 11,
 	.width  = 5,
 	.encode = encode_reg,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
@@ -997,15 +997,15 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 3,
-	.encode = encode_ptr,
-      },
-      {
-	.type = REG,
 	.offset = 11,
 	.width  = 3,
 	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
@@ -1019,15 +1019,15 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 3,
-	.encode = encode_ptr,
-      },
-      {
-	.type = REG,
 	.offset = 11,
 	.width  = 3,
 	.encode = encode_acc,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
@@ -1041,17 +1041,17 @@ inst_def_t ajardsp_insns[] = {
 
     .operands = {
       {
+	.type = INTEGER,
+	.offset = 12,
+	.width  = 16,
+	.encode = encode_int,
+      },
+      {
 	.type = REG,
 	.offset = 8,
 	.width  = 4,
 	.encode = encode_acc_half,
       },
-      {
-	.type = INTEGER,
-	.offset = 12,
-	.width  = 16,
-	.encode = encode_int,
-      },
     },
   },
 
@@ -1063,16 +1063,16 @@ inst_def_t ajardsp_insns[] = {
 
     .operands = {
       {
-	.type = REG,
-	.offset = 8,
-	.width  = 4,
-	.encode = encode_ptr,
-      },
-      {
 	.type = INTEGER,
 	.offset = 12,
 	.width  = 16,
 	.encode = encode_int,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 4,
+	.encode = encode_ptr,
       },
     },
   },
@@ -1084,17 +1084,17 @@ inst_def_t ajardsp_insns[] = {
     .nr_operands = 2,
 
     .operands = {
-      {
-	.type = REG,
-	.offset = 8,
-	.width  = 4,
-	.encode = encode_ptr,
-      },
       {
 	.type = SYMBOL_REF,
 	.offset = 12,
 	.width  = 16,
 	.encode = encode_symref,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 4,
+	.encode = encode_ptr,
       },
     },
   },
@@ -1193,9 +1193,9 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 25,
-	.width  = 3,
-	.encode = encode_ptr,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
       },
       {
 	.type = INTEGER,
@@ -1205,9 +1205,9 @@ inst_def_t ajardsp_insns[] = {
       },
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.offset = 25,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
@@ -1221,9 +1221,9 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 25,
-	.width  = 3,
-	.encode = encode_ptr,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
       },
       {
 	.type = SYMBOL_REF,
@@ -1233,9 +1233,9 @@ inst_def_t ajardsp_insns[] = {
       },
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
+	.offset = 25,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
@@ -1249,9 +1249,9 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 25,
+	.offset = 9,
 	.width  = 3,
-	.encode = encode_ptr,
+	.encode = encode_acc,
       },
       {
 	.type = INTEGER,
@@ -1261,9 +1261,9 @@ inst_def_t ajardsp_insns[] = {
       },
       {
 	.type = REG,
-	.offset = 9,
+	.offset = 25,
 	.width  = 3,
-	.encode = encode_acc,
+	.encode = encode_ptr,
       },
     },
   },
@@ -1275,16 +1275,16 @@ inst_def_t ajardsp_insns[] = {
     .nr_operands = 2,
     .operands = {
       {
-	.type = REG,
-	.offset = 25,
-	.width  = 3,
-	.encode = encode_ptr,
-      },
-      {
 	.type = INTEGER,
 	.offset = 13,
 	.width  = 12,
 	.encode = encode_int,
+      },
+      {
+	.type = REG,
+	.offset = 25,
+	.width  = 3,
+	.encode = encode_ptr,
       },
     },
   },
@@ -1322,15 +1322,15 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
-	.offset = 8,
-	.width  = 5,
-	.encode = encode_reg,
-      },
-      {
-	.type = REG,
 	.offset = 13,
 	.width  = 6,
 	.encode = encode_spec,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 5,
+	.encode = encode_reg,
       },
     },
   },
@@ -1530,6 +1530,12 @@ inst_def_t ajardsp_insns[] = {
     .operands = {
       {
 	.type = REG,
+	.offset = 14,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+      {
+	.type = REG,
 	.offset = 8,
 	.width  = 3,
 	.encode = encode_ptr,
@@ -1539,12 +1545,6 @@ inst_def_t ajardsp_insns[] = {
 	.offset = 11,
 	.width  = 3,
 	.encode = encode_ptr,
-      },
-      {
-	.type = REG,
-	.offset = 14,
-	.width  = 3,
-	.encode = encode_acc,
       },
     },
   },
@@ -1610,8 +1610,6 @@ inst_def_t ajardsp_insns[] = {
       },
     },
   },
-
-
 
 
   /* LSU instructions for the new encoding ends here */
