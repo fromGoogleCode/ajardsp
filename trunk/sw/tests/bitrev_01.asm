@@ -42,28 +42,28 @@ input:
 output:
         .skip 32
 .code
-        ldimm16 $ptr0, #input
-      | ldimm16 $ptr1, #output
+        ldimm16 #input, $ptr0
+      | ldimm16 #output, $ptr1
 
-        ldimm16 $acc0l, 0x0001
-      | ldimm16 $acc0h, 0x0800
+        ldimm16 0x0001, $acc0l
+      | ldimm16 0x0800, $acc0h
 
         mvts16 $acc0l, $modsel
         mvts16 $acc0h, $mod0
 
-        ldimm16 $acc0l, 0x0001
-      | ldimm16 $acc0h, 0xf800
+        ldimm16 0x0001, $acc0l
+      | ldimm16 0xf800, $acc0h
 
         mvts16 $acc0l, $masksel
         mvts16 $acc0h, $mask0
 
-        ldimm16 $acc0l, 0x0001
+        ldimm16 0x0001, $acc0l
         mvts16 $acc0l, $bitrev
         nop
 
         /* Loop prologue */
 
-        ldimm16 $ptr7, 31
+        ldimm16 31, $ptr7
 	mvts16 $ptr7, $bkrepcnt
 	nop
         /* Loop kernel */
@@ -71,7 +71,7 @@ output:
 
         /* Loop body begins here */
         ldinc16 $ptr0, $acc1l
-        stinc16 $ptr1, $acc1l
+        stinc16 $acc1l, $ptr1
         nop
 loop_end:
         nop

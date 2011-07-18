@@ -6,11 +6,11 @@
 .code
 loop_forever_start:
         xor32 $acc0, $acc0, $acc0
-      | ldimm16 $ptr6, 0x1ff
+      | ldimm16 0x1ff, $ptr6
         /* Fill pattern in SDRAM */
-        ldimm16 $ptr0, 0x0000
-      | ldimm16 $ptr1, 0xf000
-        ldimm16 $ptr2, 0x0000
+        ldimm16 0x0000, $ptr0
+      | ldimm16 0xf000, $ptr1
+        ldimm16 0x0000, $ptr2
 
 
 
@@ -18,8 +18,8 @@ loop_forever_start:
         nop
         bkrep #loop_init_end
         mv16     $ptr0, $acc0l
-        stext32  $ptr0, $ptr1, $acc0
-       	addptr16 $ptr0, 1
+        stext32  $acc0, $ptr0, $ptr1
+       	addptr16 1, $ptr0
 loop_init_end:
         nop
         nop

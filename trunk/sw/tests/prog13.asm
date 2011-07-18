@@ -44,13 +44,13 @@ input_1:
 output:
         .skip 32
 .code
-        ldimm16 $ptr4, #input_0
-      | ldimm16 $ptr5, #input_0
-
-        ldimm16 $ptr6, #input_1
-      | ldimm16 $ptr7, #input_1
-
-        ldimm16 $ptr2, #output
+        ldimm16 #input_0, $ptr4
+      | ldimm16 #input_0, $ptr5
+			         
+        ldimm16 #input_1, $ptr6
+      | ldimm16 #input_1, $ptr7
+			         
+        ldimm16 #output,  $ptr2
 
         /* Loop prologue */
         ldinc32 $ptr4, $acc1
@@ -59,7 +59,7 @@ output:
         ldinc32 $ptr6, $acc3
       | ldinc32 $ptr7, $acc2
 
-        ldimm16 $ptr3, 3
+        ldimm16 3, $ptr3
 	mvts16 $ptr3, $bkrepcnt
 	nop
         /* Loop kernel */
@@ -99,6 +99,6 @@ loop_end:
         add32 $acc0, $acc1, $acc0
         nop
         nop
-        st32 $ptr2, $acc0
+        st32 $acc0, $ptr2
 
         halt

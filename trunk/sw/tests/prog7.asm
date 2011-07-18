@@ -21,25 +21,25 @@ output:
         .skip 32
 .code
 
-        ldimm16 $acc0l, 256
-      | ldimm16 $acc0h, 257
-        ldimm16 $acc1l, 258
-      | ldimm16 $acc1h, 259
-
-        ldimm16 $acc4h, 256
+        ldimm16 256, $acc0l
+      | ldimm16 257, $acc0h
+        ldimm16 258, $acc1l
+      | ldimm16 259, $acc1h
+		             
+        ldimm16 256, $acc4h
 	nop
 	nop
 	mvts16 $acc4h, $sp
         nop
         nop
-        ldimm16 $acc4l, 0x4440
-      | ldimm16 $acc4h, 0x444f
-        ldimm16 $acc5l, 0x5550
-      | ldimm16 $acc5h, 0x555f
-        ldimm16 $acc6l, 0x6660
-      | ldimm16 $acc6h, 0x666f
-        ldimm16 $acc7l, 0x7770
-      | ldimm16 $acc7h, 0x777f
+        ldimm16 0x4440, $acc4l
+      | ldimm16 0x444f, $acc4h
+        ldimm16 0x5550, $acc5l
+      | ldimm16 0x555f, $acc5h
+        ldimm16 0x6660, $acc6l
+      | ldimm16 0x666f, $acc6h
+        ldimm16 0x7770, $acc7l
+      | ldimm16 0x777f, $acc7h
 
         call #function_0
         push16 $acc0l | push16 $acc0h
@@ -47,46 +47,46 @@ output:
         nop
         pop16 $ptr3
         push16 $ptr4
-	mvfs16 $acc7l, $sp | push16 $acc7h
+	mvfs16 $sp, $acc7l | push16 $acc7h
         push16 $acc7h
-	mvfs16 $acc2l, $sp | push32 $acc2
+	mvfs16 $sp, $acc2l | push32 $acc2
         push32 $acc0 | push32 $acc1
 	call #foobar
-        mvfs16 $acc4h, $sp
-	mvfs16 $acc2l, $sp
-	mvfs16 $acc2l, $sp
+        mvfs16 $sp, $acc4h
+	mvfs16 $sp, $acc2l
+	mvfs16 $sp, $acc2l
         mvts16 $acc2h, $sp
         halt
 	nop
 .align 4
 foobar2:
-	mvfs16 $acc1l, $retpc
+	mvfs16 $retpc, $acc1l
 	rets
-        mvfs16 $acc4h, $retpc
-        mvfs16 $acc4h, $retpc
+        mvfs16 $retpc, $acc4h
+        mvfs16 $retpc, $acc4h
 	nop
 .align 4
 foobar:
-        ldimm16 $ptr5, 0xbabe | push16 $retpc
+        ldimm16 0xbabe, $ptr5 | push16 $retpc
         call #foobar2
         nop
         nop
         pop16 $retpc
         nop
 	rets
-        mvfs16 $acc4h, $sp
-        mvfs16 $acc4h, $sp
+        mvfs16 $sp, $acc4h
+        mvfs16 $sp, $acc4h
 	nop
 
 
 .align 4
 function_0:
         /* prologue - begin */
-        mvfs16 $ptr7, $sp | push16 $ptr7
+        mvfs16 $sp, $ptr7 | push16 $ptr7
         push16 $retpc
-        addptr16 $ptr7, -32 /* make room for locals */
+        addptr16 -32, $ptr7 /* make room for locals */
         nop
-        mvts16 $ptr7, $sp | mvfs16 $ptr7, $sp
+        mvts16 $ptr7, $sp | mvfs16 $sp, $ptr7
         nop
         push16 $ptr7 /* sp before locals*/| push16 $acc0l  /* dummy align push */
 
