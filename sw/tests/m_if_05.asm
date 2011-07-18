@@ -7,14 +7,14 @@
 loop_forever_start:
         xor32 $acc0, $acc0, $acc0
         xor32 $acc3, $acc3, $acc3
-      | ldimm16 $ptr3, 0x000
-        ldimm16 $ptr6, 0x1ff
+      | ldimm16 0x000, $ptr3
+        ldimm16 0x1ff, $ptr6
         /* Fill pattern in SDRAM */
-        ldimm16 $ptr0, 0x0000
-      | ldimm16 $ptr1, 0xf000
-        ldimm16 $ptr2, 0xe000
+        ldimm16 0x0000, $ptr0
+      | ldimm16 0xf000, $ptr1
+        ldimm16 0xe000, $ptr2
 
-        ldimm16 $acc3h, 768
+        ldimm16 768, $acc3h
 
         mvts16 $ptr6, $bkrepcnt
         nop
@@ -24,11 +24,11 @@ loop_forever_start:
         nop
         nop
 /*        shiftrl32 $acc0, $acc3h, $acc0 */
-        sub16 $acc0l, $acc3h
+        sub16 $acc3h, $acc0l
         nop
         nop
-        stext32  $ptr0, $ptr1, $acc0
-       	addptr16 $ptr0, 1
+        stext32  $acc0, $ptr0, $ptr1
+       	addptr16 1, $ptr0
 loop_init_end:
         nop
         nop

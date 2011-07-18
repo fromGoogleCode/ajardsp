@@ -21,7 +21,7 @@ output:
         .skip 32
 .code
 
-        ldimm16 $ptr3, 10
+        ldimm16 10, $ptr3
         nop
         nop
         ldoff16 $ptr3,-1, $acc3h
@@ -30,16 +30,16 @@ output:
         ldoff32 $ptr3,-2, $acc7
         nop
         nop
-        stoff32 $ptr3, -4, $acc7
-        stoff32 $ptr3, 2, $acc7 | stoff16 $ptr3, -5, $acc7h
+        stoff32 $acc7, -4, $ptr3
+        stoff32 $acc7,  2, $ptr3 | stoff16 $acc7h, -5,$ptr3
 
 
-        ldimm16 $acc0l, 0xffff
-      | ldimm16 $acc0h, 0x0000
-        ldimm16 $acc1l, 0xff00
-      | ldimm16 $acc1h, 0x0808
-
-        ldimm16 $acc4h, 32
+        ldimm16 0xffff, $acc0l
+      | ldimm16 0x0000, $acc0h
+        ldimm16 0xff00, $acc1l
+      | ldimm16 0x0808, $acc1h
+			        
+        ldimm16 32,    	$acc4h
 	nop
 	nop
 	mvts16 $acc4h, $sp
@@ -54,16 +54,16 @@ output:
         push16 $satctrl
         push16 $mulsign
 
-        ldimm16 $acc2l, 0x1234
-      | ldimm16 $acc2h, 0x7fff
+        ldimm16 0x1234, $acc2l
+      | ldimm16 0x7fff, $acc2h
 
         nop
         nop
         add32 $acc2, $acc2, $acc3
         nop
 
-        ldimm16 $acc2l, 0xffff
-        ldimm16 $acc2h, -3
+        ldimm16 0xffff, $acc2l
+        ldimm16 -3,     $acc2h
         nop
         nop
         mpy16 $acc2l, $acc2h, $acc5

@@ -22,11 +22,11 @@ output:
 .code
 
 
-        ldimm16 $ptr4, #input
-      | ldimm16 $ptr3, #input
-        ldimm16 $ptr2, #output
-        nop
-        ldimm16 $ptr7, 15
+        ldimm16 #input,  $ptr4
+      | ldimm16 #input,  $ptr3
+        ldimm16 #output, $ptr2
+        nop		        
+        ldimm16 15,      $ptr7
 	mvts16 $ptr7, $bkrepcnt
 	nop
         bkrep #loop_end
@@ -38,6 +38,6 @@ output:
         nop
 loop_end:
         nop
-        stinc32 $ptr2, $acc6
+        stinc32 $acc6, $ptr2
 
         halt

@@ -7,8 +7,8 @@
 loop_forever_start:
         xor32 $acc0, $acc0, $acc0
         /* Fill pattern in SDRAM */
-        ldimm16 $ptr0, 0x0000
-      | ldimm16 $ptr1, 0x0000
+        ldimm16 0x0000, $ptr0
+      | ldimm16 0x0000, $ptr1
 
         mvts16 $ptr6, $bkrepcnt
         nop
@@ -17,13 +17,13 @@ loop_forever_start:
         nop
         nop
         nop
-        stext32  $ptr0, $ptr1, $acc0
+        stext32  $acc0, $ptr0, $ptr1
          nop
 nop
 nop
 nop
 nop
-       	addptr16 $ptr0, 1
+       	addptr16 1, $ptr0
 loop_init_end:
         nop
         nop

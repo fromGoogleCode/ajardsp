@@ -43,14 +43,14 @@ input_1:
 output:
         .skip 32
 .code
-        ldimm16 $ptr4, #input_0
-      | ldimm16 $ptr5, #input_0
-
-        ldimm16 $ptr6, #input_1
-      | ldimm16 $ptr7, #input_1
-
-        ldimm16 $ptr2, #output
-      | ldimm16 $acc3h, 4
+        ldimm16 #input_0, $ptr4
+      | ldimm16 #input_0, $ptr5
+			         
+        ldimm16 #input_1, $ptr6
+      | ldimm16 #input_1, $ptr7
+			         
+        ldimm16 #output,  $ptr2
+      | ldimm16  4,       $acc3h
 
         ldinc32 $ptr4, $acc1
 
@@ -59,19 +59,19 @@ output:
 
         shiftll32 $acc1, $acc3h, $acc2
         nop
-        ldimm16 $acc5h, 0x8000
-      | ldimm16 $acc5l, 0x1234
+        ldimm16 0x8000, $acc5h
+      | ldimm16 0x1234, $acc5l
 
 
-        stinc32 $ptr2, $acc2
+        stinc32 $acc2, $ptr2
         nop
         shiftra32 $acc5, $acc3h, $acc7
         shiftrl32 $acc5, $acc3h, $acc6
         nop
         nop
-        stinc32 $ptr2, $acc7
+        stinc32 $acc7, $ptr2
         nop
-        stinc32 $ptr2, $acc6
+        stinc32 $acc6, $ptr2
         nop
         nop
         nop

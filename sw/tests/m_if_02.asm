@@ -4,14 +4,14 @@
 	.word 0xcafe
        	.word 0xbabe
 .code
-        ldimm16 $ptr5, 0x0000
-        ldimm16 $ptr3, 0xf000
-      | ldimm16 $ptr4, 0x7f
-        ldimm16 $acc3l, 0x7f
-      | ldimm16 $acc3h, 0x0
+        ldimm16 0x0000, $ptr5
+        ldimm16 0xf000, $ptr3
+      | ldimm16 0x7f,   $ptr4
+        ldimm16  0x7f,  $acc3l
+      | ldimm16  0x0,   $acc3h
         xor32 $acc4, $acc4, $acc4
         nop
-        ldimm16 $acc4l, 0x3f
+        ldimm16 0x3f, $acc4l
         nop
         nop
 loop:
@@ -22,7 +22,7 @@ loop:
         and32 $acc3, $acc4, $acc3
         nop
         nop
-      stext32 $ptr4, $ptr5, $acc3
+      stext32 $acc3, $ptr4, $ptr5
       nop
       nop
       nop
@@ -32,8 +32,8 @@ loop:
       nop
       nop
 
-        stext32 $ptr4, $ptr3, $acc7
-	addptr16 $ptr4, 1
+        stext32 $acc7, $ptr4, $ptr3
+	addptr16 1, $ptr4
 	bra #loop
 	nop
         nop

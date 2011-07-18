@@ -3,10 +3,10 @@
 .data
 	.word 0xcafe
 .code
-        ldimm16 $ptr3, 0x0123
-      | ldimm16 $ptr4, 0x4567
-        ldimm16 $acc3l, 0x89ab
-      | ldimm16 $acc3h, 0xcdef
+        ldimm16 0x0123, $ptr3 
+      | ldimm16 0x4567, $ptr4 
+        ldimm16 0x89ab, $acc3l
+      | ldimm16 0xcdef, $acc3h
 	add16 $acc3h, $acc3l
         nop
 	add16 $acc3h, $acc3l

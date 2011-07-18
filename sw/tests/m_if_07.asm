@@ -6,49 +6,37 @@
 .code
         xor32 $acc0, $acc0, $acc0
         xor32 $acc1, $acc1, $acc1
-      | ldimm16 $ptr6, 0xffff
-
-
-        /* Start the VGA ctrl. */
-        ldimm16 $ptr1,  0xf001
-        ldimm16 $ptr0,  0x0000
-        ldimm16 $acc1l, 0x0001
-        nop
-        stext32 $ptr0, $ptr1, $acc1
-
-
-
-
+      | ldimm16 0xffff, $ptr6
         /* Fill pattern in SDRAM */
-        ldimm16 $ptr0, 0x0000
-      | ldimm16 $ptr1, 0xf000
-        ldimm16 $ptr2, 0x0000
-        ldimm16 $acc1l, 0x0000
-        ldimm16 $acc1h, 0x0000
-
-        ldimm16 $acc1h, 0x0100
-        ldimm16 $acc1l, 0x0001
+        ldimm16 0x0000, $ptr0
+      | ldimm16 0xf000, $ptr1
+        ldimm16 0x0000, $ptr2
+        ldimm16 0x0000, $acc1l
+        ldimm16 0x0000, $acc1h
+			       
+        ldimm16 0x0100, $acc1h
+        ldimm16 0x0001, $acc1l
 
         mvts16 $ptr6, $bkrepcnt
-        ldimm16 $ptr2, 0x0000
+        ldimm16 0x0000, $ptr2
         nop
         bkrep #loop_init_end
-        stext32  $ptr0, $ptr2, $acc1
-      	addptr16 $ptr0, 4
+        stext32  $acc1, $ptr0, $ptr2
+      	addptr16 4, $ptr0
         nop
 loop_init_end:
         nop
         nop
 
-        ldimm16 $acc1h, 0x0002
-        ldimm16 $acc1l, 0x0100
-        ldimm16 $ptr2, 0x0001
+        ldimm16 0x0002, $acc1h
+        ldimm16 0x0100, $acc1l
+        ldimm16 0x0001, $ptr2
         nop
         mvts16 $ptr6, $bkrepcnt
         nop
         bkrep #loop_init_end2
-        stext32  $ptr0, $ptr2, $acc1
-      	addptr16 $ptr0, 4
+        stext32  $acc1, $ptr0, $ptr2
+      	addptr16 4, $ptr0
         nop
 loop_init_end2:
         nop
@@ -56,44 +44,44 @@ loop_init_end2:
 
         nop
 
-        ldimm16 $acc1h, 0x0102
-        ldimm16 $acc1l, 0x0404
-        ldimm16 $ptr2, 0x0002
+        ldimm16 0x0102, $acc1h
+        ldimm16 0x0404, $acc1l
+        ldimm16 0x0002, $ptr2
         nop
         mvts16 $ptr6, $bkrepcnt
         nop
         bkrep #loop_init_end3
-        stext32  $ptr0, $ptr2, $acc1
-      	addptr16 $ptr0, 4
+        stext32  $acc1, $ptr0, $ptr2
+      	addptr16 4, $ptr0
         nop
 loop_init_end3:
         nop
         nop
 
         nop
-        ldimm16 $acc1h, 0x0000
-        ldimm16 $acc1l, 0x0606
-        ldimm16 $ptr2, 0x0003
+        ldimm16 0x0000, $acc1h
+        ldimm16 0x0606, $acc1l
+        ldimm16 0x0003, $ptr2
         nop
         mvts16 $ptr6, $bkrepcnt
         nop
         bkrep #loop_init_end4
-        stext32  $ptr0, $ptr2, $acc1
-      	addptr16 $ptr0, 4
+        stext32  $acc1, $ptr0, $ptr2
+      	addptr16 4, $ptr0
         nop
 loop_init_end4:
         nop
         nop
 
-        ldimm16 $acc1h, 0x0102
-        ldimm16 $acc1l, 0x0707
-        ldimm16 $ptr2, 0x0004
+        ldimm16 0x0102, $acc1h
+        ldimm16 0x0707, $acc1l
+        ldimm16 0x0004, $ptr2
         nop
         mvts16 $ptr6, $bkrepcnt
         nop
         bkrep #loop_init_end5
-        stext32  $ptr0, $ptr2, $acc1
-      	addptr16 $ptr0, 4
+        stext32  $acc1, $ptr0, $ptr2
+      	addptr16 4, $ptr0
         nop
 loop_init_end5:
         nop
@@ -102,29 +90,29 @@ loop_init_end5:
 
 
         /* Start the VGA ctrl. */
-        stext32 $ptr2, $ptr1, $acc1
+        stext32 $acc1, $ptr2, $ptr1
 
         /* Start the VGA ctrl. */
-        ldimm16 $ptr1,  0xf001
-        ldimm16 $ptr0,  0x0000
-        ldimm16 $acc1l, 0x0001
+        ldimm16 0xf001, $ptr1 
+        ldimm16 0x0000, $ptr0 
+        ldimm16 0x0001, $acc1l
         nop
-        stext32 $ptr0, $ptr1, $acc1
+        stext32 $acc1, $ptr0, $ptr1
 
 
 
 
-        ldimm16 $ptr6, 0x0200
+        ldimm16 0x0200, $ptr6
         nop
         mvts16 $ptr6, $bkrepcnt
-        ldimm16 $ptr0, 0x0000
-        ldimm16 $ptr2, 0x0000
-        ldimm16 $ptr3, 0x0000
+        ldimm16 0x0000, $ptr0
+        ldimm16 0x0000, $ptr2
+        ldimm16 0x0000, $ptr3
         nop
         bkrep #loop_init_end_6
         ldext32  $ptr0, $ptr2, $acc1
-      	addptr16 $ptr0, 4
-        stinc32 $ptr3, $acc1
+      	addptr16 4, $ptr0
+        stinc32 $acc1, $ptr3
         nop
 loop_init_end_6:
         nop
@@ -135,14 +123,14 @@ loop_init_end_6:
 
 foreverever:
 
-        ldimm16 $ptr0,  0x0004
-        ldimm16 $acc1h, 0x0000
-       | ldimm16 $acc1l, 0xe000
+        ldimm16 0x0004, $ptr0
+        ldimm16 0x0000, $acc1h
+       | ldimm16 0xe000, $acc1l
         nop
-        stext32 $ptr0, $ptr1, $acc1
-        ldimm16 $acc1l, 0x0000
+        stext32 $acc1, $ptr0, $ptr1
+        ldimm16 0x0000, $acc1l
         nop
-        stext32 $ptr0, $ptr1, $acc1
+        stext32 $acc1, $ptr0, $ptr1
 
 /*        bra #foreverever */
         nop
