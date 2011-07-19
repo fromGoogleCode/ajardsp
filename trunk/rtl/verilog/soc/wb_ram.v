@@ -88,7 +88,7 @@ module wb_ram(
           end
      end
 
-`ifdef SIMULATION
+`ifdef SIMULATION_WB_RAM
    reg [31:0]    wb_dat_o;
    reg [31:0] mem[0:1024];
 

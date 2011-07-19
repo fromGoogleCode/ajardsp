@@ -211,9 +211,9 @@ module dmem(clk,
    assign en_a_w = rd_en_0_i | wr_en_0_i;
    assign en_b_w = rd_en_1_i | wr_en_1_i | ext_dmem_wr_en_i | ext_dmem_rd_en_i;
 
-   assign ext_dmem_rd_data_o = rd_data_1_o;
+   assign ext_dmem_rd_data_o = dob_w;
 
-   assign stall_req_o = (wr_en_1_i | rd_en_1_i) & (ext_dmem_wr_en_i | ext_dmem_rd_en_i);
+   assign stall_req_o = ((wr_en_1_i | rd_en_1_i) & (ext_dmem_wr_en_i | ext_dmem_rd_en_i)) & ~resolve_cycle_r;
 
    always @(posedge clk)
      begin
@@ -245,7 +245,7 @@ module dmem(clk,
      .SSRA(res),
      .SSRB(res),
      .WEA(wea_high_w),
-     .WEB((wr_en_1_i & mask_1_i[1]) | ext_dmem_wr_en_i));
+     .WEB((ext_dmem_wr_en_i | ext_dmem_rd_en_i) ?  ext_dmem_wr_en_i : (wr_en_1_i & mask_1_i[1])));
 
    RAMB16_S18_S18 dmem_ram_low(
      .DOA(doa_w[15:0]),
@@ -265,7 +265,7 @@ module dmem(clk,
      .SSRA(res),
      .SSRB(res),
      .WEA(wea_low_w),
-     .WEB((wr_en_1_i & mask_1_i[0]) | ext_dmem_wr_en_i));
+     .WEB((ext_dmem_wr_en_i | ext_dmem_rd_en_i) ? ext_dmem_wr_en_i : (wr_en_1_i & mask_1_i[0])));
 
 `endif //`ifdef SIMULATION_DMEM
 
