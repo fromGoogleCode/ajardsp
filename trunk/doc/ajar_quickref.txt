@@ -1,0 +1,150 @@
+Ajar DSP, Programmers view, quick reference card
+=================================================
+
+Registers:
+===========
+
+8 acc[39:0] (8 bit guard, 16 bit high, 16 bit low)
+8 ptr[15:0]
+4 predicate bits: every instruction predicable (32 bit per default, 16 bit have
+                  32 bit predicate counterparts, i.e. if predicate used, 16 bit instruction
+                  will use 32 bit) ******todo: pred0 fixed to 1 ?? how does format for predication
+                  of instructions look like?
+
+Special registers:
+===================
+
+sp      [15:0]  Stack Pointer
+retpc   [15:0]  Return PC (link register), holds return address if call is executed
+satctrl [15:0]  Saturation control *****todo: how does this work, specifies if/if not
+                                              sat on accumulators/lists for each acc if/if not sat to
+                                              -0x80000000 .. 0x7fff ffff ?? only 8 bit??
+mulsign [15:0]  Multiplication operand sign ****todo: how is specification for this???
+masksel [15:0]  Pointer mask selector            [1:0]: ptr0, [3:2]: ptr1, ..., [15:14]: ptr7,
+                                                 value 0: no mask, 1: mask0, 2: mask1, 3: reserved
+mask0   [15:0] 16-bit pointer mask register 0     ******todo: whatfor? AND for mod0/1, i.e. circ buffer ??
+mask1   [15:0] 16-bit pointer mask register 1     ******todo: whatfor?
+modsel  [15:0] Pointer modification selector.    [1:0]: ptr0, [3:2]: ptr1, ..., [15:14]: ptr7,
+                                                 value 0: standard modifier, 1: mod0, 2: mod1, 3: reserved
+mod0    [15:0] 16-bit pointer modification register 0, signed 16 bit, increment/decrement value for ptr operation
+mod1    [15:0] 16-bit pointer modification register 1, signed 16 bit, increment/decrement value for ptr operation
+bitrev  [15:0] Reverse carry pointer modification enable register  ****** todo: describe how it works ...
+                                                                                where do we describe how many bits affected?
+
+
+memory: 16 bit word memory, little endian for long (32 bit) access
+
+Addressing modes: linear, circular, circular with reverse carry update
+
+L/I  : latency/initiation interval -> latency    : how many instructions/cycles after current
+                                                   instruction before result can be used
+                                      initiation : how many cycles before next instruction executed
+
+Units: PCBL##: P:PCU program control unit   C:CU computational unig   B:CMU bit manipulation unit   L:LSU load/store unit,#rd acc ports,#wr acc ports
+
+Sz   : instruction size in 16 bit words, note: every 16 bit instruction can be conditional but then occupies 32 bit
+
+Parallel execution constraints (|): - sum of parallel instruction cannot be > 64 bit/4 16 bit words
+                                    - DSP unit usage must be <= 1 PCU && <= 2 CU && <= 1 BMU && <= 2 LSU
+                                    - only one special register access per cycle
+                                    - < 6 readports on reg file to be used (i.e. mac | mac | st | st would not work -> 8 read ports)
+
+
+accA/accB,accC: acc0 - acc7
+accBlh        : acc0l,acc0h,...,acc7l,acc7h
+accAU         : acc0 - acc7 unsigned (e.g. logical shift right, fill with 0 bits)
+accAS         : acc0 - acc7 signed (e.g. arithmetical shift right, fill with sign bits)
+
+ptrA          : ptr0 - ptr7
+
+reg           : ptr0 - ptr7, acc0l, acc0h, ..., acc7l, acc7h
+
+
+instruction                      | C-notation           | L/I | Sz | Unit | notes
+---------------------------------+----------------------+-----+-------------------------
+and32      accA,accB,accC        |  A  &  B  -> C       | 1/1 |  2 |--B-21|
+or32       accA,accB,accC        |  A  |  B  -> C       | 1/1 |  2 |--B-21|
+xor32      accA,accB,accC        |  A  ^  B  -> C       | 1/1 |  2 |--B-21|
+not32      accA,accC             | ˜A        -> C       | 1/1 |  2 |--B-11| bitwise neg/bit inverse? 
+shiftra32  accA,accBlh,accC      |  AS >> B  -> C       | 1/1 |  2 |--B-21| arithmetic >>, fill with sign bits
+shiftrl32  accA,accBlh,accC      |  AU >> B  -> C       | 1/1 |  2 |      | logical    >>, fill with  0   bits
+shiftll32  accA,accBlh,accC      |  A  << B  -> C       | 1/1 |  2 |      | can also be seen as arithmetical <<, same
+and16      accAlh,accBlh,accClh  |  A  &  B  -> C       | 1/1 |  2 |      | 
+or16       accAlh,accBlh,accClh  |  A  |  B  -> C       | 1/1 |  2 |      | 
+xor16      accAlh,accBlh,accClh  |  A  ^  B  -> C       | 1/1 |  2 |      | 
+not16      accAlh,accClh         | ˜A        -> C       | 1/1 |  2 |      | bitwise neg/bit inverse
+shiftra16  accAlh,accBlh,accClh  |  AS >> B  -> C       | 1/1 |  2 |      | arithmetic >>, fill with sign bits
+shiftrl16  accAlh,accBlh,accClh  |  AU << B  -> C       | 1/1 |  2 |      | logical    <<, fill with  0   bits
+shiftll16  accAlh,accBlh,accClh  |  A  << B  -> C       | 1/1 |  2 |      | can also be seen as arithmetical <<, same
+
++add16      accAlh,accBlh         |  A  +  B  -> B       | 1/1 |  1 |-C--21| really this format??
++sub16      accAlh,accBlh         |  B  -  A  -> B       | 1/1 |  1 |-C--21| 
+cmp16(op)  accAlh,accBlh,pred123 |  A  op B  -> pred123 | 1/1 |  2 |      | op = eq,ne,lt,le,gt,ge
+mpy16      accAlh,accBlh,accC    |  A  *  B  -> C       | 1/1 |  1 |      | 
+mac16      accAlh,accBlh,accC    |  A*B + C  -> C       | 1/1 |  1 |      | 
+add32      accA,accB,accC        |  A  +  B  -> C       | 1/1 |  1 |      | really this format??
+sub32      accA,accB,accC        |  A  -  B  -> C       | 1/1 |  1 |      | really this format??
+
+ld16       ptrA,regA             |  *ptrA    -> A       | 0/1 |  1 |      | 
+ldinc16    ptrA,regA             |  *ptrA++  -> A       | 0/1 |  1 |      | 
++st16       regA,hptrA            |  A        -> *ptrA   | 0/1 |  1 |      | 
++stinc16    regA,hptrA            |  A        -> *ptrA++ | 0/1 |  1 |      | 
+ld32       ptrA,accA             |  *ptrA    -> A       | 0/1 |  1 |      | 
+ldinc32    ptrA,accA             |  *ptrA++  -> A       | 0/1 |  1 |      | 
++st32       accA,ptrA             |  A        -> *ptrA   | 0/1 |  1 |      | 
++stinc32    accA,ptrA             |  A        -> *ptrA++ | 0/1 |  1 |      | 
+
+push16     regA                  | A         -> *--sp   | 0/1 |  1 |      | 
+push16     spclreg               | spclreg   -> *--sp   | 0/1 |  1 |      | 
+pop16      regA                  | *--sp     -> A       | 0/1 |  1 |      | 
+pop16      spclreg               | *--sp     -> spclreg | 0/1 |  1 |      | 
+push32     accA                  | A         -> *--sp   | 0/1 |  1 |      | 
+pop32      accA                  | *--sp     -> A       | 0/1 |  1 |      | 
+
+mv16       regA,regB             | regA      -> regB    | 0/1 |  1 |      | 
+
++ldimm16    #const16,accAlh       | #const16  -> accAlh  | 0/1 |  2 |      |
++ldimm16    #const16,ptrA         | #const16  -> ptrA    | 0/1 |  2 |      | 
++ldimm16    #sym_addr,ptrA        | #sym_addr -> ptrA    | 0/1 |  2 |      | loads symbol address
+
++mvfs16     spclreg,ptrA          | spclreg   -> ptrA    | 0/1 |  2 |      | 
++mvfs16     spclreg,accAlh        | spclreg   -> A       | 0/1 |  2 |      | todo: propose consistent scheme, last op always to,
+mvts16     ptrA,spclreg          | ptrA      -> spclreg | 0/1 |  2 |      |       then we do not need f/t for programmers
+mvts16     accAlh,spclreg        | A         -> spclreg | 0/1 |  2 |      | 
+
++ldoff16    ptrA,#c13,regB        | ptrA[#c13]-> regB    | 0/1 |  2 |      | #const13 in [-4096..4095] or symbol
++ldoff16    ptrA,#sym,regB        | ptrA[#sym]-> regB    | 0/1 |  2 |      | #const13 in [-4096..4095]
++ldoff32    ptrA,#c13,accB        | ptrA[#c13]-> accB    | 0/1 |  2 |      | #const13 in [-4096..4095]
++stoff16    regA,#c13,ptrB        | A     ->  ptrB[#c13] | 0/1 |  2 |      | #const13 in [-4096..4095]
++stoff16    regA,#sym,ptrB        | A     ->  ptrB[#sym] | 0/1 |  2 |      | #const13 in [-4096..4095]
++stoff32    accA,#c13,ptrB        | accA  ->  ptrB[#c13] | 0/1 |  2 |      | #const13 in [-4096..4095]
+
+newly added, missing in original docs:
+
+nop                              | ;                             | 0/1 |  1 |      | no operation
++addptr16   #offs,ptrA            | ptrA += offs                  | 1/1 |  2 |      | add offset to pointer
++stext32     accA,ptrHI,ptrLO     | accA    -> *(ptrHI<<16|ptrLO) | 0/1 |  2 |      | store accu -> external memory, todo
+ldext32     ptrHI,ptrLO,accA     | *(ptrHI<<16|ptrLO)    -> accA | 0/1 |  2 |      | load  accu from external memory, todo
+
+
+bra                              |                               | 0/3 |  2 |      | 
+bra.1ds                          |                               | 0/2 |  2 |      | 
+bra.2ds                          |                               | 0/1 |  2 |      | 
+call                             |                               | 0/3 |  2 |      | 
+call.1ds                         |                               | 0/2 |  2 |      | 
+call.2ds                         |                               | 0/1 |  2 |      | 
+rets                             |                               | 0/3 |  1 |      | 
+rets.1ds                         |                               | 0/2 |  1 |      | 
+rets.2ds                         |                               | 0/1 |  1 |      | 
+reti                             |                               | 0/3 |  1 |      | 
+reti.1ds                         |                               | 0/2 |  1 |      | 
+reti.2ds                         |                               | 0/1 |  1 |      | 
+eint                             |                               | 0/3 |  1 |      | 
+dint                             |                               | 0/3 |  1 |      | 
+bkrep                            |                               | 0/1 |  2 |      | todo: any restrictions on blk size ??
+halt                             |                               | 0/1 |  1 |      | 
+
+
+
+****todo: examples to show immm/register instructions, branching, loops, special register usage
+          (read and use loop index)
