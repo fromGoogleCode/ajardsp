@@ -102,8 +102,9 @@ module wb_ajardsp(
              wb_m_write = 2,
              wb_m_read_ack = 3,
              wb_m_burst = 4,
-             wb_m_burst_1 = 5,
-             wb_m_back_off = 6;
+             wb_m_burst_0 = 5,
+             wb_m_burst_1 = 6,
+             wb_m_back_off = 7;
 
    parameter bflag_inc_ext   = 0,
              bflag_inc_int   = 1,
@@ -128,7 +129,7 @@ module wb_ajardsp(
 
              wb_adr_o           <= EXT_BOOT_ADDR;
              m_if_int_addr_r    <= 0;
-             m_if_burst_len_r   <= EXT_BOOT_LEN;
+             m_if_burst_len_r   <= EXT_BOOT_LEN >> 2;
 
              m_if_burst_flags_r <= 1 << bflag_inc_ext |
                                    1 << bflag_inc_int |
@@ -165,7 +166,7 @@ module wb_ajardsp(
                     begin
                        wb_adr_o           <= m_if_burst_ext_addr_w;
                        m_if_int_addr_r    <= m_if_burst_int_addr_w;
-                       m_if_burst_len_r   <= m_if_burst_len_w;
+                       m_if_burst_len_r   <= m_if_burst_len_w >> 2;
                        m_if_burst_flags_r <= m_if_burst_flags_w;
 
                        wb_we_o       <=  m_if_burst_flags_w[bflag_write_ext];
@@ -221,12 +222,13 @@ module wb_ajardsp(
                end
 
                wb_m_burst: begin
-                  wb_state_r <= wb_m_burst_1;
+                  wb_state_r <= wb_m_burst_0;
                end
 
-               wb_m_burst_1: begin
-                  wb_cyc_o <= 1;
-                  wb_stb_o <= 1;
+               wb_m_burst_0: begin
+                  /* Due to pipeline effect of BRAMs we need to be one step ahead if DMEM is source */
+                  if (m_if_burst_flags_r[bflag_write_ext] & m_if_burst_flags_r[bflag_inc_int])
+                    m_if_int_addr_r <= m_if_int_addr_r + 2;
 
                   wb_dat_o <= dmem_rd_data_32_w;
                   if (m_if_burst_flags_r[bflag_transp0])
@@ -237,12 +239,29 @@ module wb_ajardsp(
                   else
                     wb_sel_o <= 4'b1111;
 
+                  wb_state_r <= wb_m_burst_1;
+               end
+
+               wb_m_burst_1: begin
+                  wb_cyc_o <= 1;
+                  wb_stb_o <= 1;
+
                   if (wb_ack_i)
                     begin
-                       if (m_if_burst_len_r)
+
+                       wb_dat_o <= dmem_rd_data_32_w;
+                       if (m_if_burst_flags_r[bflag_transp0])
+                         wb_sel_o <= {dmem_rd_data_32_w[31:24] != 0 ? 1'b1 : 1'b0,
+                                      dmem_rd_data_32_w[23:16] != 0 ? 1'b1 : 1'b0,
+                                      dmem_rd_data_32_w[15:8]  != 0 ? 1'b1 : 1'b0,
+                                      dmem_rd_data_32_w[7:0]   != 0 ? 1'b1 : 1'b0};
+                       else
+                         wb_sel_o <= 4'b1111;
+
+                       if (m_if_burst_len_r > 1 /* does not work when != 1*/ )
                          begin
 
-                            m_if_burst_len_r <= m_if_burst_len_r - 4;
+                            m_if_burst_len_r <= m_if_burst_len_r - 1;
 
                             if (m_if_burst_flags_r[bflag_inc_ext])
                               wb_adr_o <= wb_adr_o + 4;
@@ -250,7 +269,7 @@ module wb_ajardsp(
                             if (m_if_burst_flags_r[bflag_inc_int])
                               m_if_int_addr_r <= m_if_int_addr_r + 2;
 
-                            if (0 && m_if_burst_len_r[5:0] == 0)
+                            if (m_if_burst_len_r[3:0] == 0)
                               begin
                                  wb_cyc_o <= 0;
                                  wb_stb_o <= 0;
@@ -262,7 +281,10 @@ module wb_ajardsp(
                          begin
                             m_if_ack <= 1;
 
-                            wb_we_o       <= 0;
+                            wb_cyc_o <= 0;
+                            wb_stb_o <= 0;
+                            wb_we_o  <= 0;
+
                             m_if_dmem_ren <= 0;
                             m_if_dmem_wen <= 0;
                             m_if_imem_wen <= 0;

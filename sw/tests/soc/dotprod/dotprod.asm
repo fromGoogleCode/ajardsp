@@ -44,13 +44,13 @@ output:
         .skip 2
 
 .code
-        ldimm16 $ptr4, #input_0
-      | ldimm16 $ptr5, #input_0
+        ldimm16 #input_0, $ptr4
+      | ldimm16 #input_0, $ptr5
 
-        ldimm16 $ptr6, #input_1
-      | ldimm16 $ptr7, #input_1
+        ldimm16 #input_1, $ptr6
+      | ldimm16 #input_1, $ptr7
 
-        ldimm16 $ptr2, #output
+        ldimm16 #output, $ptr2
 
         /* Loop prologue */
         ldinc32 $ptr4, $acc1
@@ -59,7 +59,7 @@ output:
         ldinc32 $ptr6, $acc3
       | ldinc32 $ptr7, $acc2
 
-        ldimm16 $ptr3, 3
+        ldimm16 3, $ptr3
 	mvts16 $ptr3, $bkrepcnt
 	nop
         /* Loop kernel */
@@ -97,12 +97,12 @@ loop_end:
         nop
         add32 $acc0, $acc1, $acc0
         nop
-        st32 $ptr2, $acc0
+        st32 $acc0, $ptr2
 
-        ldimm16 $ptr0, 0x0100  /* Data length */
-      | ldimm16 $ptr1, 0x0000  /* Data int source address */
-        ldimm16 $acc0l, 0x0000
-      | ldimm16 $acc0h, 0xD000 /* Data ext dest address */
+        ldimm16 0x0100, $ptr0  /* Data length */
+      | ldimm16 0x0000, $ptr1  /* Data int source address */
+        ldimm16 0x0000, $acc0l
+      | ldimm16 0xD000, $acc0h /* Data ext dest address */
 
         extburst 0x07, $ptr0, $ptr1, $acc0
 
