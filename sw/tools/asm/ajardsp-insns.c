@@ -1185,6 +1185,35 @@ inst_def_t ajardsp_insns[] = {
   },
 
   {
+    .mnemonic = "ldoff32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_OFF_32 | FU_LSU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 25,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
+	.type = SYMBOL_REF,
+	.offset = 13,
+	.width  = 12,
+	.encode = encode_symref,
+      },
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 3,
+	.encode = encode_acc,
+      },
+    },
+  },
+
+
+  {
     .mnemonic = "stoff16",
     .size = INST_32,
     .pattern = INSN_ENC_32 | LSU_ITYPE_ST_OFF_16 | FU_LSU,
@@ -1198,17 +1227,18 @@ inst_def_t ajardsp_insns[] = {
 	.encode = encode_reg,
       },
       {
-	.type = INTEGER,
-	.offset = 13,
-	.width  = 12,
-	.encode = encode_int,
-      },
-      {
 	.type = REG,
 	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
       },
+      {
+	.type = INTEGER,
+	.offset = 13,
+	.width  = 12,
+	.encode = encode_int,
+      },
+
     },
   },
 
@@ -1226,16 +1256,16 @@ inst_def_t ajardsp_insns[] = {
 	.encode = encode_reg,
       },
       {
-	.type = SYMBOL_REF,
-	.offset = 13,
-	.width  = 12,
-	.encode = encode_symref,
-      },
-      {
 	.type = REG,
 	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
+      },
+      {
+	.type = SYMBOL_REF,
+	.offset = 13,
+	.width  = 12,
+	.encode = encode_symref,
       },
     },
   },
@@ -1254,16 +1284,44 @@ inst_def_t ajardsp_insns[] = {
 	.encode = encode_acc,
       },
       {
+	.type = REG,
+	.offset = 25,
+	.width  = 3,
+	.encode = encode_ptr,
+      },
+      {
 	.type = INTEGER,
 	.offset = 13,
 	.width  = 12,
 	.encode = encode_int,
+      },
+    },
+  },
+
+  {
+    .mnemonic = "stoff32",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_ST_OFF_32 | FU_LSU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 3,
+	.encode = encode_acc,
       },
       {
 	.type = REG,
 	.offset = 25,
 	.width  = 3,
 	.encode = encode_ptr,
+      },
+      {
+	.type = SYMBOL_REF,
+	.offset = 13,
+	.width  = 12,
+	.encode = encode_symref,
       },
     },
   },

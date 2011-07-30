@@ -59,7 +59,7 @@ typedef struct {
 
 GList *BreakPoint_List_p = NULL;
 
-static SourceFileLine_t SourceFileLines[1024];
+static SourceFileLine_t SourceFileLines[10*1024];
 static int SourceFileLinesMax = 0;
 
 static GtkTreeModel* SourceTreeModel = NULL;

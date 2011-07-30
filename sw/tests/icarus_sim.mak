@@ -1,6 +1,6 @@
 AJARDSP_ROOT = ../..
 
-INCLUDE = -I$(AJARDSP_ROOT)/rtl/verilog/ -I$(AJARDSP_ROOT)/sim/rtl_sim/src/ddr_sdram_model/
+INCLUDE = -I$(AJARDSP_ROOT)/rtl/verilog/ -I$(AJARDSP_ROOT)/rtl/verilog/soc -I$(AJARDSP_ROOT)/sim/rtl_sim/src/ddr_sdram_model/
 
 RTL_SIM = \
     $(AJARDSP_ROOT)/sim/rtl_sim/src/BUFG.v \
@@ -26,6 +26,8 @@ RTL_MODEL= \
     $(AJARDSP_ROOT)/rtl/verilog/soc/wb_ram.v \
     $(AJARDSP_ROOT)/rtl/verilog/soc/wb_misc_io.v \
     $(AJARDSP_ROOT)/rtl/verilog/soc/wb_debug.v \
+    $(AJARDSP_ROOT)/rtl/verilog/soc/wb_eth_ctrl.v \
+    $(AJARDSP_ROOT)/rtl/verilog/soc/async_fifo.v \
     $(AJARDSP_ROOT)/rtl/verilog/soc/uart.v \
     $(AJARDSP_ROOT)/rtl/verilog/ajardsp_top.v \
     $(AJARDSP_ROOT)/rtl/verilog/vliwfetch.v \
@@ -47,5 +49,5 @@ RTL_MODEL= \
 all: ajardsp_soc.vvp
 	vvp ajardsp_soc.vvp -lxt2
 
-ajardsp_soc.vvp: $(RTL_SIM) $(RTL_MODEL) tx.hex wb_ram.hex
-	iverilog $(INCLUDE) $(RTL_SIM) $(RTL_MODEL) -DSIMULATION_UART -o ajardsp_soc.vvp -s tb
+ajardsp_soc.vvp: $(RTL_SIM) $(RTL_MODEL) eth_rx.hex tx.hex wb_ram.hex
+	iverilog $(INCLUDE) $(RTL_SIM) $(RTL_MODEL) -DSIMULATION_UART -o ajardsp_soc.vvp -s tb -pfileline=1

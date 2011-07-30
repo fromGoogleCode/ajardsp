@@ -1,2 +1,4 @@
 gcc -o targetmon targetmon.c
 gcc -g3 -O0 -o wb_debug wb_debug.c
+gcc -o ethraw ethraw.c
+
