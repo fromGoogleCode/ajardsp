@@ -8,7 +8,7 @@ setCable -p auto
 identify
 
 # Specify the configuration file.
-assignFile -p 1 -file "./AjarDSP-UART-TOP.bit"
+assignFile -p 1 -file "./AjarDSP-SoC-TOP.bit"
 
 # Program a device.
 program -p 1

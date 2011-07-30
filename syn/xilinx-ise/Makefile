@@ -1,5 +1,5 @@
-DESIGN		= AjarDSP-UART-TOP
-PINS		= s3esk-ajardsp-uart-top.ucf
+DESIGN		= AjarDSP-SoC-TOP
+PINS		= soc-top.ucf
 DEVICE		= xc3s1600e-fg320-4
 BGFLAGS		= -g TdoPin:PULLNONE -g DonePin:PULLUP \
 		  -g CRC:enable -g StartUpClk:CCLK
@@ -16,10 +16,8 @@ PARFLAGS	= -ol std
 
 
 # Top
-SRC = 	../../rtl/verilog/top_top.v
 
-SRC +=	../../rtl/verilog/vgagraph.v \
-	../../rtl/verilog/ajardsp_top.v \
+SRC =	../../rtl/verilog/ajardsp_top.v \
 	../../rtl/verilog/imem.v \
 	../../rtl/verilog/dmem.v \
 	../../rtl/verilog/cu.v \
@@ -34,7 +32,20 @@ SRC +=	../../rtl/verilog/vgagraph.v \
 	../../rtl/verilog/lsu.v \
 	../../rtl/verilog/curegs.v \
 	../../rtl/verilog/pcu.v \
-	../../rtl/verilog/vliwdec.v
+	../../rtl/verilog/vliwdec.v \
+	../../rtl/verilog/soc/soc_top.v \
+	../../rtl/verilog/soc/wb_sdram_ctrl.v \
+	../../rtl/verilog/soc/sdram_ctrl.v \
+	../../rtl/verilog/soc/wb_ajardsp.v \
+	../../rtl/verilog/soc/wb_vga_ctrl.v \
+	../../rtl/verilog/soc/vga_font.v \
+	../../rtl/verilog/soc/wb_eth_ctrl.v \
+	../../rtl/verilog/soc/async_fifo.v \
+	../../rtl/verilog/soc/wb_adc_ctrl.v \
+        ../../rtl/verilog/soc/wb_ram.v \
+        ../../rtl/verilog/soc/wb_misc_io.v \
+        ../../rtl/verilog/soc/wb_debug.v \
+        ../../rtl/verilog/soc/uart.v
 
 
 all:		bits
@@ -66,7 +77,7 @@ build/project.src:
 
 build/project.xst: build/project.src
 		echo "run" > $@
-		echo "-top top_top" >> $@
+		echo "-top soc_top" >> $@
 		echo "-p $(DEVICE)" >> $@
 		echo "-opt_mode Speed" >> $@
 		echo "-opt_level 1" >> $@
