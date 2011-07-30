@@ -30,15 +30,15 @@ output:
         ldoff32 $ptr3,-2, $acc7
         nop
         nop
-        stoff32 $acc7, -4, $ptr3
-        stoff32 $acc7,  2, $ptr3 | stoff16 $acc7h, -5,$ptr3
+        stoff32 $acc7, $ptr3, -4
+        stoff32 $acc7, $ptr3, 2 | stoff16 $acc7h, $ptr3, -5
 
 
         ldimm16 0xffff, $acc0l
       | ldimm16 0x0000, $acc0h
         ldimm16 0xff00, $acc1l
       | ldimm16 0x0808, $acc1h
-			        
+
         ldimm16 32,    	$acc4h
 	nop
 	nop

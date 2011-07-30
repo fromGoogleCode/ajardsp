@@ -20,14 +20,14 @@ SDRAM (ext)  : 0x0000 0000 - 0xBFFF FFFF
 VGA ctrl - detailed address map
 -------------------------------
 
-0xF000 0000
+0xF001 0000
 VGA ctrl register. Enable bit for frame buffer, enable
 bit for console mode.
 
-0xF000 0004
+0xF001 0004
 VGA frame buffer base address
 
-0xF001 0000 - 0xF001 0FFF
+0xF000 0000 - 0xF000 0FFF
 VGA console mode memory
 
 Misc block - detailed address map

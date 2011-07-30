@@ -39,11 +39,13 @@ SRC =	../../rtl/verilog/ajardsp_top.v \
 	../../rtl/verilog/soc/wb_ajardsp.v \
 	../../rtl/verilog/soc/wb_vga_ctrl.v \
 	../../rtl/verilog/soc/vga_font.v \
+	../../rtl/verilog/soc/wb_eth_ctrl.v \
+	../../rtl/verilog/soc/async_fifo.v \
 	../../rtl/verilog/soc/wb_adc_ctrl.v \
-   ../../rtl/verilog/soc/wb_ram.v \
-   ../../rtl/verilog/soc/wb_misc_io.v \
-   ../../rtl/verilog/soc/wb_debug.v \
-   ../../rtl/verilog/soc/uart.v
+        ../../rtl/verilog/soc/wb_ram.v \
+        ../../rtl/verilog/soc/wb_misc_io.v \
+        ../../rtl/verilog/soc/wb_debug.v \
+        ../../rtl/verilog/soc/uart.v
 
 
 all:		bits

@@ -50,6 +50,18 @@ module soc_top(
                SD_WE,
                SD_CK_FB,
 
+               /* ETH-PHY IF */
+               E_COL,
+               E_CRS,
+               E_MDC,
+               E_MDIO,
+               E_RX_CLK,
+               E_RX_DV,
+               E_RXD,
+               E_TX_CLK,
+               E_TX_EN,
+               E_TXD,
+
                SW,
                BTN_NORTH,
                BTN_EAST,
@@ -107,7 +119,7 @@ module soc_top(
 
    input        ROT_A, ROT_B, ROT_CENTER;
 
-
+   /* DDR-SDRAM */
    output [12:0] SD_A;
    inout [15:0]  SD_DQ;
    output [1:0]  SD_BA;
@@ -124,6 +136,18 @@ module soc_top(
    inout         SD_UDQS;
    output        SD_WE;
    input         SD_CK_FB;
+   /* Ethernet */
+   input        E_COL,
+                E_CRS;
+   output       E_MDC;
+   inout        E_MDIO;
+   input        E_RX_CLK,
+                E_RX_DV;
+   input [4:0]  E_RXD;
+   input        E_TX_CLK;
+   output       E_TX_EN;
+   output [4:0] E_TXD;
+
 
    reg [3:0]     rst_cnt_0, rst_cnt_1, rst_cnt_2;
 
@@ -216,12 +240,23 @@ module soc_top(
    wire        m_vga_wb_stb_o_w;
    wire        m_vga_wb_we_o_w;
 
-   reg [3:0]   active_wb_master;
+   reg         m_eth_wb_ack_i_w;
+   reg [31:0]  m_eth_wb_dat_i_w;
+   wire [31:0] m_eth_wb_dat_o_w;
+   wire [31:0] m_eth_wb_adr_o_w;
+   wire        m_eth_wb_cyc_o_w;
+   wire [2:0]  m_eth_wb_cti_o_w;
+   wire [3:0]  m_eth_wb_sel_o_w;
+   wire        m_eth_wb_stb_o_w;
+   wire        m_eth_wb_we_o_w;
 
-   parameter M_DSP_0 = 4'b0001,
-             M_DSP_1 = 4'b0010,
-             M_VGA   = 4'b0100,
-             M_DEBUG = 4'b1000;
+   reg [4:0]   active_wb_master;
+
+   parameter M_DSP_0 = 5'b00001,
+             M_DSP_1 = 5'b00010,
+             M_VGA   = 5'b00100,
+             M_DEBUG = 5'b01000,
+             M_ETH   = 5'b10000;
 
    wire [7:0]  led_misc_io_w,
                reset_ctrl_misc_io_w;
@@ -391,6 +426,11 @@ module soc_top(
 
                M_DEBUG: begin
                   if (m_debug_wb_cyc_o_w == 0)
+                    active_wb_master <= M_ETH;
+               end
+
+               M_ETH: begin
+                  if (m_eth_wb_cyc_o_w == 0)
                     active_wb_master <= M_DSP_0;
                end
 
@@ -410,7 +450,11 @@ module soc_top(
             m_debug_wb_sel_o_w or m_debug_wb_stb_o_w or m_debug_wb_we_o_w or
 
             m_vga_wb_dat_o_w or m_vga_wb_adr_o_w or m_vga_wb_cyc_o_w or m_vga_wb_cti_o_w or
-            m_vga_wb_sel_o_w or m_vga_wb_stb_o_w or m_vga_wb_we_o_w)
+            m_vga_wb_sel_o_w or m_vga_wb_stb_o_w or m_vga_wb_we_o_w or
+
+            m_eth_wb_dat_o_w or m_eth_wb_adr_o_w or m_eth_wb_cyc_o_w or m_eth_wb_cti_o_w or
+            m_eth_wb_sel_o_w or m_eth_wb_stb_o_w or m_eth_wb_we_o_w
+            )
      begin
         m_dsp_0_wb_ack_i_w = 0;
         m_dsp_0_wb_dat_i_w = wb_dat_i_w;
@@ -420,6 +464,17 @@ module soc_top(
         m_debug_wb_dat_i_w = wb_dat_i_w;
         m_vga_wb_ack_i_w = 0;
         m_vga_wb_dat_i_w = wb_dat_i_w;
+        m_eth_wb_ack_i_w = 0;
+        m_eth_wb_dat_i_w = wb_dat_i_w;
+
+
+        wb_dat_o_w = 0;
+        wb_adr_o_w = 0;
+        wb_cyc_o_w = 0;
+        wb_cti_o_w = 0;
+        wb_sel_o_w = 0;
+        wb_stb_o_w = 0;
+        wb_we_o_w  = 0;
 
         case (active_wb_master)
           M_DSP_0: begin
@@ -465,6 +520,18 @@ module soc_top(
              wb_stb_o_w = m_vga_wb_stb_o_w;
              wb_we_o_w  = m_vga_wb_we_o_w;
           end
+
+          M_ETH: begin
+             m_eth_wb_ack_i_w = wb_ack_i_w;
+             wb_dat_o_w = m_eth_wb_dat_o_w;
+             wb_adr_o_w = m_eth_wb_adr_o_w;
+             wb_cyc_o_w = m_eth_wb_cyc_o_w;
+             wb_cti_o_w = m_eth_wb_cti_o_w;
+             wb_sel_o_w = m_eth_wb_sel_o_w;
+             wb_stb_o_w = m_eth_wb_stb_o_w;
+             wb_we_o_w  = m_eth_wb_we_o_w;
+          end
+
         endcase
      end
 
@@ -729,5 +796,44 @@ module soc_top(
                        .uart_tx(uart_tx_debug_w)
 
                        );
+
+   wb_eth_ctrl wb_eth_ctrl_0(
+                             .wb_clk_i(CLK_40_MHZ),
+                             .wb_rst_i(rst),
+
+                             .m_wb_ack_i(m_eth_wb_ack_i_w),
+                             .m_wb_dat_o(m_eth_wb_dat_o_w),
+                             .m_wb_dat_i(m_eth_wb_dat_i_w),
+                             .m_wb_adr_o(m_eth_wb_adr_o_w),
+
+                             .m_wb_cyc_o(m_eth_wb_cyc_o_w),
+                             .m_wb_stb_o(m_eth_wb_stb_o_w),
+                             .m_wb_cti_o(m_eth_wb_cti_o_w),
+                             .m_wb_sel_o(m_eth_wb_sel_o_w),
+                             .m_wb_we_o(m_eth_wb_we_o_w),
+/*
+                             .s_wb_adr_i(wb_adr_o_w),
+                             .s_wb_dat_i(wb_dat_o_w),
+                             .s_wb_dat_o(vga_wb_dat_i_w),
+
+                             .s_wb_cyc_i(vga_wb_cyc_o_w),
+                             .s_wb_stb_i(vga_wb_stb_o_w),
+                             .s_wb_we_i(wb_we_o_w),
+                             .s_wb_sel_i(wb_sel_o_w),
+                             .s_wb_ack_o(vga_wb_ack_i_w),
+*/
+                             .E_COL(E_COL),
+                             .E_CRS(E_CRS),
+                             .E_MDC(E_MDC),
+                             .E_MDIO(E_MDIO),
+                             .E_RX_CLK(E_RX_CLK),
+                             .E_RX_DV(E_RX_DV),
+                             .E_RXD(E_RXD),
+                             .E_TX_CLK(E_TX_CLK),
+                             .E_TX_EN(E_TX_EN),
+                             .E_TXD(E_TXD)
+
+                             );
+
 
 endmodule

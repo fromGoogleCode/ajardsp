@@ -61,6 +61,8 @@ module tb;
    reg         uart_on;
    wire [7:0]  leds;
 
+   reg [3:0]   eth_rx_mem [0:1023];
+   reg [9:0]   eth_rx_addr;
 
    soc_top soc_top_0(
                      .CLK_50_MHZ(clk),
@@ -81,6 +83,18 @@ module tb;
                      .SD_UDQS(udqs),
                      .SD_WE(we),
                      .SD_CK_FB(ddr_clk),
+
+                     /* Ethernet */
+                     .E_COL(),
+                     .E_CRS(),
+                     .E_MDC(),
+                     .E_MDIO(),
+                     .E_RX_CLK(clk),
+                     .E_RX_DV(eth_rx_addr < 55),
+                     .E_RXD(eth_rx_mem[eth_rx_addr]),
+                     .E_TX_CLK(),
+                     .E_TX_EN(),
+                     .E_TXD(),
 
                      .SW(4'b1111),
                      .BTN_NORTH(0),
@@ -143,8 +157,18 @@ module tb;
           end
      end
 
+   always @(posedge clk)
+     begin
+        if (rst)
+          eth_rx_addr <= 0;
+        else
+          eth_rx_addr <= eth_rx_addr + 1;
+     end
+
    initial begin
       $readmemh("tx.hex", tx_mem);
+      $readmemh("eth_rx.hex", eth_rx_mem);
+
       $dumpvars;
       rst = 1;
       clk = 0;

@@ -8,7 +8,7 @@ int_vec:
         nop
         nop
 start:
-        ldimm16 $ptr7, 0x1000
+        ldimm16 0x0800, $ptr7
         nop
         mvts16 $ptr7, $sp
         call #main
@@ -16,6 +16,9 @@ start:
         nop
         halt
         nop
+        nop
+stop:
+        bra #stop
         nop
         nop
 

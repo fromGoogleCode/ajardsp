@@ -926,11 +926,11 @@ ajardsp_function_value (enum machine_mode mode, tree fndecl)
     switch (TREE_CODE(TREE_TYPE(TREE_TYPE(fndecl)))) {
 
     case INTEGER_TYPE:
-      printf("%s: INTEGER_TYPE\n", __FUNCTION__);
+      /* printf("%s: INTEGER_TYPE\n", __FUNCTION__); */
       return gen_rtx_REG(mode, AJARDSP_REGNO_FIRST_ACC + (mode == QImode ? 1 : 0));
 
     case POINTER_TYPE:
-      printf("%s: POINTER_TYPE\n", __FUNCTION__);
+      /* printf("%s: POINTER_TYPE\n", __FUNCTION__); */
       return gen_rtx_REG(mode, AJARDSP_REGNO_FIRST_PTR);
 
     default:
@@ -950,8 +950,10 @@ void *ajardsp_function_arg(CUMULATIVE_ARGS *cum, enum machine_mode mode, tree ty
     printf("%s: tree type is NULL, type not known, probably a library function... what to do??? revert to stack passing for now\n", __FUNCTION__);
     return NULL_RTX;
   }
-
+#if 0
   printf("function_arg: tree_type: %s\n", tree_code_name[(int) TREE_CODE(type)]);
+#endif
+
 #if 1
   switch (TREE_CODE(type)) {
   case INTEGER_TYPE:
@@ -976,8 +978,10 @@ void ajardsp_function_arg_advance(CUMULATIVE_ARGS *cum, enum machine_mode mode,
     return;
   }
 
+#if 0
   printf("function_arg_advance: tree_type: %s\n", tree_code_name[(int) TREE_CODE(type)]);
   printf("cum.r_regs: %d\ncum.a_regs: %d\n", cum->r_regs, cum->a_regs);
+#endif
 
   switch (TREE_CODE(type)) {
   case INTEGER_TYPE:
@@ -1547,16 +1551,14 @@ ajardsp_reorg(void)
 void
 ajardsp_optimization_options (int level, int size ATTRIBUTE_UNUSED)
 {
-
-  printf("This is run only once I hope!\n");
-
   register_pass (&pass_info_insert_nop);
+
+  target_flags |= MASK_INSERT_NOPS;
 
   if (level > 2)
     {
       target_flags |= MASK_VLIW_PACK;
       //      target_flags |= MASK_HWLOOP;
-      //      target_flags |= MASK_INSERT_NOPS;
     }
 }
 

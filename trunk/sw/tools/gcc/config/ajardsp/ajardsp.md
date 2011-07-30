@@ -173,6 +173,21 @@
         )]
         ""
         {
+
+          if(GET_CODE(operands[0]) == REG && GET_CODE(operands[1]) == CONST_INT)
+          {
+    	    rtx lo_int = gen_rtx_CONST_INT(QImode, trunc_int_for_mode(INTVAL(operands[1]) & 0xffff, QImode));
+	    rtx hi_int = gen_rtx_CONST_INT(QImode, trunc_int_for_mode((INTVAL(operands[1]) >> 16) & 0xffff, QImode));
+
+	    rtx lo_reg = simplify_gen_subreg (QImode, operands[0], HImode, 0);
+	    rtx hi_reg = simplify_gen_subreg (QImode, operands[0], HImode, 1);
+
+	    emit_move_insn(lo_reg, lo_int);
+	    emit_move_insn(hi_reg, hi_int);
+
+            DONE;
+          }
+
           if(GET_CODE(operands[0])==MEM && GET_CODE(operands[1])!=REG)
           {
 
@@ -207,20 +222,24 @@
    (set_attr "isize" "1")])
 
 (define_insn "*ld_hi"
-  [(set (match_operand:HI 0 "register_operand" "=d")
-        (match_operand:HI 1 "memory_operand" "m"))]
+  [(set (match_operand:HI 0 "register_operand" "=d,d")
+        (match_operand:HI 1 "memory_operand" "Qr,m"))]
   ""
-  "ld32 %a1, %0"
-  [(set_attr "itype" "lsu")
-   (set_attr "isize" "1")])
+  "@
+   ld32 %1, %0
+   ldoff32 %a1, %0"
+  [(set_attr "itype" "lsu,lsu")
+   (set_attr "isize" "1,2")])
 
 ;;Constant loads
 
 (define_insn "*ld_imm_qi"
-  [(set (match_operand:QI 0 "register_operand" "=r")
-        (match_operand:QI 1 "const_int_operand" "i"))]
+  [(set (match_operand:QI 0 "register_operand" "=r,r")
+        (match_operand:QI 1 "const_int_operand" "i,Iu16"))]
   ""
-  "ldimm16 %0, %c1"
+  "@
+   ldimm16 %c1, %0
+   ldimm16 %c1, %0"
   [(set_attr "itype" "lsu")
    (set_attr "isize" "2")])
 
@@ -240,12 +259,11 @@
   [(set_attr "itype" "cu")
    (set_attr "isize" "1")])
 
-
 (define_insn "*symbolic_address_load"
   [(set (match_operand:QI 0 "register_operand" "=r")
         (match_operand:QI 1 "symbolic_operand" ""))]
   ""
-  "ldimm16 %0, %s1"
+  "ldimm16 %s1, %0"
   [(set_attr "itype" "lsu")
    (set_attr "isize" "2")])
 
@@ -258,18 +276,20 @@
         (match_operand:QI 1 "register_operand" "r,r"))]
   ""
   "@
-   st16 %0, %1
-   stoff16 %a0, %1"
+   st16 %1, %0
+   stoff16 %1, %a0"
   [(set_attr "itype" "lsu_all,lsu_all")  ;;FIXME: should _only_ be lsu_all if second operand is a $ptr register
    (set_attr "isize" "1,2")])
 
 (define_insn "*store_word_hi"
-  [(set (match_operand:HI 0 "memory_operand" "=m")
-        (match_operand:HI 1 "register_operand" "r"))]
+  [(set (match_operand:HI 0 "memory_operand" "=Qr,m")
+        (match_operand:HI 1 "register_operand" "r,r"))]
   ""
-  "st32 %a0, %1"
-  [(set_attr "itype" "lsu")
-   (set_attr "isize" "1")])
+  "@
+   st32 %1, %0
+   stoff32 %1, %a0"
+  [(set_attr "itype" "lsu,lsu")
+   (set_attr "isize" "1,2")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Move patterns (register to register)
@@ -283,7 +303,7 @@
   "@
    mv16 %1, %0
    mvts16 %1, %0
-   mvfs16 %0, %1
+   mvfs16 %1, %0
    dummy"
   [(set_attr "itype" "lsu,lsu_spec,lsu_spec,lsu")
    (set_attr "isize" "1,2,2,1")])
@@ -297,20 +317,6 @@
   [(set_attr "itype" "bmu")
    (set_attr "isize" "2")])
 
-
-;; (define_insn "swap_spec_qi"
-;;   [(parallel
-;;     [(set (match_operand:QI 0 "register_operand" "=r")
-;; 	  (match_operand:QI 1 "register_operand" "=q"))
-;;      (set (match_dup 1)
-;; 	  (match_dup 0))]
-;;     )]
-;;   ""
-;;   "mvfs16 %0, %1 | mvts16 %0, %1"
-;;   [(set_attr "itype" "lsu_all")
-;;    (set_attr "isize" "2")])
-
-
 (define_insn "swap_spec_qi"
   [(parallel
     [(set (match_operand:QI 0 "register_operand" "=r,q")
@@ -320,8 +326,8 @@
     )]
   ""
   "@
-   mvfs16 %0, %1 | mvts16 %0, %1
-   mvfs16 %1, %0 | mvts16 %1, %0"
+   mvfs16 %1, %0 | mvts16 %0, %1
+   mvfs16 %0, %1 | mvts16 %1, %0"
   [(set_attr "itype" "lsu_all,lsu_all")
    (set_attr "isize" "2,2")])
 
@@ -377,8 +383,8 @@
         )]
   ""
   "@
-   add16 %0, %2
-   addptr16 %0, %2"
+   add16 %2, %0
+   addptr16 %2, %0"
   [(set_attr "itype" "cu,lsu")
    (set_attr "isize" "1,2")])
 
@@ -388,7 +394,7 @@
                  (match_operand:HI 2 "nonmemory_operand" "d"))
         )]
   ""
-  "add32 %0, %1, %2"
+  "add32 %1, %2, %0"
   [(set_attr "itype" "cu")
    (set_attr "isize" "1")])
 
@@ -518,7 +524,7 @@
                   (match_operand:QI 2 "register_operand" "d"))
         )]
   ""
-  "sub16 %0, %2"
+  "sub16 %2, %0"
   [(set_attr "itype" "cu")
    (set_attr "isize" "1")])
 
@@ -557,6 +563,35 @@
          )]
         ""
         "shiftrl16 %1, %2, %0"
+[(set_attr "itype" "bmu")])
+
+;; 32-bit shifts
+
+(define_insn "ashlhi3"
+        [(set (match_operand:HI 0 "register_operand" "=d")
+              (ashift:HI (match_operand:HI 1 "register_operand" "d")
+                       (match_operand:QI 2 "register_operand" "d"))
+         )]
+        ""
+        "shiftll32 %1, %2, %0"
+[(set_attr "itype" "bmu")])
+
+(define_insn "ashrhi3"
+        [(set (match_operand:HI 0 "register_operand" "=d")
+              (ashiftrt:HI (match_operand:HI 1 "register_operand" "d")
+                       (match_operand:QI 2 "register_operand" "d"))
+         )]
+        ""
+        "shiftra32 %1, %2, %0"
+[(set_attr "itype" "bmu")])
+
+(define_insn "lshrhi3"
+        [(set (match_operand:HI 0 "register_operand" "=d")
+              (lshiftrt:HI (match_operand:HI 1 "register_operand" "d")
+                       (match_operand:QI 2 "register_operand" "d"))
+         )]
+        ""
+        "shiftrl32 %1, %2, %0"
 [(set_attr "itype" "bmu")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
