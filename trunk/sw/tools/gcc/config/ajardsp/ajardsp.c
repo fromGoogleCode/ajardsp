@@ -709,6 +709,7 @@ asm_output_common(FILE *STREAM,char *NAME,int SIZE,int ROUNDED)
 {
   int i;
 
+  fprintf(STREAM, ".data\n") ; // NAK
   assemble_name(STREAM,NAME);
   fprintf(STREAM, ":\n");
   for(i=0;i< SIZE/UNITS_PER_WORD;i++)

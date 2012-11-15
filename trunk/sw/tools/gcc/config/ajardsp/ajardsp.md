@@ -423,6 +423,16 @@
         "and16 %2, %1, %0"
 [(set_attr "itype" "bmu")])
 
+;; NAK 2012-11-14 Added half int-single int multiplication
+(define_insn "mulhisi3"
+        [(set (match_operand:SI 0 "register_operand" "=d")
+              (mult:SI (match_operand:HI 1 "register_operand" "d")
+                       (match_operand:HI 2 "register_operand" "d"))
+         )]
+        ""
+        "mpy16 %2, %1, %0"
+[(set_attr "itype" "cu")])
+
 (define_insn "andhi3"
         [(set (match_operand:HI 0 "register_operand" "=d")
               (and:HI (match_operand:HI 1 "register_operand" "d")
@@ -784,7 +794,7 @@
                         [(match_operand:QI 2 "register_operand" "d")
                          (match_operand:QI 3 "nonmemory_operand" "d")]))]
   ""
-  "cmp16%1 %3, %2, %0"
+  "cmp16%1 %2, %3, %0"
   [(set_attr "itype" "cu_cmp")
    (set_attr "isize" "2")
    (set_attr "predicable" "no")])
@@ -813,11 +823,14 @@
   ""
   {
    rtx predbit = gen_reg_rtx(BImode);
-
    /* Compare instruction takes the comparison operator and its two operands. It
       produces a predicate register of BImode .*/
 
    emit_insn(gen_mycmpqi(predbit, operands[0], operands[1], operands[2]));
+   
+   /* NAK 2012-11-13 Added NOPs between compare and conditional branch */
+   emit_insn(gen_nop());
+   emit_insn(gen_nop());
 
    /* Branch instruction takes two operands, a predicate register and a
       destination label */
@@ -945,6 +958,7 @@
   "one_islot+lsu0+lsu1+bus_spec")
 (define_insn_reservation "lsu_32_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "2"))
   "two_islots+lsu0+lsu1+bus_spec")
+
 
 ;;    (define_bypass number out_insn_names in_insn_names [guard])  ;; Define latencies for the pred bits. I.e. 1 for CU and BMU use, 2 for PCU use and 2 for LSU mem writes while 1 for remaining LSUs.
 
