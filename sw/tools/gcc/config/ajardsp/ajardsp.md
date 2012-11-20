@@ -462,21 +462,39 @@
         "mac16 %2, %3, %0"
 [(set_attr "itype" "cu")])
 
-(define_insn "negqi2"
+(define_expand "negqi2"
         [(set (match_operand:QI 0 "register_operand" "=y")
               (neg:QI (match_operand:QI 1 "register_operand" "d"))
          )]
         ""
-        "negh %1, %0"
-[(set_attr "itype" "cu")])
-
-(define_insn "neghi2"
-        [(set (match_operand:HI 0 "register_operand" "=d")
+	{
+	 rtx extrareg = gen_reg_rtx(QImode);
+	 emit_insn(gen_one_cmplqi2(operands[0],operands[1])) ;
+	 emit_insn(gen_movqi(extrareg,CONST1_RTX(QImode))) ;
+	 emit_insn(gen_addqi3(operands[0],operands[0],extrareg)) ;
+	 DONE;
+	}
+)
+(define_expand "neghi2"
+        [(set (match_operand:HI 0 "register_operand" "=y")
               (neg:HI (match_operand:HI 1 "register_operand" "d"))
          )]
         ""
-        "neg %1, %0"
-[(set_attr "itype" "cu")])
+	{
+	 rtx extrareg = gen_reg_rtx(HImode);
+	 emit_insn(gen_one_cmplhi2(operands[0],operands[1])) ;
+	 emit_insn(gen_movhi(extrareg,CONST1_RTX(QImode))) ;
+	 emit_insn(gen_addhi3(operands[0],operands[0],extrareg)) ;
+	 DONE;
+	}
+)
+;(define_insn "neghi2"
+;        [(set (match_operand:HI 0 "register_operand" "=d")
+;              (neg:HI (match_operand:HI 1 "register_operand" "d"))
+;         )]
+;        ""
+;        "neg %1, %0"
+;[(set_attr "itype" "cu")])
 
 (define_insn "one_cmplqi2"
         [(set (match_operand:QI 0 "register_operand" "=d")
