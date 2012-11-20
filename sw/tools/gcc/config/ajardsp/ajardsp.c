@@ -663,6 +663,13 @@ print_operand_address(FILE *STREAM,rtx X)
         }
       else
         {
+	  fprintf(stderr, "CONST_INT  = %08x\n", CONST_INT) ;
+	  fprintf(stderr, "SYMBOL_REF = %08x\n", SYMBOL_REF) ;
+	  fprintf(stderr, "SUBREG     = %08x\n", SUBREG) ;
+	  fprintf(stderr, "REG        = %08x\n", REG) ;
+	  fprintf(stderr, "PC         = %08x\n", PC) ;
+	  fprintf(stderr, "CONST      = %08x\n", CONST) ;
+	  fprintf(stderr, "GET_CODE(op1) = %08x GET_CODE(op2) = %08x\n", GET_CODE(op1), GET_CODE(op2)) ;
           debug_rtx(X);
           gcc_unreachable();
         }
@@ -712,11 +719,15 @@ asm_output_common(FILE *STREAM,char *NAME,int SIZE,int ROUNDED)
   fprintf(STREAM, ".data\n") ; // NAK
   assemble_name(STREAM,NAME);
   fprintf(STREAM, ":\n");
+  fprintf(STREAM, ".skip %d\n", SIZE/UNITS_PER_WORD) ;
+/*
   for(i=0;i< SIZE/UNITS_PER_WORD;i++)
     {
       fprintf(STREAM, "\t.word\t0\n");
     }
+
   fprintf(STREAM,"\n");
+*/
 }
 
 bool
@@ -1347,6 +1358,7 @@ ajardsp_prologue(void)
       emit_insn(gen_rtx_SET(QImode, hard_frame_pointer_rtx,
                             plus_constant(hard_frame_pointer_rtx, -(get_frame_size()  + 2 /* retpc */))));
       emit_insn(gen_swap_spec_qi(stack_pointer_rtx, hard_frame_pointer_rtx));
+      emit_insn(gen_nop()) ;
       emit_insn(gen_pushqi1(hard_frame_pointer_rtx));  /* stack pointer before locals */
     }
 
