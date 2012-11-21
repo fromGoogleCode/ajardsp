@@ -98,3 +98,87 @@ Result_t disasm(uint32 insn_word, char* buf_p)
 
   return RES_BAD;
 }
+
+/*
+ * str2int()
+ *
+ * Converts a string of length len stored in data to an integer.
+ *
+ */
+unsigned long long str2int(char *data, unsigned char len)
+{
+        unsigned long long result = 0;
+        unsigned char current_char;
+        unsigned int j ;
+
+        for(j = 0 ; j < len ; j++)
+        {
+                result <<= 4 ;
+                current_char = data[j] - '0' ;
+
+                if(current_char > 9) current_char -= 7 ;
+                if(current_char > 15) current_char -= 32 ;
+                result += current_char ;
+        }
+        return result;
+}
+int main(int argc, char **argv)
+{
+	FILE *stream = NULL ;
+	char *line = malloc(400) ; // Line read from file
+	char *distxt = malloc(400) ; // Line of disassembly
+	int addr = 0 ;
+
+	if(argc != 2)
+	{
+		fprintf(stderr, "Usage: %s <hex file>\n", argv[0]) ;
+		return -1 ;
+	}
+
+	stream = fopen(argv[1], "r") ;
+
+	if(stream == NULL)
+	{
+		fprintf(stderr, "Error: cannot open %s for reading.\n", argv[1]) ;
+		return -1;
+	}
+
+	do
+	{
+		line = fgets(line, 400, stream) ;
+		if(line == NULL)
+			break ;
+
+		unsigned int insn_word = str2int(line,8) ;
+		disasm(insn_word, distxt);
+		printf("%04x\t%08x\t%s", addr++, insn_word, distxt) ;
+
+		// If this instruction is executed in parallel with the next...
+		if((insn_word & 1) != 0)
+		{
+			printf(" | ") ;
+		}
+		else
+		{
+			printf("\n") ;
+		}
+		
+		insn_word = str2int(line+8,8) ;
+		disasm(insn_word, distxt);
+		printf("%04x\t%08x\t%s", addr++, insn_word, distxt) ;
+		
+		// If this instruction is executed in parallel with the next...
+		if((insn_word & 1) != 0)
+		{
+			printf(" | ") ;
+		}
+		else
+		{
+			printf("\n") ;
+		}
+	}while(line != NULL) ;
+}
+
+
+
+

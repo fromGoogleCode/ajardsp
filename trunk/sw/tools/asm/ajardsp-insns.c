@@ -765,6 +765,35 @@ inst_def_t ajardsp_insns[] = {
 
     },
   },
+  {
+    .mnemonic = "cmp16ltu",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | CMP_LT | CU_ITYPE_CMP_16 | FU_CU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 24,
+	.width  = 2,
+	.encode = encode_pred,
+      },
+
+    },
+  },
+
 
   {
     .mnemonic = "cmp16le",
@@ -794,6 +823,35 @@ inst_def_t ajardsp_insns[] = {
 
     },
   },
+  {
+    .mnemonic = "cmp16leu",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | CMP_LE | CU_ITYPE_CMP_16 | FU_CU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 24,
+	.width  = 2,
+	.encode = encode_pred,
+      },
+
+    },
+  },
+
 
   {
     .mnemonic = "cmp16gt",
@@ -823,6 +881,35 @@ inst_def_t ajardsp_insns[] = {
 
     },
   },
+  {
+    .mnemonic = "cmp16gtu",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | CMP_GT | CU_ITYPE_CMP_16 | FU_CU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 24,
+	.width  = 2,
+	.encode = encode_pred,
+      },
+
+    },
+  },
+
 
   {
     .mnemonic = "cmp16ge",
@@ -852,6 +939,35 @@ inst_def_t ajardsp_insns[] = {
 
     },
   },
+{
+    .mnemonic = "cmp16geu",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | CMP_GE | CU_ITYPE_CMP_16 | FU_CU,
+    .nr_operands = 3,
+
+    .operands = {
+      {
+	.type = REG,
+	.offset = 9,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 13,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+      {
+	.type = REG,
+	.offset = 24,
+	.width  = 2,
+	.encode = encode_pred,
+      },
+
+    },
+  },
+
 
   /* New CU encoding ends here */
 
@@ -1098,6 +1214,28 @@ inst_def_t ajardsp_insns[] = {
       },
     },
   },
+  {
+    .mnemonic = "ldimm16",
+    .size = INST_32,
+    .pattern = INSN_ENC_32 | LSU_ITYPE_LD_IMM_PTR_16 | FU_LSU,
+    .nr_operands = 2,
+
+    .operands = {
+      {
+	.type = SYMBOL_REF,
+	.offset = 12,
+	.width  = 16,
+	.encode = encode_symref,
+      },
+      {
+	.type = REG,
+	.offset = 8,
+	.width  = 4,
+	.encode = encode_acc_half,
+      },
+    },
+  },
+
   {
     .mnemonic = "ldoff16",
     .size = INST_32,
