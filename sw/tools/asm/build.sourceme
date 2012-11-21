@@ -1,1 +1,3 @@
-bison -d asm.y && flex asm.l && gcc -g -o ajardsp-asm lex.yy.c  asm.c  asm.tab.c  ajardsp-insns.c  symtab.c -I. -lfl -ly 
+bison -d asm.y && flex asm.l && gcc -g -o ajardsp-asm lex.yy.c  asm.c  asm.tab.c  ajardsp-insns.c  symtab.c -I. -lfl -ly
+gcc -o ajardsp-disasm disasm.c ajardsp-insns.c
+
