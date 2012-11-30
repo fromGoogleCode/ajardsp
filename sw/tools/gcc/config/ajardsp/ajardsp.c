@@ -816,6 +816,8 @@ regno_reg_class(int REGN)
     return PRED_REGS;
   if (AJARDSP_REGNO_FIRST_SPEC <= (REGN) && (REGN) <= AJARDSP_REGNO_LAST_SPEC)
     return SPEC_REGS;
+  if (AJARDSP_REGNO_FIRST_PTR <= (REGN) && (REGN) <= AJARDSP_REGNO_LAST_ACC)
+    return ACC_PTR;
 
   return NO_REGS;
 }

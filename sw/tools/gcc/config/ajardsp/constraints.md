@@ -66,6 +66,10 @@
 (define_register_constraint "z" "PRED_REGS"
   "Predicate register ($pred0 - $pred3)")
 
+(define_register_constraint "c" "NONPRED_REGS"
+  "All registers except predicate registers")
+
+
 ;;
 ;; Memory addresses and symbols
 ;;

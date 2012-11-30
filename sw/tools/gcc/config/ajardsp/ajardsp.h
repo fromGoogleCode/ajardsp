@@ -131,7 +131,9 @@ enum reg_class                                  \
         ALL_PTR_REGS,                           \
         GENERAL_REGS,                           \
         ALL_REGS,                               \
-        LIM_REG_CLASSES                         \
+	ACC_PTR,				\
+	NONPRED_REGS,				\
+	LIM_REG_CLASSES
 };
 
 #define N_REG_CLASSES LIM_REG_CLASSES
@@ -150,7 +152,8 @@ enum reg_class                                  \
         "SPEC_REGS",                            \
         "ALL_PTR_REGS",                         \
         "GEN_REGS",                             \
-        "ALL_REGS"                              \
+        "ALL_REGS",                             \
+	"ACC_PTR"                          \
 }
 
 #define REG_CLASS_CONTENTS                      \
@@ -167,7 +170,8 @@ enum reg_class                                  \
     {0x30000000},   /* SPEC_REGS */             \
     {0x100000ff},   /* ALL_PTR_REGS */          \
     {0x0fffffff},   /* GENERAL_REGS */          \
-    {0x3fffffff}    /* ALL_REGS */              \
+    {0x3fffffff},   /* ALL_REGS */              \
+    {0x00ffffff}    /* ACC and PTR */           \
 }
 
 
@@ -446,7 +450,7 @@ extern int target_flags;
         fprintf(stream,"%s",name)
 
 #define ASM_OUTPUT_EXTERNAL(stream, decl, name) \
-        fprintf(stream,".extern %s\n",name)
+//        fprintf(stream,".extern %s\n",name)
 
 /* ------------------------------------------------------------------------------*
  *                      Misc
