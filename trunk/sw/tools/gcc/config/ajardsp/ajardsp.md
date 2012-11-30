@@ -462,32 +462,44 @@
         "mac16 %2, %3, %0"
 [(set_attr "itype" "cu")])
 
-(define_expand "negqi2"
-        [(set (match_operand:QI 0 "register_operand" "=y")
-              (neg:QI (match_operand:QI 1 "register_operand" "d"))
-         )]
-        ""
-	{
-	 rtx extrareg = gen_reg_rtx(QImode);
-	 emit_insn(gen_one_cmplqi2(operands[0],operands[1])) ;
-	 emit_insn(gen_movqi(extrareg,CONST1_RTX(QImode))) ;
-	 emit_insn(gen_addqi3(operands[0],operands[0],extrareg)) ;
-	 DONE;
-	}
-)
-(define_expand "neghi2"
-        [(set (match_operand:HI 0 "register_operand" "=y")
+
+(define_insn "neghi2"
+        [(set (match_operand:HI 0 "register_operand" "=d")
               (neg:HI (match_operand:HI 1 "register_operand" "d"))
          )]
         ""
-	{
-	 rtx extrareg = gen_reg_rtx(HImode);
-	 emit_insn(gen_one_cmplhi2(operands[0],operands[1])) ;
-	 emit_insn(gen_movhi(extrareg,CONST1_RTX(QImode))) ;
-	 emit_insn(gen_addhi3(operands[0],operands[0],extrareg)) ;
-	 DONE;
-	}
-)
+	"sub32 $acc0,$acc0,$acc0
+	 sub32 %1,$acc0,%1"
+[(set_attr "itype" "bmu")
+ (set_attr "isize" "2")])
+
+
+;(define_expand "negqi2"
+;        [(set (match_operand:QI 0 "register_operand" "=y")
+;              (neg:QI (match_operand:QI 1 "register_operand" "d"))
+;         )]
+;        ""
+;	{
+;	 rtx extrareg = gen_reg_rtx(QImode);
+;	 emit_insn(gen_one_cmplqi2(operands[0],operands[1])) ;
+;	 emit_insn(gen_movqi(extrareg,CONST1_RTX(QImode))) ;
+;	 emit_insn(gen_addqi3(operands[0],operands[0],extrareg)) ;
+;	 DONE;
+;	}
+;)
+;(define_expand "neghi2"
+;        [(set (match_operand:HI 0 "register_operand" "=y")
+;              (neg:HI (match_operand:HI 1 "register_operand" "d"))
+;         )]
+;        ""
+;	{
+;	 rtx extrareg = gen_reg_rtx(HImode);
+;	 emit_insn(gen_one_cmplhi2(operands[0],operands[1])) ;
+;	 emit_insn(gen_movhi(extrareg,CONST1_RTX(QImode))) ;
+;	 emit_insn(gen_addhi3(operands[0],operands[0],extrareg)) ;
+;	 DONE;
+;	}
+;)
 ;(define_insn "neghi2"
 ;        [(set (match_operand:HI 0 "register_operand" "=d")
 ;              (neg:HI (match_operand:HI 1 "register_operand" "d"))
@@ -535,7 +547,8 @@
          )]
         ""
         "xor16 %2, %1, %0"
-[(set_attr "itype" "bmu")])
+[(set_attr "itype" "bmu")
+ (set_attr "isize" "2")])
 
 (define_insn "xorhi3"
         [(set (match_operand:HI 0 "register_operand" "=d")
@@ -767,7 +780,7 @@
   "TARGET_HWLOOP"
   {
     static char str[64];
-    sprintf(str, \"mv \t%d, brc1   bkrep \t#%%l1\", INTVAL(operands[0]));
+    sprintf(str, \"mvts16 \t%d, $bkrepcnt\nnop\nnop\nbkrep \t#%%l1\", INTVAL(operands[0]));
     return str;
   }
 
@@ -779,7 +792,8 @@
 ;;Conditional code and branch instructions
 ;;========================================
 
-(define_code_iterator cond_code [lt ltu eq ge geu gt gtu le leu ne])
+; NAK got rid of ltu, gtu, leu predicates
+(define_code_iterator cond_code [lt lt eq ge gt gt le le ne])
 
 (define_insn "jump"
         [(set (pc) (label_ref (match_operand 0 "" "")))]
