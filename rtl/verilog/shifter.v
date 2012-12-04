@@ -51,8 +51,10 @@ module shifter(data_i,
    reg [31:0]   mux_res_w;
 
 
-   assign mul_input_w    = dir_left_i ? data_i[31:0] : data_i[0:31];
-   assign data_o         = dir_left_i ? mux_res_w[31:0] : mux_res_w[0:31];
+   //assign mul_input_w    = dir_left_i ? data_i[31:0] : data_i[0:31];
+   assign mul_input_w    = dir_left_i ? data_i[31:0] : {<<{data_i}}; // NAK 2012-10-26 Changed to compile in Modelsim
+   //assign data_o         = dir_left_i ? mux_res_w[31:0] : mux_res_w[0:31];
+   assign data_o         = dir_left_i ? mux_res_w[31:0] : {<<{mux_res_w[31:0]}}; // NAK Changed this line so it would compile in Modelsim.
 
    assign steps_mul_op_w = 1 << steps_i[2:0];
 
