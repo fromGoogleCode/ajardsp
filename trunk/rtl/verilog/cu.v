@@ -30,6 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+`include "config.v"
+
 module cu(clk,
 	  rst,
           clk_en,
@@ -212,7 +214,7 @@ module cu(clk,
         op_2_idx_o = 0;
 
         op_0_ren_o = 0;
-	op_1_ren_o = 0;
+	      op_1_ren_o = 0;
         op_2_ren_o = 0;
 
         op_0_16_pos = 0;
@@ -225,7 +227,7 @@ module cu(clk,
                   op_0_idx_o = inst_pipe_0_r[12:10];
                   op_0_ren_o = 1;
                   op_0_16_pos = inst_pipe_0_r[9];
- 	          op_1_idx_o = inst_pipe_0_r[16:14];
+ 	                op_1_idx_o = inst_pipe_0_r[16:14];
                   op_1_ren_o = 1;
                   op_1_16_pos = inst_pipe_0_r[13];
                end

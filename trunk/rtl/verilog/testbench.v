@@ -34,6 +34,7 @@ module testbench;
 
    reg clk, rst;
    wire interrupt;
+   wire halt ;
    wire [15:0] gpio_w;
    reg [31:0]  cycle;
 
@@ -50,6 +51,10 @@ module testbench;
           cycle <= 0;
         else
           cycle <= cycle + 1;
+	
+	if (halt)
+	  $display("CPU Halted. Ran for %d cycles. Issued %d instructions\n", cycle, ajardsp_0.vliwfetch_0.num_insns_issued) ;
+
      end
 
    ajardsp_top ajardsp_0(.clk(clk),
@@ -66,7 +71,7 @@ module testbench;
                          .ext_dmem_rd_data_o(),
                          .ext_dmem_rd_en_i(0),
 
-                         .core_halt_o(),
+                         .core_halt_o(halt),
                          .gpio_o(gpio_w),
                          .interrupt_req_i(interrupt),
 
@@ -83,7 +88,7 @@ module testbench;
       rst = 1;
       #5 rst = 0;
 
-      #100000 $finish;
+      #10000000 $finish;
    end
 
    always clk = #1 ~clk;

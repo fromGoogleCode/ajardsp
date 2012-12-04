@@ -139,6 +139,22 @@ module vliwfetch(instmem_data,
    assign fetch_enable = next_pc[2] != pc[2] || fetch_state != RUNNING ||
                          (fetch_state == RUNNING && insn_on_top && next_pc[1:0] != 2'b00);
 
+`ifdef SIMULATION
+  integer num_insns_issued ;
+
+  initial begin
+    num_insns_issued = 0 ;
+  end
+
+  always @(posedge clk)
+  begin
+    if (clk_en)
+    begin
+      num_insns_issued = num_insns_issued + inst_0_valid + inst_1_valid + inst_2_valid + inst_3_valid ;
+    end
+  end
+`endif
+
    // instmem_64_0 => instmem_64_1
    always @(pc or instmem_64_0 or instmem_64_1 or insn_on_top)
      begin

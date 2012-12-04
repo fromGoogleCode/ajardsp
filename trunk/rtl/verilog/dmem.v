@@ -164,6 +164,7 @@ module dmem(clk,
         if (dump_mem_i)
           begin
  `ifdef DMEM_OUT_FILE
+ $display("Dumping dmem to %s\n", `DMEM_OUT_FILE) ;
              fp = $fopen(`DMEM_OUT_FILE, "w");
 
              for (i = 0; i < 16'hffff; i = i + 1)
