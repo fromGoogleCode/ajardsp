@@ -557,6 +557,8 @@ int asm_do_pass_1(inst_bundle_t *ib_p, data_element_t *data_p)
 
     if (ib_p->label) {
       /* Do nothing */
+      fprintf(lineno_fp, "\n<%s>:\n", ib_p->label);
+
     }
     else if (ib_p->align) {
       int i;
@@ -576,7 +578,7 @@ int asm_do_pass_1(inst_bundle_t *ib_p, data_element_t *data_p)
       }
     }
     else {
-      fprintf(lineno_fp, "0x%04X:%d\n", imem_addr, ib_p->insts_p->lineno);
+      fprintf(lineno_fp, "0x%04X:%d\t%s\n", imem_addr, ib_p->insts_p->lineno, ib_p->insts_p->mnemonic);
       if (RES_GOOD != try_assemble_inst_bundle(ib_p)) {
         fprintf(stderr, "Assemble failure for instruction packet starting around line: %d\n", ib_p->insts_p->lineno);
         exit(1);
