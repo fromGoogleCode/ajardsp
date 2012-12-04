@@ -420,7 +420,20 @@ is_data_reg_low_part(int REGN)
 void
 ajardsp_asm_internal_label(FILE *stream, const char *prefix, unsigned int labelno)
 {
-  fprintf(stream,"%s%d:",prefix,labelno);
+  char *fname = alloca(strlen(main_input_filename));
+  int i ;
+
+  strcpy(fname,main_input_filename) ;
+
+  for(i = 0 ; i < strlen(fname) ; i++)
+  {
+    if( !ISALNUM(fname[i]) )
+      fname[i] = '_' ;
+  }
+
+  fname[i] = '\0';
+
+  fprintf(stream,"%s%d_%s:",prefix,labelno, fname);
   return;
 }
 
@@ -701,7 +714,20 @@ ajardsp_asm_output_ascii(FILE *stream, char *ptr, int len)
 void
 asm_generate_internal_label(char *STRING,char *PREFIX,int NUM)
 {
-  sprintf(STRING,"%s%d", PREFIX,NUM);
+  char *fname = alloca(strlen(main_input_filename));
+  int i ;
+
+  strcpy(fname,main_input_filename) ;
+
+  for(i = 0 ; i < strlen(fname) ; i++)
+  {
+    if( !ISALNUM(fname[i]) )
+      fname[i] = '_' ;
+  }
+
+  fname[i] = '\0';
+
+  sprintf(STRING,"%s%d_%s", PREFIX,NUM, fname);
 }
 void
 asm_output_local(FILE *STREAM,char *NAME,int SIZE,int ROUNDED)

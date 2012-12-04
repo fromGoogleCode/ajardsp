@@ -53,10 +53,10 @@
    (ACC7L_REGNUM       22)
    (ACC7H_REGNUM       23)
 
-   (PRED0_REGNUM       24)
-   (PRED1_REGNUM       25)
-   (PRED2_REGNUM       26)
-   (PRED3_REGNUM       27)
+   (PRED0_REGNUM       30)
+   (PRED1_REGNUM       31)
+   (PRED2_REGNUM       32)
+   (PRED3_REGNUM       33)
 
    (SP_REGNUM          28)
    (RETPC_REGNUM       29)
@@ -273,7 +273,7 @@
 
 (define_insn "*st_qi"
   [(set (match_operand:QI 0 "memory_operand" "=Qr,m")
-        (match_operand:QI 1 "register_operand" "r,r"))]
+        (match_operand:QI 1 "register_operand" "c,r"))]
   ""
   "@
    st16 %1, %0
@@ -398,19 +398,19 @@
   [(set_attr "itype" "cu")
    (set_attr "isize" "1")])
 
-(define_insn "absqi2"
-        [(set (match_operand:QI 0 "register_operand" "=y")
-              (abs:QI (match_operand:QI 1 "register_operand" "d")))]
-        ""
-        "absh %1, %0"
-[(set_attr "itype" "cu")])
+;(define_insn "absqi2"
+;        [(set (match_operand:QI 0 "register_operand" "=y")
+;              (abs:QI (match_operand:QI 1 "register_operand" "d")))]
+;        ""
+;        "absh %1, %0"
+;[(set_attr "itype" "cu")])
 
-(define_insn "abshi2"
-        [(set (match_operand:HI 0 "register_operand" "=d")
-              (abs:HI (match_operand:HI 1 "register_operand" "d")))]
-        ""
-        "abs %1, %0"
-[(set_attr "itype" "cu")])
+;(define_insn "abshi2"
+;        [(set (match_operand:HI 0 "register_operand" "=d")
+;              (abs:HI (match_operand:HI 1 "register_operand" "d")))]
+;        ""
+;        "abs %1, %0"
+;[(set_attr "itype" "cu")])
 
 
 
@@ -423,16 +423,6 @@
         "and16 %2, %1, %0"
 [(set_attr "itype" "bmu")])
 
-;; NAK 2012-11-14 Added half int-single int multiplication
-(define_insn "mulhisi3"
-        [(set (match_operand:SI 0 "register_operand" "=d")
-              (mult:SI (match_operand:HI 1 "register_operand" "d")
-                       (match_operand:HI 2 "register_operand" "d"))
-         )]
-        ""
-        "mpy16 %2, %1, %0"
-[(set_attr "itype" "cu")])
-
 (define_insn "andhi3"
         [(set (match_operand:HI 0 "register_operand" "=d")
               (and:HI (match_operand:HI 1 "register_operand" "d")
@@ -443,6 +433,16 @@
 [(set_attr "itype" "bmu")])
 
 
+;; NAK 2012-11-14 Added half int-single int multiplication
+;(define_insn "mulqi3"
+;        [(set (match_operand:QI 0 "register_operand" "=d")
+;              (mult:QI (sign_extend:HI (match_operand:QI 1 "register_operand" "D"))
+;                       (sign_extend:HI (match_operand:QI 2 "register_operand" "D")))
+;         )]
+;        ""
+;        "mpy16 %2, %1, %0"
+;[(set_attr "itype" "cu")])
+
 (define_insn "mulqihi3"
         [(set (match_operand:HI 0 "register_operand" "=d")
               (mult:HI (sign_extend:HI (match_operand:QI 1 "register_operand" "D"))
@@ -452,10 +452,23 @@
         "mpy16 %2, %1, %0"
 [(set_attr "itype" "cu")])
 
+(define_expand "mulqi3"
+        [(set (match_operand:QI 0 "register_operand" "=d")
+              (mult:QI (match_operand:QI 1 "register_operand" "D")
+                       (match_operand:QI 2 "register_operand" "D"))
+         )]
+        ""
+	{
+	 rtx extrareg = gen_reg_rtx(HImode);
+	 emit_insn(gen_mulqihi3(extrareg,operands[1],operands[2])) ;
+	 DONE;
+	}
+)
+
 (define_insn "*mac_qi"
-  [(set (match_operand:HI 0 "register_operand" "=d")
+  [(set (match_operand:HI 0 "register_operand" "=D")
         (plus:HI (mult:HI (sign_extend:HI (match_operand:QI 2 "register_operand" "D"))
-                          (sign_extend:HI (match_operand:QI 3 "register_operand" "D")))
+                          (sign_extend:HI (match_operand:QI 3 "register_operand" "d")))
                  (match_operand:HI 1 "register_operand" "0")
               ))]
         ""
@@ -463,15 +476,14 @@
 [(set_attr "itype" "cu")])
 
 
-(define_insn "neghi2"
-        [(set (match_operand:HI 0 "register_operand" "=d")
-              (neg:HI (match_operand:HI 1 "register_operand" "d"))
-         )]
-        ""
-	"sub32 $acc0,$acc0,$acc0
-	 sub32 %1,$acc0,%1"
-[(set_attr "itype" "bmu")
- (set_attr "isize" "2")])
+;(define_insn "neghi2"
+;        [(set (match_operand:HI 0 "register_operand" "=d")
+;              (neg:HI (match_operand:HI 1 "register_operand" "d"))
+;         )]
+;        ""
+;	"nop"
+;[(set_attr "itype" "bmu")
+; (set_attr "isize" "2")])
 
 
 ;(define_expand "negqi2"
@@ -807,7 +819,7 @@
 (define_insn "indirect_jump"
         [(set (pc) (match_operand:QI 0 "register_operand" ""))]
         ""
-        "bra %0"
+        "bra %0 /* indirect_jump */"
 [(set_attr "itype" "pcu")])
 
 (define_insn "nop"
@@ -937,22 +949,22 @@
 
 (automata_option "v")  ;; generate debuginfo in ajardsp.dfa
 
-(define_automaton "ajardsp")
+(define_automaton "ajardsp_0")
 
 ;; Define available cpu units.
-(define_cpu_unit "bmu" "ajardsp")
-(define_cpu_unit "pcu" "ajardsp")
-(define_cpu_unit "lsu0" "ajardsp")
-(define_cpu_unit "lsu1" "ajardsp")
-(define_cpu_unit "cu0" "ajardsp")
-(define_cpu_unit "cu1" "ajardsp")
+(define_cpu_unit "bmu,pcu,lsu0,lsu1,cu0,cu1,bus_spec" "ajardsp_0")
+;(define_cpu_unit "pcu" "ajardsp")
+;(define_cpu_unit "lsu0" "ajardsp")
+;(define_cpu_unit "lsu1" "ajardsp")
+;(define_cpu_unit "cu0" "ajardsp")
+;(define_cpu_unit "cu1" "ajardsp")
 
-(define_cpu_unit "bus_spec" "ajardsp")
+;(define_cpu_unit "bus_spec" "ajardsp")
 
-(define_cpu_unit "islot0" "ajardsp")
-(define_cpu_unit "islot1" "ajardsp")
-(define_cpu_unit "islot2" "ajardsp")
-(define_cpu_unit "islot3" "ajardsp")
+(define_cpu_unit "islot0,islot1,islot2,islot3" "ajardsp_0")
+;(define_cpu_unit "islot1" "ajardsp")
+;(define_cpu_unit "islot2" "ajardsp")
+;(define_cpu_unit "islot3" "ajardsp")
 
 ;; Define reservations for issue slots
 (define_reservation "one_islot" "(islot0|islot1|islot2|islot3)")

@@ -132,7 +132,6 @@ enum reg_class                                  \
         GENERAL_REGS,                           \
         ALL_REGS,                               \
 	ACC_PTR,				\
-	NONPRED_REGS,				\
 	LIM_REG_CLASSES
 };
 
@@ -174,6 +173,21 @@ enum reg_class                                  \
     {0x00ffffff}    /* ACC and PTR */           \
 }
 
+#define TARGET_CLASS_LIKELY_SPILLED_P(a) \
+        a == NO_REGS? 0 :                                \
+        a == CALLER_SAVED_REGS ? 1 :                     \
+        a == CALLEE_SAVED_REGS ? 1 :                      \
+        a == ACC_REGS_LOW_PART ? 1 :                      \
+        a == ACC_REGS_HIGH_PART ? 1 :                     \
+        a == ACC_REGS_0_3 ? 1  :                           \
+        a == ACC_REGS ? 1  :                               \
+        a == PTR_REGS ? 1  :                               \
+        a == PRED_REGS ? 0  :                              \
+        a == (SPEC_REGS ? 1  :                              \
+        a == ALL_PTR_REGS ? 1 :                           \
+        a == GENERAL_REGS ? 1 :                           \
+        a == ALL_REGS ? 1 :                               \
+	a == ACC_PTR ? 1 : 1
 
 #define REGNO_REG_CLASS(REGNO) \
 regno_reg_class(REGNO)

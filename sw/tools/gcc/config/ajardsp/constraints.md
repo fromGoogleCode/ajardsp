@@ -66,7 +66,7 @@
 (define_register_constraint "z" "PRED_REGS"
   "Predicate register ($pred0 - $pred3)")
 
-(define_register_constraint "c" "NONPRED_REGS"
+(define_register_constraint "c" "ACC_PTR"
   "All registers except predicate registers")
 
 
