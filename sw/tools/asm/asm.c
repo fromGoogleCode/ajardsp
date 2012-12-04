@@ -481,6 +481,14 @@ int asm_do_pass_0(inst_bundle_t *ib_p, data_element_t *data_p)
 
   while (data_p) {
     if (data_p->label) {
+      uint32 temp_addr ;
+      
+      // Check if this symbol has been previously defined.
+      if(symtab_lookup(data_p->label, &temp_addr) == RES_GOOD)
+      {
+        fprintf(stderr, "ERROR: Multiply defined symbol %s\n", data_p->label) ;
+	exit(1) ;
+      }
       symtab_add(data_p->label, dmem_addr);
     }
     else {
@@ -498,7 +506,15 @@ int asm_do_pass_0(inst_bundle_t *ib_p, data_element_t *data_p)
   while (ib_p) {
 
     if (ib_p->label) {
-      symtab_add(ib_p->label, imem_addr);
+      uint32 temp_addr ;
+      
+      // Check if this symbol has been previously defined.
+      if(symtab_lookup(ib_p->label, &temp_addr) == RES_GOOD)
+      {
+        fprintf(stderr, "ERROR: Multiply defined symbol %s\n", ib_p->label) ;
+	exit(1) ;
+      }
+        symtab_add(ib_p->label, imem_addr);
     }
     else if (ib_p->align) {
       imem_addr += ib_p->align - 1;
@@ -578,7 +594,42 @@ int asm_do_pass_1(inst_bundle_t *ib_p, data_element_t *data_p)
       }
     }
     else {
-      fprintf(lineno_fp, "0x%04X:%d\t%s\n", imem_addr, ib_p->insts_p->lineno, ib_p->insts_p->mnemonic);
+      instruction_t *inst = ib_p->insts_p ;
+
+      fprintf(lineno_fp, "0x%04x:%d\t", imem_addr, ib_p->insts_p->lineno);
+
+      while(inst != NULL)
+      {
+        fprintf(lineno_fp, "%s", inst->mnemonic);
+
+        operand_t *op = inst->ops_p ;
+
+        while(op != NULL)
+        {
+          if(op->type == REG)
+            fprintf(lineno_fp, " $") ;
+          else if(op->type == SYMBOL_REF)
+	    fprintf(lineno_fp, " #") ;
+	  else
+	    fprintf(lineno_fp, " ") ;
+
+          if(op->name != NULL)
+            fprintf(lineno_fp, "%s", op->name) ;
+	  else
+	    fprintf(lineno_fp, " 0x%08x", op->offset) ;
+	
+	  if(op->next_p != NULL)
+	    fprintf(lineno_fp, ",") ;
+
+	  op = op->next_p ;
+        }
+
+	if(inst->next_p != NULL)
+	  fprintf(lineno_fp, " | ") ;
+	inst = inst->next_p ;
+      }
+      fprintf(lineno_fp, "\n") ;
+
       if (RES_GOOD != try_assemble_inst_bundle(ib_p)) {
         fprintf(stderr, "Assemble failure for instruction packet starting around line: %d\n", ib_p->insts_p->lineno);
         exit(1);
