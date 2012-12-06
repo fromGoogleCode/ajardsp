@@ -1,4 +1,3 @@
-;; This file is part of the AjarDSP GCC configuration.
 ;;
 ;; Copyright (C) 2010 Markus Lavin.
 ;;
@@ -340,10 +339,10 @@
         (match_operand:QI 0 "register_operand" "r,q"))]
   ""
   "@
-   push16 %0
-   push16 %0"
+   nop\;push16 %0
+   nop\;push16 %0"
   [(set_attr "itype" "lsu,lsu_spec")
-   (set_attr "isize" "1,1")])
+   (set_attr "isize" "2,2")])
 
 (define_insn "pushhi1"
   [(set (mem:HI (pre_dec (reg:QI SP_REGNUM)))
@@ -651,25 +650,25 @@
 ;; Floating point
 ;;===============
 
-(define_insn "addqf3"
-  [(set (match_operand:QF 0 "register_operand" "=d")
-        (plus:QF (match_operand:QF 1 "register_operand" "d")
-                 (match_operand:QF 2 "register_operand" "d"))
-        )]
-  ""
-  "fpadd %1, %2, %0"
-  [(set_attr "itype" "cu_fp")
-   (set_attr "isize" "2")])
+;(define_insn "addqf3"
+;  [(set (match_operand:QF 0 "register_operand" "=d")
+;        (plus:QF (match_operand:QF 1 "register_operand" "d")
+;                 (match_operand:QF 2 "register_operand" "d"))
+;        )]
+;  ""
+;  "fpadd %1, %2, %0"
+;  [(set_attr "itype" "cu_fp")
+;   (set_attr "isize" "2")])
 
-(define_insn "mulqf3"
-  [(set (match_operand:QF 0 "register_operand" "=d")
-        (mult:QF (match_operand:QF 1 "register_operand" "d")
-                 (match_operand:QF 2 "register_operand" "d"))
-        )]
-  ""
-  "fpmul %1, %2, %0"
-  [(set_attr "itype" "cu_fp")
-   (set_attr "isize" "2")])
+;(define_insn "mulqf3"
+;  [(set (match_operand:QF 0 "register_operand" "=d")
+;        (mult:QF (match_operand:QF 1 "register_operand" "d")
+;                 (match_operand:QF 2 "register_operand" "d"))
+;        )]
+;  ""
+;  "fpmul %1, %2, %0"
+;  [(set_attr "itype" "cu_fp")
+;   (set_attr "isize" "2")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Function calls
@@ -993,14 +992,14 @@
 (define_insn_reservation "pcu_32" 1 (and (eq_attr "itype" "pcu") (eq_attr "isize"  "2"))
   "two_islots+pcu")
 
-(define_insn_reservation "lsu_16_spec"  2 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "1"))
+(define_insn_reservation "lsu_16_spec"  3 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "1"))
   "one_islot+(lsu0|lsu1)+bus_spec")
-(define_insn_reservation "lsu_32_spec" 2 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "2"))
+(define_insn_reservation "lsu_32_spec" 3 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "2"))
   "two_islots+(lsu0|lsu1)+bus_spec")
 
-(define_insn_reservation "lsu_16_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "1"))
+(define_insn_reservation "lsu_16_all" 3 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "1"))
   "one_islot+lsu0+lsu1+bus_spec")
-(define_insn_reservation "lsu_32_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "2"))
+(define_insn_reservation "lsu_32_all" 3 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "2"))
   "two_islots+lsu0+lsu1+bus_spec")
 
 
