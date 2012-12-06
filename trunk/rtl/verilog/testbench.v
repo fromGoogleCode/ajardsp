@@ -53,7 +53,7 @@ module testbench;
           cycle <= cycle + 1;
 	
 	if (halt)
-	  $display("CPU Halted. Ran for %d cycles. Issued %d instructions\n", cycle, ajardsp_0.vliwfetch_0.num_insns_issued) ;
+	  $display("CPU Halted. Ran for %d cycles. Issued %d instructions, including %d nops Fraction of nops = %f.\n", cycle, ajardsp_0.vliwfetch_0.num_insns_issued, ajardsp_0.vliwfetch_0.num_nops_issued, real'(ajardsp_0.vliwfetch_0.num_nops_issued) / real'(ajardsp_0.vliwfetch_0.num_insns_issued)) ;
 
      end
 

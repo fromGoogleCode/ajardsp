@@ -141,15 +141,21 @@ module vliwfetch(instmem_data,
 
 `ifdef SIMULATION
   integer num_insns_issued ;
+  integer num_nops_issued ;
 
   initial begin
     num_insns_issued = 0 ;
+    num_nops_issued = 0 ;
   end
 
   always @(posedge clk)
   begin
     if (clk_en)
     begin
+      num_nops_issued = num_nops_issued + (inst_1_valid == 0) + (inst_0_valid == 0);
+      if(inst_0_valid == 1)
+        num_nops_issued = num_nops_issued + (inst_0 == 0) ;
+
       num_insns_issued = num_insns_issued + inst_0_valid + inst_1_valid + inst_2_valid + inst_3_valid ;
     end
   end

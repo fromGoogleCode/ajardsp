@@ -67,6 +67,7 @@ module cu(clk,
 	  );
 
 `include "insns.v"
+`include "config.v"
 
    input clk;
    input rst;
