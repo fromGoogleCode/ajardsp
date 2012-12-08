@@ -63,6 +63,7 @@ extern const struct real_format ajardsp_single_format;
 #define FLOAT_TYPE_SIZE 16
 #define DOUBLE_TYPE_SIZE 16
 #define LONG_DOUBLE_TYPE_SIZE 16
+//#define POINTER_SIZE 16
 
 /* ------------------------------------------------------------------------------*
  *                      Registers and their usage conventions                    *
@@ -285,6 +286,8 @@ CLASS
 
 #define FRAME_GROWS_DOWNWARD 1
 
+#define ARGS_GROWS_UPWARD 1
+
 #define STARTING_FRAME_OFFSET \
 starting_frame_offset ()
 
@@ -294,24 +297,18 @@ starting_frame_offset ()
 #define FIRST_PARM_OFFSET(FUN)\
 0
 
-#define STACK_POINTER_REGNUM \
-AJARDSP_REGNO_SP
+#define STACK_POINTER_REGNUM  AJARDSP_REGNO_SP
 
-#define HARD_FRAME_POINTER_REGNUM \
-AJARDSP_REGNO_LAST_PTR
+#define HARD_FRAME_POINTER_REGNUM AJARDSP_REGNO_LAST_PTR
 
-#define ARG_POINTER_REGNUM \
-HARD_FRAME_POINTER_REGNUM
+#define ARG_POINTER_REGNUM AJARDSP_REGNO_LAST_PTR - 1
 
-#define FRAME_POINTER_REGNUM \
-HARD_FRAME_POINTER_REGNUM
+#define FRAME_POINTER_REGNUM AJARDSP_REGNO_LAST_PTR
 
-#define ELIMINABLE_REGS \
-{{FRAME_POINTER_REGNUM,      STACK_POINTER_REGNUM}, \
- {FRAME_POINTER_REGNUM,      HARD_FRAME_POINTER_REGNUM}, \
- {ARG_POINTER_REGNUM,        STACK_POINTER_REGNUM}, \
- {HARD_FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM} \
-}
+#define ELIMINABLE_REGS  \
+ {{ARG_POINTER_REGNUM, STACK_POINTER_REGNUM}, \
+ {ARG_POINTER_REGNUM, FRAME_POINTER_REGNUM}, \
+ {FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM}}
 
 /*Recomputes new offsets, after eliminating.*/
 #define INITIAL_ELIMINATION_OFFSET(FROM, TO, VAR) \
