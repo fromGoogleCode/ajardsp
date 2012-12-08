@@ -640,15 +640,22 @@ print_operand_address(FILE *STREAM,rtx X)
         {
           if(GET_CODE(op1) == SYMBOL_REF)
             {
+              fprintf(stderr,"[print_operand_address] %s, #%s\n",
+                      ((GET_CODE(op2)==REG)
+                       ?reg_names[REGNO(op2)]
+                       :reg_names[REGNO(XEXP(op2,0))]), XSTR((op1),0));
               fprintf(STREAM,"%s, #%s",
                       ((GET_CODE(op2)==REG)
                        ?reg_names[REGNO(op2)]
                        :reg_names[REGNO(XEXP(op2,0))]), XSTR((op1),0));
-
-
             }
           else
             {
+              fprintf(stderr,"[print_operand_address] %s, %d\n",
+                      ((GET_CODE(op2)==REG)
+                       ?reg_names[REGNO(op2)]
+                       :reg_names[REGNO(XEXP(op2,0))]),  INTVAL(op1));
+
               fprintf(STREAM,"%s, %d",
                       ((GET_CODE(op2)==REG)
                        ?reg_names[REGNO(op2)]
@@ -661,6 +668,12 @@ print_operand_address(FILE *STREAM,rtx X)
         {
           if(GET_CODE(op2) == SYMBOL_REF)
             {
+
+              fprintf(stderr,"[print_operand_address] %s, #%s\n",
+                      ((GET_CODE(op1) == REG)
+                       ?reg_names[REGNO(op1)]
+                       :reg_names[REGNO(XEXP(op1,0))]), XSTR((op2),0));
+
               fprintf(STREAM,"%s, #%s",
                       ((GET_CODE(op1) == REG)
                        ?reg_names[REGNO(op1)]
@@ -668,6 +681,12 @@ print_operand_address(FILE *STREAM,rtx X)
             }
           else
             {
+
+              fprintf(stderr,"[print_operand_address] %s, %d\n",
+                      ((GET_CODE(op1) == REG)
+                       ?reg_names[REGNO(op1)]
+                       :reg_names[REGNO(XEXP(op1,0))]), INTVAL(op2));
+
               fprintf(STREAM,"%s, %d",
                       ((GET_CODE(op1) == REG)
                        ?reg_names[REGNO(op1)]

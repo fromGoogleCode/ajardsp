@@ -458,9 +458,11 @@
          )]
         ""
 	{
-	 rtx extrareg = gen_reg_rtx(HImode);
-	 emit_insn(gen_mulqihi3(extrareg,operands[1],operands[2])) ;
-	 DONE;
+//	 fprintf(stderr, "HERRO!!!!!!!!!!!!! GCC trying to emit mulqi3\n") ;
+//	 rtx extrareg = gen_reg_rtx(HImode);
+//	 emit_insn(gen_mulqihi3(extrareg,operands[1],operands[2])) ;
+//	 DONE;
+	 FAIL;
 	}
 )
 
@@ -992,14 +994,14 @@
 (define_insn_reservation "pcu_32" 1 (and (eq_attr "itype" "pcu") (eq_attr "isize"  "2"))
   "two_islots+pcu")
 
-(define_insn_reservation "lsu_16_spec"  3 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "1"))
+(define_insn_reservation "lsu_16_spec"  2 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "1"))
   "one_islot+(lsu0|lsu1)+bus_spec")
-(define_insn_reservation "lsu_32_spec" 3 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "2"))
+(define_insn_reservation "lsu_32_spec" 2 (and (eq_attr "itype" "lsu_spec") (eq_attr "isize"  "2"))
   "two_islots+(lsu0|lsu1)+bus_spec")
 
-(define_insn_reservation "lsu_16_all" 3 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "1"))
+(define_insn_reservation "lsu_16_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "1"))
   "one_islot+lsu0+lsu1+bus_spec")
-(define_insn_reservation "lsu_32_all" 3 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "2"))
+(define_insn_reservation "lsu_32_all" 2 (and (eq_attr "itype" "lsu_all") (eq_attr "isize"  "2"))
   "two_islots+lsu0+lsu1+bus_spec")
 
 
