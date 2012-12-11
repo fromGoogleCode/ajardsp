@@ -60,6 +60,7 @@ extern int lineno;
 %token TOK_NOT
 %token TOK_ALIGN
 
+%token <ival> TOK_DATA_DWORD
 %token <ival> TOK_INTEGER
 %token <mnemonic>  TOK_MNEMONIC
 %token <str>  TOK_REGISTER
@@ -285,7 +286,12 @@ data_element: TOK_DATA_SKIP TOK_DATA_INTEGER
               data_p->symref = $2;
               $$ = data_p;
             }
-
+            | TOK_DATA_DWORD TOK_DATA_INTEGER
+            {
+              data_element_t *data_p = calloc(1, sizeof(data_element_t));
+              data_p->value = $2;
+              $$ = data_p;
+            }
             | TOK_DATA_LABEL
             {
               data_element_t *data_p = calloc(1, sizeof(data_element_t));

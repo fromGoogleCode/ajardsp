@@ -88,6 +88,7 @@ int lineno = 1;
 <CODE>[a-z][._0-9a-z]*              {if (lookfor_state == code_sections) {yylval.mnemonic.str = strdup(yytext); yylval.mnemonic.lineno = lineno; return TOK_MNEMONIC;}}
 <CODE>^[._0-9a-zA-Z]+":"            {if (lookfor_state == code_sections) {yylval.str  = strdup(yytext); yylval.str[strlen(yylval.str) - 1] = '\0'; return TOK_LABEL;}}
 
+<DATA>".dword" {if (lookfor_state == data_sections) {return TOK_DATA_DWORD;}}
 <DATA>".word" {if (lookfor_state == data_sections) {return TOK_DATA_WORD;}}
 <DATA>".skip" {if (lookfor_state == data_sections) {return TOK_DATA_SKIP;}}
 <DATA>"-"?("0x"[0-9a-fA-F]+|[0-9]+) {if (lookfor_state == data_sections) {yylval.ival = strtol(yytext, NULL, 0); return TOK_DATA_INTEGER;}}

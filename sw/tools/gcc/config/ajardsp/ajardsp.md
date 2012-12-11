@@ -648,6 +648,34 @@
         "shiftrl32 %1, %2, %0"
 [(set_attr "itype" "bmu")])
 
+(define_insn "ashlsi3"
+        [(set (match_operand:SI 0 "register_operand" "=d")
+              (ashift:SI (match_operand:SI 1 "register_operand" "d")
+                       (match_operand:QI 2 "register_operand" "d"))
+         )]
+        ""
+        "shiftll32 %1, %2, %0"
+[(set_attr "itype" "bmu")])
+
+(define_insn "ashrsi3"
+        [(set (match_operand:SI 0 "register_operand" "=d")
+              (ashiftrt:SI (match_operand:SI 1 "register_operand" "d")
+                       (match_operand:QI 2 "register_operand" "d"))
+         )]
+        ""
+        "shiftra32 %1, %2, %0"
+[(set_attr "itype" "bmu")])
+
+(define_insn "lshrsi3"
+        [(set (match_operand:SI 0 "register_operand" "=d")
+              (lshiftrt:SI (match_operand:SI 1 "register_operand" "d")
+                       (match_operand:QI 2 "register_operand" "d"))
+         )]
+        ""
+        "shiftrl32 %1, %2, %0"
+[(set_attr "itype" "bmu")])
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Floating point
 ;;===============
